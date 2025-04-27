@@ -44,14 +44,24 @@
                 align-items: center;
             }
 
-            #controls {
+            #controls-container {
+                /* Renamed for clarity */
                 width: 100%;
                 max-width: 600px;
                 margin-bottom: 15px;
-                text-align: center;
-                display: flex; /* Use flexbox for button layout */
-                justify-content: center; /* Center buttons */
-                gap: 10px; /* Add space between buttons */
+                display: flex;
+                flex-direction: column; /* Stack control groups */
+                align-items: center;
+                gap: 10px;
+            }
+
+            #main-controls,
+            #interpolation-controls {
+                display: flex;
+                flex-wrap: wrap; /* Allow wrapping on small screens */
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
             }
 
             /* Shared button styles */
@@ -59,12 +69,13 @@
                 background-color: var(--button-color);
                 color: var(--button-text-color);
                 border: none;
-                padding: 10px 20px;
+                padding: 10px 15px; /* Slightly smaller padding */
                 border-radius: var(--border-radius);
                 cursor: pointer;
-                font-size: 14px;
+                font-size: 13px; /* Slightly smaller font */
                 font-weight: 500;
                 transition: background-color 0.2s ease;
+                white-space: nowrap; /* Prevent button text wrapping */
             }
             .control-button:hover {
                 background-color: #aaaaaa;
@@ -76,10 +87,60 @@
                 cursor: not-allowed;
             }
 
+            /* Interpolation specific styles */
+            #interpolation-controls {
+                background-color: var(--surface-color-2);
+                padding: 8px 12px;
+                border-radius: var(--border-radius);
+                font-size: 13px;
+            }
+            #interpolation-controls label {
+                cursor: pointer;
+                user-select: none;
+                margin-right: 5px;
+            }
+            #interpolation-controls input[type="checkbox"] {
+                margin-right: 10px;
+                vertical-align: middle;
+            }
+            #interpolation-steps-group {
+                display: none; /* Hidden by default */
+                align-items: center;
+                gap: 8px;
+            }
+            #interpolation-controls
+                input[type="checkbox"]:checked
+                ~ #interpolation-steps-group {
+                display: flex; /* Show when checkbox is checked */
+            }
+            #interpolation-steps-slider {
+                width: 100px; /* Adjust width as needed */
+                vertical-align: middle;
+            }
+            #interpolation-steps-number {
+                width: 45px; /* Adjust width */
+                background-color: var(--surface-color-1);
+                color: var(--text-color);
+                border: 1px solid var(--border-color);
+                border-radius: 3px;
+                padding: 3px 5px;
+                font-size: 12px;
+                text-align: center;
+            }
+            /* Hide spinner buttons on number input */
+            #interpolation-steps-number::-webkit-outer-spin-button,
+            #interpolation-steps-number::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            #interpolation-steps-number {
+                -moz-appearance: textfield; /* Firefox */
+            }
+
             #palette-container {
                 width: 100%;
                 overflow-x: auto;
-                overflow-y: hidden;
+                overflow-y: hidden; /* Keep horizontal scroll, vertical handled by page */
                 padding-bottom: 10px; /* Ensure space below table for capture */
                 border: 1px solid var(--border-color);
                 border-radius: var(--border-radius);
@@ -92,11 +153,9 @@
             table {
                 border-collapse: separate;
                 border-spacing: var(--cell-spacing);
-                /* Removed margin: var(--cell-spacing); - handled by container padding */
-                width: auto; /* Let table size itself */
+                width: auto; /* Let table size itself based on content */
                 min-width: 100%;
-                table-layout: fixed;
-                /* Important for html2canvas background */
+                table-layout: fixed; /* Keep fixed for consistent column widths */
                 background-color: var(--surface-color-1);
             }
 
@@ -117,7 +176,8 @@
                 transition:
                     transform 0.1s ease-out,
                     box-shadow 0.2s ease-out,
-                    font-weight 0.1s ease-out; /* Added font-weight transition */
+                    font-weight 0.1s ease-out,
+                    background-color 0.2s ease; /* Added background transition */
                 word-wrap: break-word;
             }
 
@@ -132,6 +192,18 @@
                 transform: scale(1.05);
                 box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
             }
+            td.interpolated {
+                /* Style for interpolated cells */
+                /* Optional: subtle visual difference */
+                /* opacity: 0.95; */
+            }
+            td.label.interpolated-label {
+                /* Style for placeholder labels */
+                color: var(--text-color-muted);
+                font-style: italic;
+                font-size: smaller;
+            }
+
             td.copied::after {
                 content: "Copied!";
                 position: absolute;
@@ -260,6 +332,16 @@
                     min-height: 200px;
                     font-size: 12px;
                 }
+                #interpolation-controls {
+                    font-size: 12px;
+                }
+                #interpolation-steps-slider {
+                    width: 80px;
+                }
+                #interpolation-steps-number {
+                    width: 40px;
+                    font-size: 11px;
+                }
             }
             @media (max-width: 480px) {
                 :root {
@@ -271,6 +353,33 @@
                 td {
                     font-size: 7px;
                 }
+                #controls-container {
+                    gap: 8px;
+                }
+                #main-controls,
+                #interpolation-controls {
+                    gap: 8px;
+                }
+                .control-button {
+                    padding: 8px 10px;
+                    font-size: 12px;
+                }
+                #interpolation-controls {
+                    padding: 6px 10px;
+                    font-size: 11px;
+                }
+                #interpolation-steps-group {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 5px;
+                }
+                #interpolation-steps-slider {
+                    width: 120px;
+                } /* Wider on small screens when stacked */
+                #interpolation-steps-number {
+                    width: 45px;
+                }
+
                 .modal-content {
                     width: 95%;
                     margin-top: 15%;
@@ -292,13 +401,39 @@
         </style>
     </head>
     <body>
-        <div id="controls">
-            <button id="edit-palette-button" class="control-button">
-                Edit Palette Data
-            </button>
-            <button id="export-png-button" class="control-button">
-                Export as PNG
-            </button>
+        <div id="controls-container">
+            <div id="main-controls">
+                <button id="edit-palette-button" class="control-button">
+                    Edit Palette Data
+                </button>
+                <button id="export-png-button" class="control-button">
+                    Export as PNG
+                </button>
+            </div>
+            <div id="interpolation-controls">
+                <label for="interpolation-toggle"
+                    >Distribute Shades (Vertical):</label
+                >
+                <input type="checkbox" id="interpolation-toggle" />
+                <div id="interpolation-steps-group">
+                    <label for="interpolation-steps-slider">Steps:</label>
+                    <input
+                        type="range"
+                        id="interpolation-steps-slider"
+                        min="1"
+                        max="10"
+                        value="1"
+                        step="1"
+                    />
+                    <input
+                        type="number"
+                        id="interpolation-steps-number"
+                        min="1"
+                        max="10"
+                        value="1"
+                    />
+                </div>
+            </div>
         </div>
 
         <div id="palette-container">
@@ -311,6 +446,7 @@
 
         <!-- The Modal -->
         <div id="edit-modal" class="modal">
+            <!-- ... (modal content remains the same) ... -->
             <div class="modal-content">
                 <span class="close-button" id="close-modal-button"
                     >&times;</span
@@ -332,8 +468,8 @@
 
         <script>
             // --- Initial Data (Minimal Format: Strings for labels, #Hex for colors) ---
-            const initialGridDataMinimal = [
-                // Row 0: Top Labels
+            const sourceGridData = Object.freeze([
+                // Freeze to prevent accidental modification
                 [
                     "100x",
                     "#FFFFFF",
@@ -363,7 +499,6 @@
                     "Crimson",
                     "100x",
                 ],
-                // Row 1: 96x
                 [
                     "96x",
                     "#F4F4F4",
@@ -393,7 +528,6 @@
                     "#FFEBF0",
                     "96x",
                 ],
-                // Row 2: 88x
                 [
                     "88x",
                     "#E0E0E0",
@@ -423,7 +557,6 @@
                     "#FFC2D1",
                     "88x",
                 ],
-                // Row 3: 80x
                 [
                     "80x",
                     "#CCCCCC",
@@ -453,7 +586,6 @@
                     "#FF99B2",
                     "80x",
                 ],
-                // Row 4: 64x
                 [
                     "64x",
                     "#A3A3A3",
@@ -483,7 +615,6 @@
                     "#FF4775",
                     "64x",
                 ],
-                // Row 5: 48x
                 [
                     "48x",
                     "#7A7A7A",
@@ -513,7 +644,6 @@
                     "#B5405D",
                     "48x",
                 ],
-                // Row 6: 32x
                 [
                     "32x",
                     "#525252",
@@ -543,7 +673,6 @@
                     "#792A3E",
                     "32x",
                 ],
-                // Row 7: 24x
                 [
                     "24x",
                     "#3D3D3D",
@@ -573,7 +702,6 @@
                     "#5B202F",
                     "24x",
                 ],
-                // Row 8: 16x
                 [
                     "16x",
                     "#292929",
@@ -603,7 +731,6 @@
                     "#3C151F",
                     "16x",
                 ],
-                // Row 9: 12x
                 [
                     "12x",
                     "#1F1F1F",
@@ -633,7 +760,6 @@
                     "#2D1017",
                     "12x",
                 ],
-                // Row 10: 8x
                 [
                     "8x",
                     "#141414",
@@ -663,7 +789,6 @@
                     "#1E0B10",
                     "8x",
                 ],
-                // Row 11: 0x / Bottom Labels
                 [
                     "0x",
                     "#000000",
@@ -693,15 +818,17 @@
                     "345",
                     "0x",
                 ],
-            ];
+            ]);
 
-            // --- State Variable ---
-            let currentGridData = initialGridDataMinimal; // Holds the current palette data
+            // --- State Variables ---
+            let currentGridData = [...sourceGridData.map((row) => [...row])]; // Holds data being displayed (start with a copy)
+            let isInterpolationEnabled = false;
+            let interpolationSteps = 1;
 
             // --- DOM Elements ---
             const paletteInput = document.getElementById("palette-input");
             const updateButton = document.getElementById("update-button");
-            const paletteTable = document.getElementById("palette-table"); // Get table directly
+            const paletteTable = document.getElementById("palette-table");
             const tableBody = paletteTable.getElementsByTagName("tbody")[0];
             const modal = document.getElementById("edit-modal");
             const openModalButton = document.getElementById(
@@ -710,59 +837,202 @@
             const closeModalButton =
                 document.getElementById("close-modal-button");
             const exportPngButton =
-                document.getElementById("export-png-button"); // Get export button
+                document.getElementById("export-png-button");
+            // Interpolation Controls
+            const interpolationToggle = document.getElementById(
+                "interpolation-toggle",
+            );
+            const interpolationStepsGroup = document.getElementById(
+                "interpolation-steps-group",
+            );
+            const stepsSlider = document.getElementById(
+                "interpolation-steps-slider",
+            );
+            const stepsNumber = document.getElementById(
+                "interpolation-steps-number",
+            );
 
-            // --- Functions ---
+            // --- Helper Functions ---
 
-            // Convert minimal grid data (strings) to the simple text format
-            function convertToSimpleFormat(gridData) {
-                return gridData
-                    .map((row) => row.join(" ")) // Already in the desired format per row
-                    .join("\n");
+            function isValidHex(str) {
+                /* ... remains the same ... */
+                return (
+                    typeof str === "string" &&
+                    str.startsWith("#") &&
+                    (str.length === 4 || str.length === 7) &&
+                    /^#[0-9A-Fa-f]+$/.test(str)
+                );
+            }
+            function hexToRgb(hex) {
+                /* ... remains the same ... */
+                let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                hex = hex.replace(
+                    shorthandRegex,
+                    (m, r, g, b) => r + r + g + g + b + b,
+                );
+                let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+                    hex,
+                );
+                return result
+                    ? {
+                          r: parseInt(result[1], 16),
+                          g: parseInt(result[2], 16),
+                          b: parseInt(result[3], 16),
+                      }
+                    : null;
+            }
+            function componentToHex(c) {
+                /* ... remains the same ... */
+                let hex = c.toString(16);
+                return hex.length == 1 ? "0" + hex : hex;
+            }
+            function rgbToHex(r, g, b) {
+                /* ... remains the same ... */
+                return (
+                    "#" +
+                    componentToHex(r) +
+                    componentToHex(g) +
+                    componentToHex(b)
+                );
+            }
+            function interpolateHexColor(hex1, hex2, steps) {
+                /* ... remains the same ... */
+                const rgb1 = hexToRgb(hex1);
+                const rgb2 = hexToRgb(hex2);
+                if (!rgb1 || !rgb2) return []; // Invalid input
+
+                const interpolatedColors = [];
+                const totalIntervals = steps + 1;
+
+                for (let i = 1; i <= steps; i++) {
+                    const r = Math.round(
+                        rgb1.r + (rgb2.r - rgb1.r) * (i / totalIntervals),
+                    );
+                    const g = Math.round(
+                        rgb1.g + (rgb2.g - rgb1.g) * (i / totalIntervals),
+                    );
+                    const b = Math.round(
+                        rgb1.b + (rgb2.b - rgb1.b) * (i / totalIntervals),
+                    );
+                    interpolatedColors.push(rgbToHex(r, g, b));
+                }
+                return interpolatedColors;
             }
 
-            // Parse the simple text format back into minimal grid data (strings)
+            // --- Core Logic ---
+
+            // Generate a new grid with vertically interpolated colors (inserts rows)
+            function generateInterpolatedPalette(originalData, steps) {
+                if (steps <= 0) return originalData.map((row) => [...row]); // Return a copy
+
+                const newGridData = [];
+                if (!originalData || originalData.length === 0)
+                    return newGridData;
+
+                const numCols = originalData[0].length;
+
+                // Add the top header row (Row 0)
+                newGridData.push([...originalData[0]]);
+
+                // Iterate through original rows, checking pairs for interpolation
+                // Skip first (header) and last (footer) rows for starting interpolation
+                for (let i = 1; i < originalData.length - 2; i++) {
+                    const currentRow = originalData[i];
+                    const nextRow = originalData[i + 1];
+
+                    // Add the current original row to the new grid
+                    newGridData.push([...currentRow]);
+
+                    // Prepare arrays to hold interpolated colors for each step (new row)
+                    const interpolatedRowsData = Array.from(
+                        { length: steps },
+                        () => new Array(numCols).fill(""),
+                    );
+
+                    let canInterpolateRowPair = false; // Can we interpolate between row i and i+1?
+
+                    // Iterate through columns (excluding first and last label columns)
+                    for (let j = 1; j < numCols - 1; j++) {
+                        const cell1 = currentRow[j];
+                        const cell2 = nextRow[j];
+
+                        // Check if BOTH cells in the column are valid hex colors
+                        if (isValidHex(cell1) && isValidHex(cell2)) {
+                            canInterpolateRowPair = true; // Found a column to interpolate
+                            const interpolatedColors = interpolateHexColor(
+                                cell1,
+                                cell2,
+                                steps,
+                            );
+
+                            // Place interpolated colors into the corresponding step's row data
+                            for (let s = 0; s < steps; s++) {
+                                interpolatedRowsData[s][j] =
+                                    interpolatedColors[s];
+                            }
+                        } else {
+                            // If not interpolating this column, fill placeholder rows with empty strings
+                            for (let s = 0; s < steps; s++) {
+                                interpolatedRowsData[s][j] = ""; // Keep empty or copy label? Empty is simpler.
+                            }
+                        }
+                    }
+
+                    // If interpolation was possible between these rows, add the new rows
+                    if (canInterpolateRowPair) {
+                        interpolatedRowsData.forEach((newRowData) => {
+                            // Add placeholders for first/last column labels in the new rows
+                            newRowData[0] = "-"; // Placeholder for left label
+                            newRowData[newRowData.length - 1] = "-"; // Placeholder for right label
+                            newGridData.push(newRowData);
+                        });
+                    }
+                }
+
+                // Add the second to last original row (which was skipped in the loop)
+                if (originalData.length > 2) {
+                    newGridData.push([
+                        ...originalData[originalData.length - 2],
+                    ]);
+                }
+                // Add the last original row (bottom labels/colors)
+                if (originalData.length > 1) {
+                    newGridData.push([
+                        ...originalData[originalData.length - 1],
+                    ]);
+                }
+
+                return newGridData;
+            }
+
+            function convertToSimpleFormat(gridData) {
+                /* ... remains the same ... */
+                return gridData.map((row) => row.join(" ")).join("\n");
+            }
             function parseSimpleFormat(textData) {
+                /* ... remains the same ... */
                 const lines = textData.trim().split("\n");
                 return lines.map((line) => {
-                    // Split by space and filter out potential empty strings from multiple spaces
                     return line
                         .trim()
                         .split(" ")
                         .filter((cell) => cell !== "");
                 });
             }
-
-            // Determine text color based on background brightness
             function getTextColor(hexBgColor) {
+                /* ... remains the same ... */
                 if (!hexBgColor || typeof hexBgColor !== "string")
-                    return "var(--text-color)"; // Use CSS var
-                const hex = hexBgColor.replace("#", "");
-                const fullHex =
-                    hex.length === 3
-                        ? hex
-                              .split("")
-                              .map((x) => x + x)
-                              .join("")
-                        : hex;
-                if (fullHex.length !== 6) return "var(--text-color)";
-                try {
-                    const r = parseInt(fullHex.substring(0, 2), 16);
-                    const g = parseInt(fullHex.substring(2, 4), 16);
-                    const b = parseInt(fullHex.substring(4, 6), 16);
-                    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-                    // Use dark text on light backgrounds (like the button)
-                    return lum > 0.5
-                        ? "var(--button-text-color)"
-                        : "var(--text-color)";
-                } catch (e) {
-                    console.error("Error calculating text color:", e);
                     return "var(--text-color)";
-                }
+                const rgb = hexToRgb(hexBgColor);
+                if (!rgb) return "var(--text-color)";
+                const lum =
+                    (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+                return lum > 0.5
+                    ? "var(--button-text-color)"
+                    : "var(--text-color)";
             }
-
-            // Copy text to clipboard
             async function copyToClipboard(text, element) {
+                /* ... remains the same ... */
                 if (!navigator.clipboard) {
                     try {
                         const textArea = document.createElement("textarea");
@@ -789,38 +1059,31 @@
                     alert("Failed to copy.");
                 }
             }
-
-            // Show "Copied!" feedback
             function showCopiedFeedback(element) {
+                /* ... remains the same ... */
                 element.classList.add("copied");
                 setTimeout(() => element.classList.remove("copied"), 1000);
             }
 
-            // Check if a string is a valid hex color (#RGB or #RRGGBB)
-            function isValidHex(str) {
-                return (
-                    typeof str === "string" &&
-                    str.startsWith("#") &&
-                    (str.length === 4 || str.length === 7) &&
-                    /^#[0-9A-Fa-f]+$/.test(str)
-                );
-            }
-
-            // Render the palette table from minimal grid data
+            // Render the palette table from grid data
             function renderPalette(gridData) {
-                tableBody.innerHTML = "";
+                tableBody.innerHTML = ""; // Clear previous content
                 if (!Array.isArray(gridData)) {
                     console.error("Invalid grid data: not an array");
                     return;
                 }
+
                 gridData.forEach((rowData, rowIndex) => {
                     if (!Array.isArray(rowData)) {
                         console.warn(`Skipping invalid row ${rowIndex}`);
                         return;
                     }
                     const row = tableBody.insertRow();
+
                     rowData.forEach((cellData, cellIndex) => {
                         const cell = row.insertCell();
+                        const isInterpolatedLabelPlaceholder = cellData === "-";
+
                         if (isValidHex(cellData)) {
                             // It's a color swatch
                             const hexColor = cellData;
@@ -829,83 +1092,119 @@
                                 .toUpperCase();
                             cell.style.backgroundColor = hexColor;
                             cell.textContent = textContent;
-                            cell.style.color = getTextColor(hexColor); // Contrast with swatch color
+                            cell.style.color = getTextColor(hexColor);
                             cell.classList.add("swatch");
-                            cell.dataset.hex = textContent; // Store hex without # for copying
+                            cell.dataset.hex = textContent;
                             cell.addEventListener("click", () => {
                                 copyToClipboard(textContent, cell);
                             });
+                            // Add interpolated class if interpolation is enabled
+                            // (We don't easily know if THIS specific cell is original or not without more complex tracking)
+                            if (isInterpolationEnabled) {
+                                cell.classList.add("interpolated");
+                            }
                         } else if (typeof cellData === "string") {
-                            // It's a label
+                            // It's a label or placeholder
                             cell.textContent = cellData;
                             cell.classList.add("label");
-                            // Ensure label text color contrasts with default cell background
-                            cell.style.color = getTextColor(
-                                getComputedStyle(cell).backgroundColor,
-                            );
+                            if (isInterpolatedLabelPlaceholder) {
+                                cell.classList.add("interpolated-label"); // Use class for styling
+                            } else {
+                                // Regular label styling
+                                cell.style.color = getTextColor(
+                                    getComputedStyle(cell).backgroundColor,
+                                );
+                            }
                         } else {
-                            // Invalid data type in cell
+                            // Invalid data
                             console.warn(
                                 `Invalid cell data type at row ${rowIndex}, cell ${cellIndex}:`,
                                 typeof cellData,
                                 cellData,
                             );
                             cell.textContent = "?";
-                            cell.style.backgroundColor = "#555"; // Error indicator
+                            cell.style.backgroundColor = "#555";
                             cell.style.color = "var(--text-color)";
                         }
                     });
                 });
             }
 
-            // --- Modal Event Listeners ---
+            // Update the view based on interpolation state
+            function updatePaletteView() {
+                if (isInterpolationEnabled) {
+                    currentGridData = generateInterpolatedPalette(
+                        sourceGridData,
+                        interpolationSteps,
+                    );
+                } else {
+                    // Reset to a fresh copy of the source data
+                    currentGridData = sourceGridData.map((row) => [...row]);
+                }
+                renderPalette(currentGridData);
+            }
+
+            // --- Event Listeners ---
+
+            // Modal Events
             openModalButton.addEventListener("click", () => {
-                // Populate the text area with the current data state
-                paletteInput.value = convertToSimpleFormat(currentGridData);
+                /* ... remains the same ... */
+                // Always show the *original* data in the editor for simplicity
+                paletteInput.value = convertToSimpleFormat(sourceGridData);
                 modal.style.display = "block";
             });
-
             closeModalButton.addEventListener("click", () => {
+                /* ... remains the same ... */
                 modal.style.display = "none";
             });
-
             window.addEventListener("click", (event) => {
+                /* ... remains the same ... */
                 if (event.target == modal) {
                     modal.style.display = "none";
                 }
             });
 
-            // --- Update Button Event Listener (inside modal) ---
+            // Update Button (Modal)
             updateButton.addEventListener("click", () => {
+                /* ... remains the same (overwrites source) ... */
                 const textData = paletteInput.value;
                 try {
-                    const newData = parseSimpleFormat(textData);
-                    // Basic validation (ensure it's a non-empty 2D array)
+                    const newDataParsed = parseSimpleFormat(textData);
                     if (
-                        !Array.isArray(newData) ||
-                        newData.length === 0 ||
-                        !Array.isArray(newData[0])
+                        !Array.isArray(newDataParsed) ||
+                        newDataParsed.length === 0 ||
+                        !Array.isArray(newDataParsed[0])
                     ) {
                         throw new Error("Parsed data is not a valid grid.");
                     }
-                    renderPalette(newData);
-                    currentGridData = newData; // Update the current state
+
+                    // !!! This overwrites the original source data permanently for the session !!!
+                    // Consider adding a confirmation or reset mechanism if this is undesirable.
+                    sourceGridData = Object.freeze(newDataParsed); // Update the source
+
+                    // Reset view to show the new source data without interpolation
+                    isInterpolationEnabled = false;
+                    interpolationToggle.checked = false;
+                    currentGridData = sourceGridData.map((row) => [...row]); // Update current view to new source copy
+                    renderPalette(currentGridData);
                     modal.style.display = "none";
-                    // Optional: Provide success feedback
-                    // alert("Palette updated successfully!");
+                    alert(
+                        "Palette source updated. Shade distribution disabled.",
+                    );
                 } catch (error) {
                     console.error(
                         "Error parsing or processing text input:",
                         error,
                     );
                     alert(
-                        `Failed to update palette:\n${error.message}\n\nPlease check the format (space-separated values, #hex for colors).`,
+                        `Failed to update palette:\n${error.message}\n\nPlease check the format.`,
                     );
                 }
             });
 
-            // --- Export PNG Event Listener ---
+            // Export PNG Event Listener
             exportPngButton.addEventListener("click", () => {
+                /* ... remains the same ... */
                 exportPngButton.disabled = true; // Disable button during export
                 exportPngButton.textContent = "Exporting...";
 
@@ -916,6 +1215,8 @@
                             getComputedStyle(paletteTable).backgroundColor, // Explicitly set background
                         useCORS: true, // If there were external images/fonts
                         logging: false, // Disable console logging from html2canvas
+                        // Increase scale for potentially better resolution, adjust as needed
+                        // scale: window.devicePixelRatio || 1,
                     })
                         .then((canvas) => {
                             // Convert canvas to PNG data URL
@@ -944,11 +1245,52 @@
                             exportPngButton.disabled = false;
                             exportPngButton.textContent = "Export as PNG";
                         });
-                }, 100); // Small delay (100ms) before capture
+                }, 150); // Slightly longer delay might help with complex rendering
+            });
+
+            // Interpolation Toggle Listener
+            interpolationToggle.addEventListener("change", (event) => {
+                /* ... remains the same ... */
+                isInterpolationEnabled = event.target.checked;
+                updatePaletteView();
+            });
+
+            // Interpolation Steps Slider Listener
+            stepsSlider.addEventListener("input", (event) => {
+                /* ... remains the same ... */
+                interpolationSteps = parseInt(event.target.value, 10);
+                stepsNumber.value = interpolationSteps; // Sync number input
+                if (isInterpolationEnabled) {
+                    updatePaletteView();
+                }
+            });
+
+            // Interpolation Steps Number Input Listener
+            stepsNumber.addEventListener("input", (event) => {
+                /* ... remains the same ... */
+                let value = parseInt(event.target.value, 10);
+                // Clamp value to min/max
+                const min = parseInt(stepsNumber.min, 10);
+                const max = parseInt(stepsNumber.max, 10);
+                if (isNaN(value)) {
+                    value = min; // Default to min if invalid input
+                } else if (value < min) {
+                    value = min;
+                } else if (value > max) {
+                    value = max;
+                }
+                stepsNumber.value = value; // Update input field in case it was clamped
+                interpolationSteps = value;
+                stepsSlider.value = interpolationSteps; // Sync slider
+                if (isInterpolationEnabled) {
+                    updatePaletteView();
+                }
             });
 
             // --- Initial Load ---
-            renderPalette(currentGridData); // Render the initial data
+            stepsSlider.value = interpolationSteps; // Set initial slider value
+            stepsNumber.value = interpolationSteps; // Set initial number value
+            renderPalette(currentGridData); // Render the initial data (copy of source)
         </script>
     </body>
 </html>
