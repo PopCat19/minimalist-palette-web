@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Scrollable Square Color Palette</title>
+        <!-- Include html2canvas library -->
+        <script
+            src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+            integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        ></script>
+        <style>
+            :root {
+                --cell-size: 45px; /* Base size for cells */
+                --cell-spacing: 3px;
+                --cell-padding: 5px;
+                --border-radius: 5px;
+                /* Theme Colors */
+                --bg-color: #000000;
+                --surface-color-1: #141414; /* Container, Modal */
+                --surface-color-2: #1f1f1f; /* Cells, Inputs */
+                --button-color: #cccccc;
+                --button-text-color: #141414;
+                --text-color: #ffffff;
+                --text-color-muted: #cccccc;
+                --border-color: #333333;
+            }
+
+            body {
+                background-color: var(--bg-color);
+                color: var(--text-color); /* Default text color */
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    Helvetica, Arial, sans-serif, "Apple Color Emoji",
+                    "Segoe UI Emoji", "Segoe UI Symbol";
+                margin: 0;
+                padding: 10px;
+                min-height: 100vh;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            #controls {
+                width: 100%;
+                max-width: 600px;
+                margin-bottom: 15px;
+                text-align: center;
+                display: flex; /* Use flexbox for button layout */
+                justify-content: center; /* Center buttons */
+                gap: 10px; /* Add space between buttons */
+            }
+
+            /* Shared button styles */
+            .control-button {
+                background-color: var(--button-color);
+                color: var(--button-text-color);
+                border: none;
+                padding: 10px 20px;
+                border-radius: var(--border-radius);
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: background-color 0.2s ease;
+            }
+            .control-button:hover {
+                background-color: #aaaaaa;
+            } /* Darker hover */
+            .control-button:disabled {
+                /* Style for disabled state */
+                background-color: #555;
+                color: #999;
+                cursor: not-allowed;
+            }
+
+            #palette-container {
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                padding-bottom: 10px; /* Ensure space below table for capture */
+                border: 1px solid var(--border-color);
+                border-radius: var(--border-radius);
+                background-color: var(
+                    --surface-color-1
+                ); /* Ensure container bg is captured */
+                padding: var(--cell-spacing); /* Match table margin */
+            }
+
+            table {
+                border-collapse: separate;
+                border-spacing: var(--cell-spacing);
+                /* Removed margin: var(--cell-spacing); - handled by container padding */
+                width: auto; /* Let table size itself */
+                min-width: 100%;
+                table-layout: fixed;
+                /* Important for html2canvas background */
+                background-color: var(--surface-color-1);
+            }
+
+            td {
+                width: var(--cell-size);
+                height: var(--cell-size);
+                padding: var(--cell-padding);
+                text-align: center;
+                vertical-align: middle;
+                border-radius: var(--border-radius);
+                font-size: clamp(8px, 1.2vw, 10px);
+                font-weight: 500; /* Base font weight */
+                position: relative;
+                overflow: hidden;
+                box-sizing: border-box;
+                background-color: var(--surface-color-2);
+                color: var(--text-color-muted);
+                transition:
+                    transform 0.1s ease-out,
+                    box-shadow 0.2s ease-out,
+                    font-weight 0.1s ease-out; /* Added font-weight transition */
+                word-wrap: break-word;
+            }
+
+            td:hover {
+                font-weight: bold; /* Bold text on hover */
+            }
+
+            td.swatch {
+                cursor: pointer;
+            }
+            td.swatch:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+            }
+            td.copied::after {
+                content: "Copied!";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.7);
+                color: var(--text-color);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                font-size: 9px;
+                font-weight: bold; /* Keep copied text bold */
+                border-radius: inherit;
+                animation: fadeOut 1s forwards;
+            }
+            @keyframes fadeOut {
+                0% {
+                    opacity: 1;
+                }
+                80% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                }
+            }
+
+            /* --- Modal Styles --- */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
+                padding-top: 60px;
+            }
+            .modal-content {
+                background-color: var(--surface-color-1);
+                color: var(--text-color); /* Ensure modal text is white */
+                margin: 5% auto;
+                padding: 25px;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                width: 85%;
+                max-width: 750px;
+                position: relative;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            }
+            .close-button {
+                color: #aaa;
+                position: absolute;
+                top: 10px;
+                right: 20px;
+                font-size: 28px;
+                font-weight: bold;
+                line-height: 1;
+            }
+            .close-button:hover,
+            .close-button:focus {
+                color: var(--text-color);
+                text-decoration: none;
+                cursor: pointer;
+            }
+            #palette-input {
+                /* Style for textarea inside modal */
+                width: 100%;
+                min-height: 250px;
+                background-color: var(--surface-color-2);
+                color: var(--text-color-muted);
+                border: 1px solid var(--border-color);
+                border-radius: 4px;
+                padding: 10px;
+                font-family:
+                    Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+                font-size: 13px;
+                box-sizing: border-box;
+                resize: vertical;
+                margin-bottom: 15px;
+                white-space: pre;
+                overflow-wrap: normal;
+                overflow-x: auto;
+            }
+            #update-button {
+                /* Style for button inside modal */
+                background-color: var(--button-color);
+                color: var(--button-text-color);
+                border: none;
+                padding: 10px 20px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: background-color 0.2s ease;
+                display: block;
+                margin: 0 auto;
+            }
+            #update-button:hover {
+                background-color: #aaaaaa;
+            } /* Darker hover */
+
+            /* --- Responsive Adjustments --- */
+            @media (max-width: 768px) {
+                :root {
+                    --cell-size: 38px;
+                    --cell-spacing: 2px;
+                    --cell-padding: 4px;
+                    --border-radius: 4px;
+                }
+                td {
+                    font-size: 8px;
+                }
+                td.copied::after {
+                    font-size: 8px;
+                }
+                .modal-content {
+                    width: 90%;
+                    margin-top: 10%;
+                }
+                #palette-input {
+                    min-height: 200px;
+                    font-size: 12px;
+                }
+            }
+            @media (max-width: 480px) {
+                :root {
+                    --cell-size: 32px;
+                    --cell-spacing: 2px;
+                    --cell-padding: 3px;
+                    --border-radius: 3px;
+                }
+                td {
+                    font-size: 7px;
+                }
+                .modal-content {
+                    width: 95%;
+                    margin-top: 15%;
+                    padding: 15px;
+                }
+                .close-button {
+                    top: 5px;
+                    right: 10px;
+                    font-size: 24px;
+                }
+                #palette-input {
+                    min-height: 180px;
+                }
+                #update-button {
+                    padding: 8px 15px;
+                    font-size: 13px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="controls">
+            <button id="edit-palette-button" class="control-button">
+                Edit Palette Data
+            </button>
+            <button id="export-png-button" class="control-button">
+                Export as PNG
+            </button>
+        </div>
+
+        <div id="palette-container">
+            <table id="palette-table">
+                <tbody>
+                    <!-- Table rows will be generated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- The Modal -->
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="close-modal-button"
+                    >&times;</span
+                >
+                <label
+                    for="palette-input"
+                    style="display: block; margin-bottom: 8px; font-weight: 500"
+                >
+                    Palette Data (Space-Delimited, #Hex for colors):
+                </label>
+                <textarea
+                    id="palette-input"
+                    spellcheck="false"
+                    placeholder="Paste palette data here..."
+                ></textarea>
+                <button id="update-button">Update Palette from Text</button>
+            </div>
+        </div>
+
+        <script>
+            // --- Initial Data (Minimal Format: Strings for labels, #Hex for colors) ---
+            const initialGridDataMinimal = [
+                // Row 0: Top Labels
+                [
+                    "100x",
+                    "#FFFFFF",
+                    "Red",
+                    "Vermilion",
+                    "Orange",
+                    "Amber",
+                    "Yellow",
+                    "Lime",
+                    "Chartreuse",
+                    "Ddahai",
+                    "Green",
+                    "Erin",
+                    "Spring",
+                    "Gashtanta",
+                    "Cyan",
+                    "Capri",
+                    "Azure",
+                    "Cerulean",
+                    "Blue",
+                    "Volta",
+                    "Violet",
+                    "Llew",
+                    "Magenta",
+                    "Cerise",
+                    "Rose",
+                    "Crimson",
+                    "100x",
+                ],
+                // Row 1: 96x
+                [
+                    "96x",
+                    "#F4F4F4",
+                    "#FFEBEB",
+                    "#FFF0EB",
+                    "#FFF5EB",
+                    "#FFFAEB",
+                    "#FFFFEB",
+                    "#FAFFEB",
+                    "#F5FFEB",
+                    "#F0FFEB",
+                    "#EBFFEB",
+                    "#EBFFF0",
+                    "#EBFFF5",
+                    "#EBFFFA",
+                    "#EBFFFF",
+                    "#EBFAFF",
+                    "#EBF5FF",
+                    "#EBF0FF",
+                    "#EBEBFF",
+                    "#F0EBFF",
+                    "#F5EBFF",
+                    "#FAEBFF",
+                    "#FFEBFF",
+                    "#FFEBFA",
+                    "#FFEBF5",
+                    "#FFEBF0",
+                    "96x",
+                ],
+                // Row 2: 88x
+                [
+                    "88x",
+                    "#E0E0E0",
+                    "#FFC2C2",
+                    "#FFD1C2",
+                    "#FFE0C2",
+                    "#FFF0C2",
+                    "#FFFFC2",
+                    "#F0FFC2",
+                    "#E0FFC2",
+                    "#D1FFC2",
+                    "#C2FFC2",
+                    "#C2FFD1",
+                    "#C2FFE0",
+                    "#C2FFF0",
+                    "#C2FFFF",
+                    "#C2F0FF",
+                    "#C2E0FF",
+                    "#C2D1FF",
+                    "#C2C2FF",
+                    "#D1C2FF",
+                    "#E0C2FF",
+                    "#F0C2FF",
+                    "#FFC2FF",
+                    "#FFC2F0",
+                    "#FFC2E0",
+                    "#FFC2D1",
+                    "88x",
+                ],
+                // Row 3: 80x
+                [
+                    "80x",
+                    "#CCCCCC",
+                    "#FF9999",
+                    "#FFB399",
+                    "#FFCC99",
+                    "#FFE599",
+                    "#FFFF99",
+                    "#E5FF99",
+                    "#CCFF99",
+                    "#B2FF99",
+                    "#99FF99",
+                    "#99FFB3",
+                    "#99FFCC",
+                    "#99FFE5",
+                    "#99FFFF",
+                    "#99E5FF",
+                    "#99CCFF",
+                    "#99B2FF",
+                    "#9999FF",
+                    "#B399FF",
+                    "#CC99FF",
+                    "#E599FF",
+                    "#FF99FF",
+                    "#FF99E5",
+                    "#FF99CC",
+                    "#FF99B2",
+                    "80x",
+                ],
+                // Row 4: 64x
+                [
+                    "64x",
+                    "#A3A3A3",
+                    "#FF4747",
+                    "#FF7547",
+                    "#FFA347",
+                    "#FFD147",
+                    "#FFFF47",
+                    "#D1FF47",
+                    "#A3FF47",
+                    "#75FF47",
+                    "#47FF47",
+                    "#47FF75",
+                    "#47FFA3",
+                    "#47FFD1",
+                    "#47FFFF",
+                    "#47D1FF",
+                    "#47A3FF",
+                    "#4775FF",
+                    "#4747FF",
+                    "#7547FF",
+                    "#A347FF",
+                    "#D147FF",
+                    "#FF47FF",
+                    "#FF47D1",
+                    "#FF47A3",
+                    "#FF4775",
+                    "64x",
+                ],
+                // Row 5: 48x
+                [
+                    "48x",
+                    "#7A7A7A",
+                    "#B54040",
+                    "#B55D40",
+                    "#B57A40",
+                    "#B59840",
+                    "#B5B540",
+                    "#98B540",
+                    "#7AB540",
+                    "#5DB540",
+                    "#40B540",
+                    "#40B55D",
+                    "#40B57A",
+                    "#40B598",
+                    "#40B5B5",
+                    "#4098B5",
+                    "#407AB5",
+                    "#405DB5",
+                    "#4040B5",
+                    "#5D40B5",
+                    "#7A40B5",
+                    "#9840B5",
+                    "#B540B5",
+                    "#B54098",
+                    "#B5407A",
+                    "#B5405D",
+                    "48x",
+                ],
+                // Row 6: 32x
+                [
+                    "32x",
+                    "#525252",
+                    "#792A2A",
+                    "#793E2A",
+                    "#79522A",
+                    "#79652A",
+                    "#79792A",
+                    "#65792A",
+                    "#52792A",
+                    "#3E792A",
+                    "#2A792A",
+                    "#2A793E",
+                    "#2A7952",
+                    "#2A7965",
+                    "#2A7979",
+                    "#2A6579",
+                    "#2A5279",
+                    "#2A3E79",
+                    "#2A2A79",
+                    "#3E2A79",
+                    "#522A79",
+                    "#652A79",
+                    "#792A79",
+                    "#792A65",
+                    "#792A52",
+                    "#792A3E",
+                    "32x",
+                ],
+                // Row 7: 24x
+                [
+                    "24x",
+                    "#3D3D3D",
+                    "#5B2020",
+                    "#5B2F20",
+                    "#5B3D20",
+                    "#5B4C20",
+                    "#5B5B20",
+                    "#4C5B20",
+                    "#3D5B20",
+                    "#2F5B20",
+                    "#205B20",
+                    "#205B2F",
+                    "#205B3D",
+                    "#205B4C",
+                    "#205B5B",
+                    "#204C5B",
+                    "#203D5B",
+                    "#202F5B",
+                    "#20205B",
+                    "#2F205B",
+                    "#3D205B",
+                    "#4C205B",
+                    "#5B205B",
+                    "#5B204C",
+                    "#5B203D",
+                    "#5B202F",
+                    "24x",
+                ],
+                // Row 8: 16x
+                [
+                    "16x",
+                    "#292929",
+                    "#3C1515",
+                    "#3C1F15",
+                    "#3C2915",
+                    "#3C3315",
+                    "#3C3C15",
+                    "#333C15",
+                    "#293C15",
+                    "#1F3C15",
+                    "#153C15",
+                    "#153C1F",
+                    "#153C29",
+                    "#153C33",
+                    "#153C3C",
+                    "#15333C",
+                    "#15293C",
+                    "#151F3C",
+                    "#15153C",
+                    "#1F153C",
+                    "#29153C",
+                    "#33153C",
+                    "#3C153C",
+                    "#3C1533",
+                    "#3C1529",
+                    "#3C151F",
+                    "16x",
+                ],
+                // Row 9: 12x
+                [
+                    "12x",
+                    "#1F1F1F",
+                    "#2D1010",
+                    "#2D1710",
+                    "#2D1F10",
+                    "#2D2610",
+                    "#2D2D10",
+                    "#262D10",
+                    "#1F2D10",
+                    "#172D10",
+                    "#102D10",
+                    "#102D17",
+                    "#102D1F",
+                    "#102D26",
+                    "#102D2D",
+                    "#10262D",
+                    "#101F2D",
+                    "#10172D",
+                    "#10102D",
+                    "#17102D",
+                    "#1F102D",
+                    "#26102D",
+                    "#2D102D",
+                    "#2D1026",
+                    "#2D101F",
+                    "#2D1017",
+                    "12x",
+                ],
+                // Row 10: 8x
+                [
+                    "8x",
+                    "#141414",
+                    "#1E0B0B",
+                    "#1E100B",
+                    "#1E140B",
+                    "#1E190B",
+                    "#1E1E0B",
+                    "#191E0B",
+                    "#141E0B",
+                    "#101E0B",
+                    "#0B1E0B",
+                    "#0B1E10",
+                    "#0B1E14",
+                    "#0B1E19",
+                    "#0B1E1E",
+                    "#0B191E",
+                    "#0B141E",
+                    "#0B101E",
+                    "#0B0B1E",
+                    "#100B1E",
+                    "#140B1E",
+                    "#190B1E",
+                    "#1E0B1E",
+                    "#1E0B19",
+                    "#1E0B14",
+                    "#1E0B10",
+                    "8x",
+                ],
+                // Row 11: 0x / Bottom Labels
+                [
+                    "0x",
+                    "#000000",
+                    "0",
+                    "15",
+                    "30",
+                    "45",
+                    "60",
+                    "75",
+                    "90",
+                    "105",
+                    "120",
+                    "135",
+                    "150",
+                    "165",
+                    "180",
+                    "195",
+                    "210",
+                    "225",
+                    "240",
+                    "255",
+                    "270",
+                    "285",
+                    "300",
+                    "315",
+                    "330",
+                    "345",
+                    "0x",
+                ],
+            ];
+
+            // --- State Variable ---
+            let currentGridData = initialGridDataMinimal; // Holds the current palette data
+
+            // --- DOM Elements ---
+            const paletteInput = document.getElementById("palette-input");
+            const updateButton = document.getElementById("update-button");
+            const paletteTable = document.getElementById("palette-table"); // Get table directly
+            const tableBody = paletteTable.getElementsByTagName("tbody")[0];
+            const modal = document.getElementById("edit-modal");
+            const openModalButton = document.getElementById(
+                "edit-palette-button",
+            );
+            const closeModalButton =
+                document.getElementById("close-modal-button");
+            const exportPngButton =
+                document.getElementById("export-png-button"); // Get export button
+
+            // --- Functions ---
+
+            // Convert minimal grid data (strings) to the simple text format
+            function convertToSimpleFormat(gridData) {
+                return gridData
+                    .map((row) => row.join(" ")) // Already in the desired format per row
+                    .join("\n");
+            }
+
+            // Parse the simple text format back into minimal grid data (strings)
+            function parseSimpleFormat(textData) {
+                const lines = textData.trim().split("\n");
+                return lines.map((line) => {
+                    // Split by space and filter out potential empty strings from multiple spaces
+                    return line
+                        .trim()
+                        .split(" ")
+                        .filter((cell) => cell !== "");
+                });
+            }
+
+            // Determine text color based on background brightness
+            function getTextColor(hexBgColor) {
+                if (!hexBgColor || typeof hexBgColor !== "string")
+                    return "var(--text-color)"; // Use CSS var
+                const hex = hexBgColor.replace("#", "");
+                const fullHex =
+                    hex.length === 3
+                        ? hex
+                              .split("")
+                              .map((x) => x + x)
+                              .join("")
+                        : hex;
+                if (fullHex.length !== 6) return "var(--text-color)";
+                try {
+                    const r = parseInt(fullHex.substring(0, 2), 16);
+                    const g = parseInt(fullHex.substring(2, 4), 16);
+                    const b = parseInt(fullHex.substring(4, 6), 16);
+                    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+                    // Use dark text on light backgrounds (like the button)
+                    return lum > 0.5
+                        ? "var(--button-text-color)"
+                        : "var(--text-color)";
+                } catch (e) {
+                    console.error("Error calculating text color:", e);
+                    return "var(--text-color)";
+                }
+            }
+
+            // Copy text to clipboard
+            async function copyToClipboard(text, element) {
+                if (!navigator.clipboard) {
+                    try {
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.position = "fixed";
+                        textArea.style.opacity = "0";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(textArea);
+                        showCopiedFeedback(element);
+                    } catch (err) {
+                        console.error("Fallback copy failed: ", err);
+                        alert("Failed to copy.");
+                    }
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showCopiedFeedback(element);
+                } catch (err) {
+                    console.error("Failed to copy text: ", err);
+                    alert("Failed to copy.");
+                }
+            }
+
+            // Show "Copied!" feedback
+            function showCopiedFeedback(element) {
+                element.classList.add("copied");
+                setTimeout(() => element.classList.remove("copied"), 1000);
+            }
+
+            // Check if a string is a valid hex color (#RGB or #RRGGBB)
+            function isValidHex(str) {
+                return (
+                    typeof str === "string" &&
+                    str.startsWith("#") &&
+                    (str.length === 4 || str.length === 7) &&
+                    /^#[0-9A-Fa-f]+$/.test(str)
+                );
+            }
+
+            // Render the palette table from minimal grid data
+            function renderPalette(gridData) {
+                tableBody.innerHTML = "";
+                if (!Array.isArray(gridData)) {
+                    console.error("Invalid grid data: not an array");
+                    return;
+                }
+                gridData.forEach((rowData, rowIndex) => {
+                    if (!Array.isArray(rowData)) {
+                        console.warn(`Skipping invalid row ${rowIndex}`);
+                        return;
+                    }
+                    const row = tableBody.insertRow();
+                    rowData.forEach((cellData, cellIndex) => {
+                        const cell = row.insertCell();
+                        if (isValidHex(cellData)) {
+                            // It's a color swatch
+                            const hexColor = cellData;
+                            const textContent = hexColor
+                                .substring(1)
+                                .toUpperCase();
+                            cell.style.backgroundColor = hexColor;
+                            cell.textContent = textContent;
+                            cell.style.color = getTextColor(hexColor); // Contrast with swatch color
+                            cell.classList.add("swatch");
+                            cell.dataset.hex = textContent; // Store hex without # for copying
+                            cell.addEventListener("click", () => {
+                                copyToClipboard(textContent, cell);
+                            });
+                        } else if (typeof cellData === "string") {
+                            // It's a label
+                            cell.textContent = cellData;
+                            cell.classList.add("label");
+                            // Ensure label text color contrasts with default cell background
+                            cell.style.color = getTextColor(
+                                getComputedStyle(cell).backgroundColor,
+                            );
+                        } else {
+                            // Invalid data type in cell
+                            console.warn(
+                                `Invalid cell data type at row ${rowIndex}, cell ${cellIndex}:`,
+                                typeof cellData,
+                                cellData,
+                            );
+                            cell.textContent = "?";
+                            cell.style.backgroundColor = "#555"; // Error indicator
+                            cell.style.color = "var(--text-color)";
+                        }
+                    });
+                });
+            }
+
+            // --- Modal Event Listeners ---
+            openModalButton.addEventListener("click", () => {
+                // Populate the text area with the current data state
+                paletteInput.value = convertToSimpleFormat(currentGridData);
+                modal.style.display = "block";
+            });
+
+            closeModalButton.addEventListener("click", () => {
+                modal.style.display = "none";
+            });
+
+            window.addEventListener("click", (event) => {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            });
+
+            // --- Update Button Event Listener (inside modal) ---
+            updateButton.addEventListener("click", () => {
+                const textData = paletteInput.value;
+                try {
+                    const newData = parseSimpleFormat(textData);
+                    // Basic validation (ensure it's a non-empty 2D array)
+                    if (
+                        !Array.isArray(newData) ||
+                        newData.length === 0 ||
+                        !Array.isArray(newData[0])
+                    ) {
+                        throw new Error("Parsed data is not a valid grid.");
+                    }
+                    renderPalette(newData);
+                    currentGridData = newData; // Update the current state
+                    modal.style.display = "none";
+                    // Optional: Provide success feedback
+                    // alert("Palette updated successfully!");
+                } catch (error) {
+                    console.error(
+                        "Error parsing or processing text input:",
+                        error,
+                    );
+                    alert(
+                        `Failed to update palette:\n${error.message}\n\nPlease check the format (space-separated values, #hex for colors).`,
+                    );
+                }
+            });
+
+            // --- Export PNG Event Listener ---
+            exportPngButton.addEventListener("click", () => {
+                exportPngButton.disabled = true; // Disable button during export
+                exportPngButton.textContent = "Exporting...";
+
+                // Ensure the table has fully rendered (slight delay might help complex cases)
+                setTimeout(() => {
+                    html2canvas(paletteTable, {
+                        backgroundColor:
+                            getComputedStyle(paletteTable).backgroundColor, // Explicitly set background
+                        useCORS: true, // If there were external images/fonts
+                        logging: false, // Disable console logging from html2canvas
+                    })
+                        .then((canvas) => {
+                            // Convert canvas to PNG data URL
+                            const pngUrl = canvas.toDataURL("image/png");
+
+                            // Create temporary link
+                            const downloadLink = document.createElement("a");
+                            downloadLink.href = pngUrl;
+                            downloadLink.download = "palette.png"; // Filename
+
+                            // Trigger download
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
+
+                            // Re-enable button
+                            exportPngButton.disabled = false;
+                            exportPngButton.textContent = "Export as PNG";
+                        })
+                        .catch((err) => {
+                            console.error("Error exporting PNG:", err);
+                            alert(
+                                "Error exporting palette as PNG. See console for details.",
+                            );
+                            // Re-enable button on error
+                            exportPngButton.disabled = false;
+                            exportPngButton.textContent = "Export as PNG";
+                        });
+                }, 100); // Small delay (100ms) before capture
+            });
+
+            // --- Initial Load ---
+            renderPalette(currentGridData); // Render the initial data
+        </script>
+    </body>
+</html>
