@@ -468,7 +468,7 @@
 
         <script>
             // --- Initial Data (Minimal Format: Strings for labels, #Hex for colors) ---
-            const sourceGridData = Object.freeze([
+            let sourceGridData = [
                 // Freeze to prevent accidental modification
                 [
                     "100x",
@@ -818,7 +818,7 @@
                     "345",
                     "0x",
                 ],
-            ]);
+            ];
 
             // --- State Variables ---
             let currentGridData = [...sourceGridData.map((row) => [...row])]; // Holds data being displayed (start with a copy)
@@ -1180,7 +1180,7 @@
 
                     // !!! This overwrites the original source data permanently for the session !!!
                     // Consider adding a confirmation or reset mechanism if this is undesirable.
-                    sourceGridData = Object.freeze(newDataParsed); // Update the source
+                    sourceGridData = newDataParsed; // Update the source
 
                     // Reset view to show the new source data without interpolation
                     isInterpolationEnabled = false;
