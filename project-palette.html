@@ -56,7 +56,9 @@
             }
 
             #main-controls,
-            #interpolation-controls {
+            #interpolation-controls,
+            #saturation-controls {
+                /* Added saturation-controls */
                 display: flex;
                 flex-wrap: wrap; /* Allow wrapping on small screens */
                 justify-content: center;
@@ -87,14 +89,18 @@
                 cursor: not-allowed;
             }
 
-            /* Interpolation specific styles */
-            #interpolation-controls {
+            /* Interpolation & Saturation specific styles */
+            #interpolation-controls,
+            #saturation-controls {
+                /* Grouped styles */
                 background-color: var(--surface-color-2);
                 padding: 8px 12px;
                 border-radius: var(--border-radius);
                 font-size: 13px;
             }
-            #interpolation-controls label {
+            #interpolation-controls label,
+            #saturation-controls label {
+                /* Grouped styles */
                 cursor: pointer;
                 user-select: none;
                 margin-right: 5px;
@@ -103,21 +109,30 @@
                 margin-right: 10px;
                 vertical-align: middle;
             }
-            #interpolation-steps-group {
-                display: none; /* Hidden by default */
+            #interpolation-steps-group,
+            #saturation-offset-group {
+                /* Grouped styles */
+                display: flex; /* Show saturation group by default */
                 align-items: center;
                 gap: 8px;
+            }
+            #interpolation-steps-group {
+                display: none; /* Hidden by default */
             }
             #interpolation-controls
                 input[type="checkbox"]:checked
                 ~ #interpolation-steps-group {
                 display: flex; /* Show when checkbox is checked */
             }
-            #interpolation-steps-slider {
+            #interpolation-steps-slider,
+            #saturation-offset-slider {
+                /* Grouped styles */
                 width: 100px; /* Adjust width as needed */
                 vertical-align: middle;
             }
-            #interpolation-steps-number {
+            #interpolation-steps-number,
+            #saturation-offset-number {
+                /* Grouped styles */
                 width: 45px; /* Adjust width */
                 background-color: var(--surface-color-1);
                 color: var(--text-color);
@@ -129,11 +144,16 @@
             }
             /* Hide spinner buttons on number input */
             #interpolation-steps-number::-webkit-outer-spin-button,
-            #interpolation-steps-number::-webkit-inner-spin-button {
+            #interpolation-steps-number::-webkit-inner-spin-button,
+            #saturation-offset-number::-webkit-outer-spin-button,
+            #saturation-offset-number::-webkit-inner-spin-button {
+                /* Grouped styles */
                 -webkit-appearance: none;
                 margin: 0;
             }
-            #interpolation-steps-number {
+            #interpolation-steps-number,
+            #saturation-offset-number {
+                /* Grouped styles */
                 -moz-appearance: textfield; /* Firefox */
             }
 
@@ -332,13 +352,19 @@
                     min-height: 200px;
                     font-size: 12px;
                 }
-                #interpolation-controls {
+                #interpolation-controls,
+                #saturation-controls {
+                    /* Grouped */
                     font-size: 12px;
                 }
-                #interpolation-steps-slider {
+                #interpolation-steps-slider,
+                #saturation-offset-slider {
+                    /* Grouped */
                     width: 80px;
                 }
-                #interpolation-steps-number {
+                #interpolation-steps-number,
+                #saturation-offset-number {
+                    /* Grouped */
                     width: 40px;
                     font-size: 11px;
                 }
@@ -357,26 +383,36 @@
                     gap: 8px;
                 }
                 #main-controls,
-                #interpolation-controls {
+                #interpolation-controls,
+                #saturation-controls {
+                    /* Grouped */
                     gap: 8px;
                 }
                 .control-button {
                     padding: 8px 10px;
                     font-size: 12px;
                 }
-                #interpolation-controls {
+                #interpolation-controls,
+                #saturation-controls {
+                    /* Grouped */
                     padding: 6px 10px;
                     font-size: 11px;
                 }
-                #interpolation-steps-group {
+                #interpolation-steps-group,
+                #saturation-offset-group {
+                    /* Grouped */
                     flex-direction: column;
                     align-items: flex-start;
                     gap: 5px;
                 }
-                #interpolation-steps-slider {
+                #interpolation-steps-slider,
+                #saturation-offset-slider {
+                    /* Grouped */
                     width: 120px;
                 } /* Wider on small screens when stacked */
-                #interpolation-steps-number {
+                #interpolation-steps-number,
+                #saturation-offset-number {
+                    /* Grouped */
                     width: 45px;
                 }
 
@@ -434,6 +470,29 @@
                     />
                 </div>
             </div>
+            <!-- NEW: Saturation Controls -->
+            <div id="saturation-controls">
+                <label for="saturation-offset-slider">Saturation Offset:</label>
+                <div id="saturation-offset-group">
+                    <input
+                        type="range"
+                        id="saturation-offset-slider"
+                        min="-100"
+                        max="100"
+                        value="0"
+                        step="1"
+                    />
+                    <input
+                        type="number"
+                        id="saturation-offset-number"
+                        min="-100"
+                        max="100"
+                        value="0"
+                    />
+                    <span>%</span>
+                </div>
+            </div>
+            <!-- END NEW -->
         </div>
 
         <div id="palette-container">
@@ -446,7 +505,6 @@
 
         <!-- The Modal -->
         <div id="edit-modal" class="modal">
-            <!-- ... (modal content remains the same) ... -->
             <div class="modal-content">
                 <span class="close-button" id="close-modal-button"
                     >&times;</span
@@ -824,6 +882,7 @@
             let currentGridData = [...sourceGridData.map((row) => [...row])]; // Holds data being displayed (start with a copy)
             let isInterpolationEnabled = false;
             let interpolationSteps = 1;
+            let saturationOffset = 0; // NEW: Saturation offset state (-100 to 100)
 
             // --- DOM Elements ---
             const paletteInput = document.getElementById("palette-input");
@@ -851,11 +910,17 @@
             const stepsNumber = document.getElementById(
                 "interpolation-steps-number",
             );
+            // NEW: Saturation Controls
+            const saturationOffsetSlider = document.getElementById(
+                "saturation-offset-slider",
+            );
+            const saturationOffsetNumber = document.getElementById(
+                "saturation-offset-number",
+            );
 
             // --- Helper Functions ---
 
             function isValidHex(str) {
-                /* ... remains the same ... */
                 return (
                     typeof str === "string" &&
                     str.startsWith("#") &&
@@ -864,7 +929,6 @@
                 );
             }
             function hexToRgb(hex) {
-                /* ... remains the same ... */
                 let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
                 hex = hex.replace(
                     shorthandRegex,
@@ -882,12 +946,10 @@
                     : null;
             }
             function componentToHex(c) {
-                /* ... remains the same ... */
                 let hex = c.toString(16);
                 return hex.length == 1 ? "0" + hex : hex;
             }
             function rgbToHex(r, g, b) {
-                /* ... remains the same ... */
                 return (
                     "#" +
                     componentToHex(r) +
@@ -896,7 +958,6 @@
                 );
             }
             function interpolateHexColor(hex1, hex2, steps) {
-                /* ... remains the same ... */
                 const rgb1 = hexToRgb(hex1);
                 const rgb2 = hexToRgb(hex2);
                 if (!rgb1 || !rgb2) return []; // Invalid input
@@ -918,6 +979,80 @@
                 }
                 return interpolatedColors;
             }
+
+            // --- NEW: HSL Conversion and Adjustment ---
+            function rgbToHsl(r, g, b) {
+                r /= 255;
+                g /= 255;
+                b /= 255;
+                const max = Math.max(r, g, b),
+                    min = Math.min(r, g, b);
+                let h,
+                    s,
+                    l = (max + min) / 2;
+
+                if (max == min) {
+                    h = s = 0; // achromatic
+                } else {
+                    const d = max - min;
+                    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                    switch (max) {
+                        case r:
+                            h = (g - b) / d + (g < b ? 6 : 0);
+                            break;
+                        case g:
+                            h = (b - r) / d + 2;
+                            break;
+                        case b:
+                            h = (r - g) / d + 4;
+                            break;
+                    }
+                    h /= 6;
+                }
+                return { h, s, l }; // h, s, l are in [0, 1] range
+            }
+
+            function hslToRgb(h, s, l) {
+                let r, g, b;
+
+                if (s == 0) {
+                    r = g = b = l; // achromatic
+                } else {
+                    const hue2rgb = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1 / 6) return p + (q - p) * 6 * t;
+                        if (t < 1 / 2) return q;
+                        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                        return p;
+                    };
+                    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    const p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1 / 3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1 / 3);
+                }
+                return {
+                    r: Math.round(r * 255),
+                    g: Math.round(g * 255),
+                    b: Math.round(b * 255),
+                };
+            }
+
+            function adjustSaturation(hexColor, offsetPercent) {
+                const rgb = hexToRgb(hexColor);
+                if (!rgb) return hexColor; // Return original if invalid
+
+                const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+
+                // Adjust saturation: offset is -100 to 100, convert to -1.0 to 1.0
+                const offset = offsetPercent / 100;
+                hsl.s = Math.max(0, Math.min(1, hsl.s + offset)); // Clamp between 0 and 1
+
+                const newRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+                return rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+            }
+            // --- END NEW HSL ---
 
             // --- Core Logic ---
 
@@ -1006,11 +1141,9 @@
             }
 
             function convertToSimpleFormat(gridData) {
-                /* ... remains the same ... */
                 return gridData.map((row) => row.join(" ")).join("\n");
             }
             function parseSimpleFormat(textData) {
-                /* ... remains the same ... */
                 const lines = textData.trim().split("\n");
                 return lines.map((line) => {
                     return line
@@ -1020,7 +1153,6 @@
                 });
             }
             function getTextColor(hexBgColor) {
-                /* ... remains the same ... */
                 if (!hexBgColor || typeof hexBgColor !== "string")
                     return "var(--text-color)";
                 const rgb = hexToRgb(hexBgColor);
@@ -1032,7 +1164,6 @@
                     : "var(--text-color)";
             }
             async function copyToClipboard(text, element) {
-                /* ... remains the same ... */
                 if (!navigator.clipboard) {
                     try {
                         const textArea = document.createElement("textarea");
@@ -1060,11 +1191,11 @@
                 }
             }
             function showCopiedFeedback(element) {
-                /* ... remains the same ... */
                 element.classList.add("copied");
                 setTimeout(() => element.classList.remove("copied"), 1000);
             }
 
+            // Render the palette table from grid data
             // Render the palette table from grid data
             function renderPalette(gridData) {
                 tableBody.innerHTML = ""; // Clear previous content
@@ -1086,20 +1217,35 @@
 
                         if (isValidHex(cellData)) {
                             // It's a color swatch
-                            const hexColor = cellData;
-                            const textContent = hexColor
+                            const originalHexColor = cellData; // Store original hex
+
+                            // --- Apply Saturation Adjustment ---
+                            const adjustedHexColor = adjustSaturation(
+                                originalHexColor,
+                                saturationOffset,
+                            );
+                            // --- End Saturation Adjustment ---
+
+                            // --- Calculate text content based on ADJUSTED color ---
+                            const adjustedHexText = adjustedHexColor
                                 .substring(1)
                                 .toUpperCase();
-                            cell.style.backgroundColor = hexColor;
-                            cell.textContent = textContent;
-                            cell.style.color = getTextColor(hexColor);
+
+                            cell.style.backgroundColor = adjustedHexColor; // Use adjusted color for background
+                            cell.textContent = adjustedHexText; // << UPDATED: Display adjusted hex text
+                            cell.style.color = getTextColor(adjustedHexColor); // Calculate text color based on adjusted background
                             cell.classList.add("swatch");
-                            cell.dataset.hex = textContent;
+                            // Optional: Store original hex in data attribute if needed for other purposes
+                            cell.dataset.originalHex = originalHexColor
+                                .substring(1)
+                                .toUpperCase();
+                            cell.dataset.adjustedHex = adjustedHexText; // Store adjusted hex too
+
                             cell.addEventListener("click", () => {
-                                copyToClipboard(textContent, cell);
+                                // << UPDATED: Copy the ADJUSTED hex text
+                                copyToClipboard(adjustedHexText, cell);
                             });
-                            // Add interpolated class if interpolation is enabled
-                            // (We don't easily know if THIS specific cell is original or not without more complex tracking)
+
                             if (isInterpolationEnabled) {
                                 cell.classList.add("interpolated");
                             }
@@ -1141,6 +1287,8 @@
                     // Reset to a fresh copy of the source data
                     currentGridData = sourceGridData.map((row) => [...row]);
                 }
+                // Render the potentially interpolated grid.
+                // Saturation is applied *during* renderPalette.
                 renderPalette(currentGridData);
             }
 
@@ -1148,17 +1296,13 @@
 
             // Modal Events
             openModalButton.addEventListener("click", () => {
-                /* ... remains the same ... */
-                // Always show the *original* data in the editor for simplicity
                 paletteInput.value = convertToSimpleFormat(sourceGridData);
                 modal.style.display = "block";
             });
             closeModalButton.addEventListener("click", () => {
-                /* ... remains the same ... */
                 modal.style.display = "none";
             });
             window.addEventListener("click", (event) => {
-                /* ... remains the same ... */
                 if (event.target == modal) {
                     modal.style.display = "none";
                 }
@@ -1166,7 +1310,6 @@
 
             // Update Button (Modal)
             updateButton.addEventListener("click", () => {
-                /* ... remains the same (overwrites source) ... */
                 const textData = paletteInput.value;
                 try {
                     const newDataParsed = parseSimpleFormat(textData);
@@ -1178,15 +1321,14 @@
                         throw new Error("Parsed data is not a valid grid.");
                     }
 
-                    // !!! This overwrites the original source data permanently for the session !!!
-                    // Consider adding a confirmation or reset mechanism if this is undesirable.
                     sourceGridData = newDataParsed; // Update the source
 
                     // Reset view to show the new source data without interpolation
                     isInterpolationEnabled = false;
                     interpolationToggle.checked = false;
+                    // Keep current saturation offset
                     currentGridData = sourceGridData.map((row) => [...row]); // Update current view to new source copy
-                    renderPalette(currentGridData);
+                    renderPalette(currentGridData); // Render with current saturation offset
                     modal.style.display = "none";
                     alert(
                         "Palette source updated. Shade distribution disabled.",
@@ -1204,35 +1346,24 @@
 
             // Export PNG Event Listener
             exportPngButton.addEventListener("click", () => {
-                /* ... remains the same ... */
                 exportPngButton.disabled = true; // Disable button during export
                 exportPngButton.textContent = "Exporting...";
 
-                // Ensure the table has fully rendered (slight delay might help complex cases)
                 setTimeout(() => {
                     html2canvas(paletteTable, {
                         backgroundColor:
-                            getComputedStyle(paletteTable).backgroundColor, // Explicitly set background
-                        useCORS: true, // If there were external images/fonts
-                        logging: false, // Disable console logging from html2canvas
-                        // Increase scale for potentially better resolution, adjust as needed
-                        // scale: window.devicePixelRatio || 1,
+                            getComputedStyle(paletteTable).backgroundColor,
+                        useCORS: true,
+                        logging: false,
                     })
                         .then((canvas) => {
-                            // Convert canvas to PNG data URL
                             const pngUrl = canvas.toDataURL("image/png");
-
-                            // Create temporary link
                             const downloadLink = document.createElement("a");
                             downloadLink.href = pngUrl;
-                            downloadLink.download = "palette.png"; // Filename
-
-                            // Trigger download
+                            downloadLink.download = "palette.png";
                             document.body.appendChild(downloadLink);
                             downloadLink.click();
                             document.body.removeChild(downloadLink);
-
-                            // Re-enable button
                             exportPngButton.disabled = false;
                             exportPngButton.textContent = "Export as PNG";
                         })
@@ -1241,55 +1372,79 @@
                             alert(
                                 "Error exporting palette as PNG. See console for details.",
                             );
-                            // Re-enable button on error
                             exportPngButton.disabled = false;
                             exportPngButton.textContent = "Export as PNG";
                         });
-                }, 150); // Slightly longer delay might help with complex rendering
+                }, 150);
             });
 
             // Interpolation Toggle Listener
             interpolationToggle.addEventListener("change", (event) => {
-                /* ... remains the same ... */
                 isInterpolationEnabled = event.target.checked;
-                updatePaletteView();
+                updatePaletteView(); // Regenerates grid if needed and re-renders
             });
 
             // Interpolation Steps Slider Listener
             stepsSlider.addEventListener("input", (event) => {
-                /* ... remains the same ... */
                 interpolationSteps = parseInt(event.target.value, 10);
                 stepsNumber.value = interpolationSteps; // Sync number input
                 if (isInterpolationEnabled) {
-                    updatePaletteView();
+                    updatePaletteView(); // Regenerates grid and re-renders
                 }
             });
 
             // Interpolation Steps Number Input Listener
             stepsNumber.addEventListener("input", (event) => {
-                /* ... remains the same ... */
                 let value = parseInt(event.target.value, 10);
-                // Clamp value to min/max
                 const min = parseInt(stepsNumber.min, 10);
                 const max = parseInt(stepsNumber.max, 10);
                 if (isNaN(value)) {
-                    value = min; // Default to min if invalid input
+                    value = min;
                 } else if (value < min) {
                     value = min;
                 } else if (value > max) {
                     value = max;
                 }
-                stepsNumber.value = value; // Update input field in case it was clamped
+                stepsNumber.value = value;
                 interpolationSteps = value;
                 stepsSlider.value = interpolationSteps; // Sync slider
                 if (isInterpolationEnabled) {
-                    updatePaletteView();
+                    updatePaletteView(); // Regenerates grid and re-renders
                 }
             });
+
+            // --- NEW: Saturation Event Listeners ---
+            saturationOffsetSlider.addEventListener("input", (event) => {
+                saturationOffset = parseInt(event.target.value, 10);
+                saturationOffsetNumber.value = saturationOffset; // Sync number input
+                // No need to regenerate the grid, just re-render with the new offset
+                renderPalette(currentGridData);
+            });
+
+            saturationOffsetNumber.addEventListener("input", (event) => {
+                let value = parseInt(event.target.value, 10);
+                const min = parseInt(saturationOffsetNumber.min, 10);
+                const max = parseInt(saturationOffsetNumber.max, 10);
+                if (isNaN(value)) {
+                    value = 0; // Default to 0 if invalid
+                } else if (value < min) {
+                    value = min;
+                } else if (value > max) {
+                    value = max;
+                }
+                saturationOffsetNumber.value = value; // Update input field
+                saturationOffset = value;
+                saturationOffsetSlider.value = saturationOffset; // Sync slider
+                // No need to regenerate the grid, just re-render with the new offset
+                renderPalette(currentGridData);
+            });
+            // --- END NEW Saturation Listeners ---
 
             // --- Initial Load ---
             stepsSlider.value = interpolationSteps; // Set initial slider value
             stepsNumber.value = interpolationSteps; // Set initial number value
+            saturationOffsetSlider.value = saturationOffset; // Set initial saturation slider
+            saturationOffsetNumber.value = saturationOffset; // Set initial saturation number
             renderPalette(currentGridData); // Render the initial data (copy of source)
         </script>
     </body>
