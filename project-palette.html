@@ -15,8 +15,18 @@
         ></script>
     </head>
     <body>
-        <!-- Config Toggle Button -->
-        <button id="config-toggle-button" aria-label="Open Configuration">Config</button>
+        <!-- NEW Container for Bottom Controls -->
+        <div id="bottom-controls">
+            <!-- Config Toggle Button (Moved inside) -->
+            <button id="config-toggle-button" aria-label="Open Configuration">Config</button>
+
+            <!-- Zoom Controls (Moved here) -->
+            <div id="zoom-controls" class="control-group">
+                <label for="zoom-slider">Zoom:</label>
+                <input type="range" id="zoom-slider" min="10" max="500" value="100" step="1">
+                <input type="number" id="zoom-number" min="10" max="500" value="100">
+            </div>
+        </div>
 
         <!-- Pannable Viewport -->
         <div id="canvas-viewport">
@@ -98,16 +108,6 @@
                 </div>
             </div>
         </div>
-             <!-- NEW: Zoom Section -->
-             <div class="config-section">
-                 <h3>View</h3>
-                 <div id="zoom-controls" class="control-group">
-                     <label for="zoom-slider">Zoom:</label>
-                     <input type="range" id="zoom-slider" min="10" max="500" value="100" step="1">
-                     <input type="number" id="zoom-number" min="10" max="500" value="100">
-                     <span>%</span>
-        </div>
-            </div>
         </div>
 
         <!-- Link External JS (defer ensures HTML is parsed first) -->

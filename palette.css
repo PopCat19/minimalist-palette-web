@@ -205,11 +205,8 @@ body {
 
 /* --- Config Toggle Button --- */
 #config-toggle-button {
-    position: fixed;
-    bottom: 15px; /* Position at bottom */
-    left: 50%;    /* Center horizontally */
-    transform: translateX(-50%); /* Adjust centering */
-    z-index: var(--z-index-config-button);
+    /* Removed position: fixed, bottom, left, transform, z-index */
+    /* Keep appearance styles */
     background-color: var(--surface-color-1);
     color: var(--text-color-muted);
     border: var(--border-width) solid var(--border-color);
@@ -239,7 +236,7 @@ body {
 /* --- Config Modal --- */
 #config-modal {
     position: fixed;
-    bottom: 60px; /* Position above config button + gap */
+    bottom: 75px; /* Increased from 60px to add gap above bottom controls */
     left: 50%;
     transform: translateX(-50%) scale(0.95); /* Center horizontally, initial scale */
     transform-origin: bottom center; /* Scale from bottom */
@@ -431,6 +428,30 @@ input[type="number"]::-webkit-inner-spin-button {
  #zoom-number {
       width: var(--zoom-number-input-width); /* Specific width if needed */
  }
+
+/* --- NEW Bottom Controls Container --- */
+#bottom-controls {
+    position: fixed;
+    bottom: 15px;
+    left: 50%; /* Changed from 15px */
+    transform: translateX(-50%); /* Added for centering */
+    z-index: 1075; /* Above canvas, below modal */
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Space between button and zoom */
+    background-color: var(--surface-color-1);
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--config-button-shadow);
+}
+
+/* Adjust Zoom Controls for new location */
+#zoom-controls {
+    margin-bottom: 0; /* Remove margin from when it was in modal */
+    flex-wrap: nowrap; /* Prevent wrapping of label/slider/input */
+    /* Keep other styles like flex, gap, etc. inherited from .control-group */
+}
 
 /* --- Responsive Adjustments Removed --- */
 /* @media (max-width: 768px) { ... } */
