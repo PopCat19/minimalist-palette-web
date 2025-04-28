@@ -42,6 +42,7 @@
         <div id="popout-editor">
             <div class="popout-header">
                 <span class="popout-title">Palette Data</span>
+                <span id="popout-status-message"></span>
                 <button id="popout-update-button" class="control-button">Update Palette</button>
                 <button id="popout-close-button" aria-label="Close Pop-out Editor">&times;</button>
             </div>
@@ -165,6 +166,30 @@
                  <!-- END NEW Section -->
 
             </div>
+
+            <!-- NEW: State Management Section -->
+            <div class="config-section">
+                <h3>Application State</h3>
+                <div class="control-group state-management-group">
+                    <button id="save-state-button" class="control-button">Save Current State</button>
+                    <button id="reset-state-button" class="control-button reset-button">Reset All & Reload</button>
+                </div>
+            </div>
+            <!-- END NEW Section -->
+
+            <!-- NEW: Palette Data Import/Export Section -->
+            <div class="config-section">
+                <h3>Palette Data</h3>
+                <div class="control-group palette-io-group">
+                    <button id="export-palette-button" class="control-button">Export Palette (.txt)</button>
+                    <button id="import-palette-button" class="control-button">Import Palette (.txt)</button>
+                    <input type="file" id="import-palette-file-input" accept=".txt" style="display: none;"> <!-- Hidden file input -->
+                    <!-- Add URL input/button here later if needed -->
+                </div>
+                <!-- Add Drag-drop zone instructions/styling later if needed -->
+            </div>
+            <!-- END NEW Section -->
+
         </div>
 
         <!-- Link External JS (defer ensures HTML is parsed first) -->

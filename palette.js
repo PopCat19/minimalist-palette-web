@@ -370,6 +370,8 @@ const zoomDebounceDelay = 10; // Optional: debounce zoom updates slightly
 let zoomTimeout;
 // --- NEW: Track forced cell size ---
 // let lastForcedCellSizePx = null; // REMOVED - No longer needed
+// --- NEW: Local Storage Key ---
+const localStorageKey = 'minimalistPaletteAppState';
 
 // --- DOM Elements ---
 // Palette display elements
@@ -417,6 +419,16 @@ const popoutCloseButton = document.getElementById('popout-close-button');
 const popoutPaletteInput = document.getElementById('popout-palette-input');
 const popoutUpdateButton = document.getElementById('popout-update-button');
 const popoutResizeHandle = document.getElementById('popout-resize-handle'); // NEW: Resize Handle
+const popoutStatusMessage = document.getElementById('popout-status-message'); // NEW
+
+// --- NEW: State Management Buttons ---
+const saveStateButton = document.getElementById('save-state-button');
+const resetStateButton = document.getElementById('reset-state-button');
+
+// --- NEW: Palette Import/Export Elements ---
+const exportPaletteButton = document.getElementById('export-palette-button');
+const importPaletteButton = document.getElementById('import-palette-button');
+const importPaletteFileInput = document.getElementById('import-palette-file-input');
 
 // --- Helper Functions ---
 function isValidHex(str) {
@@ -1162,7 +1174,7 @@ zoomNumber.addEventListener('input', (event) => {
     // ApplyZoom will handle clamping internally before using the scale
     clearTimeout(zoomTimeout);
     if (!isNaN(value)) { // Only set timeout if value is a number
-        zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
+    zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
     }
 });
 
@@ -1543,7 +1555,7 @@ popoutHeader.addEventListener('touchstart', startPopoutDrag, { passive: false })
 popoutResizeHandle.addEventListener('mousedown', startPopoutResize);
 popoutResizeHandle.addEventListener('touchstart', startPopoutResize, { passive: false }); // Add touch listener
 
-// --- NEW: Popout Update Button Listener ---
+// --- NEW: Popout Update Button Listener (Uses Status Message) ---
 popoutUpdateButton.addEventListener('click', () => {
     const textData = popoutPaletteInput.value;
     try {
@@ -1556,36 +1568,194 @@ popoutUpdateButton.addEventListener('click', () => {
         interpolationToggle.checked = false;
         currentGridData = sourceGridData.map(row => [...row]);
         renderPalette(currentGridData); // Re-render main palette
-        popoutEditor.style.display = 'none'; // Hide popout on success
-        alert('Palette source updated. Shade distribution disabled.');
+        // popoutEditor.style.display = 'none'; // REMOVE: Don't hide popout on success
+        showPopoutStatus('Palette updated.', false); // Use status message
     } catch (error) {
         console.error("Error parsing or processing text input:", error);
-        alert(`Failed to update palette:\n${error.message}\n\nPlease check the format.`);
+        showPopoutStatus(`Error: ${error.message}`, true); // Use status message
         // Don't hide popout on error
     }
 });
 
-// --- Initial Load --- (UPDATED)
+// --- NEW: Popout Status Message Logic ---
+let statusTimeout = null;
+
+function showPopoutStatus(message, isError = false) {
+    if (!popoutStatusMessage) return; // Element might not exist yet
+
+    clearTimeout(statusTimeout);
+
+    popoutStatusMessage.textContent = message;
+    popoutStatusMessage.classList.remove('success', 'error', 'visible');
+
+    // Need a tiny delay before adding class for transition to work if classes were just removed
+    requestAnimationFrame(() => {
+        popoutStatusMessage.classList.add(isError ? 'error' : 'success');
+        popoutStatusMessage.classList.add('visible');
+
+        // Set timeout to hide the message
+        statusTimeout = setTimeout(() => {
+            popoutStatusMessage.classList.remove('visible');
+            // Optional: clear text after fade out
+            // setTimeout(() => { popoutStatusMessage.textContent = ''; }, 300);
+        }, 3000); // Display for 3 seconds
+    });
+}
+
+// --- NEW: Palette Export Function ---
+function exportPaletteData() {
+    try {
+        const paletteText = convertToSimpleFormat(sourceGridData);
+        const blob = new Blob([paletteText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        downloadLink.download = `palette_${timestamp}.txt`;
+
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(url);
+
+        console.log('Palette data exported.');
+        alert('Palette exported as .txt file.');
+
+    } catch (error) {
+        console.error('Error exporting palette data:', error);
+        alert('Failed to export palette data.');
+    }
+}
+
+// --- Local Storage Functions ---
+
+function saveStateToLocalStorage() {
+    try {
+        const stateToSave = {
+            sourceGridData: sourceGridData,
+            isInterpolationEnabled: isInterpolationEnabled,
+            interpolationSteps: interpolationSteps,
+            saturationOffset: saturationOffset,
+            paletteZoom: scale,
+            paletteOffsetX: paletteOffsetX,
+            paletteOffsetY: paletteOffsetY,
+            uiScalePercent: parseInt(uiScaleNumber.value, 10) || 100,
+            popout: {
+                left: popoutEditor.style.left || '',
+                top: popoutEditor.style.top || '',
+                width: popoutEditor.style.width || '',
+                height: popoutEditor.style.height || '',
+            }
+        };
+        localStorage.setItem(localStorageKey, JSON.stringify(stateToSave));
+        console.log('Application state saved to local storage.');
+        alert('Current state saved!');
+    } catch (error) {
+        console.error('Error saving state to local storage:', error);
+        alert('Failed to save state. Local storage might be full or disabled.');
+    }
+}
+
+function loadStateFromLocalStorage() {
+    try {
+        const savedStateJSON = localStorage.getItem(localStorageKey);
+        if (!savedStateJSON) {
+            console.log('No saved state found in local storage.');
+            return;
+        }
+        const savedState = JSON.parse(savedStateJSON);
+        console.log('Loading saved state:', savedState);
+
+        if (Array.isArray(savedState.sourceGridData) && savedState.sourceGridData.length > 0 && Array.isArray(savedState.sourceGridData[0])) {
+            sourceGridData = savedState.sourceGridData;
+            currentGridData = sourceGridData.map(row => [...row]);
+        } else {
+            console.warn('Loaded sourceGridData is invalid, using default.');
+        }
+        isInterpolationEnabled = typeof savedState.isInterpolationEnabled === 'boolean' ? savedState.isInterpolationEnabled : false;
+        interpolationSteps = typeof savedState.interpolationSteps === 'number' ? savedState.interpolationSteps : 1;
+        saturationOffset = typeof savedState.saturationOffset === 'number' ? savedState.saturationOffset : 0;
+        scale = typeof savedState.paletteZoom === 'number' ? Math.max(minScale, Math.min(maxScale, savedState.paletteZoom)) : 1;
+        paletteOffsetX = typeof savedState.paletteOffsetX === 'number' ? savedState.paletteOffsetX : 50;
+        paletteOffsetY = typeof savedState.paletteOffsetY === 'number' ? savedState.paletteOffsetY : 50;
+        const uiScalePercent = typeof savedState.uiScalePercent === 'number' ? savedState.uiScalePercent : 100;
+        applyUiScale(uiScalePercent);
+        if (savedState.popout) {
+            if (savedState.popout.left) popoutEditor.style.left = savedState.popout.left;
+            if (savedState.popout.top) popoutEditor.style.top = savedState.popout.top;
+            if (savedState.popout.width) popoutEditor.style.width = savedState.popout.width;
+            if (savedState.popout.height) popoutEditor.style.height = savedState.popout.height;
+        }
+        interpolationToggle.checked = isInterpolationEnabled;
+        stepsSlider.value = interpolationSteps;
+        stepsNumber.value = interpolationSteps;
+        saturationOffsetSlider.value = saturationOffset;
+        saturationOffsetNumber.value = saturationOffset;
+        zoomSlider.value = scale * 100;
+        zoomNumber.value = scale * 100;
+        console.log('Successfully loaded state from local storage.');
+    } catch (error) {
+        console.error('Error loading or parsing state from local storage:', error);
+    }
+}
+
+// --- State Management Listeners ---
+saveStateButton.addEventListener('click', saveStateToLocalStorage);
+resetStateButton.addEventListener('click', () => {
+    if (confirm('Are you sure you want to reset all saved settings and reload the page?')) {
+        try {
+            localStorage.removeItem(localStorageKey);
+            console.log('Saved state removed from local storage.');
+            alert('State reset. Reloading page...');
+            location.reload();
+        } catch (error) {
+            console.error('Error removing state from local storage:', error);
+            alert('Failed to reset state. Please clear local storage manually if needed.');
+        }
+    }
+});
+
+// --- NEW: Palette Export Listener ---
+exportPaletteButton.addEventListener('click', exportPaletteData);
+
+// --- Palette Import Logic (Placeholder for next step) ---
+// importPaletteButton.addEventListener('click', () => { ... });
+// importPaletteFileInput.addEventListener('change', (event) => { ... });
+
+// --- Initial Load --- (Restoring definition)
 function initializeApp() {
-    // Set initial control values
+    // Set initial default values FIRST
+    isInterpolationEnabled = false;
+    interpolationSteps = 1;
+    saturationOffset = 0;
+    scale = 1;
+    paletteOffsetX = 50;
+    paletteOffsetY = 50;
+
+    // Attempt to load saved state (will override defaults if successful)
+    loadStateFromLocalStorage();
+
+    // Now update UI elements based on the final state (either default or loaded)
     stepsSlider.value = interpolationSteps;
     stepsNumber.value = interpolationSteps;
     saturationOffsetSlider.value = saturationOffset;
     saturationOffsetNumber.value = saturationOffset;
-    // REMOVED zoomSlider init
-    zoomSlider.value = scale * 100; // Restore zoom slider init
+    zoomSlider.value = scale * 100;
     zoomNumber.value = scale * 100;
-    // REMOVED uiScaleSlider init
-    uiScaleNumber.value = 100;
+    uiScaleNumber.value = parseInt(document.documentElement.style.fontSize || '10', 10) / 10 * 100 || 100; // Read current UI scale or default
+    interpolationToggle.checked = isInterpolationEnabled; // Set toggle AFTER loading state
 
-    // Set initial palette position and scale
+    // Set initial palette position and scale (using final state)
     updateTransform();
 
-    // Set initial UI scale
-    applyUiScale(100);
+    // Set initial UI scale (if not loaded, apply default - loadState handles this now)
+    if (!document.documentElement.style.fontSize) {
+        applyUiScale(100);
+    }
 
-    // Render the initial palette
-    renderPalette(currentGridData);
+    // Render the initial palette (using final state)
+    updatePaletteView(); // Use updatePaletteView to handle potential initial interpolation
 }
 
 initializeApp(); // Run initial setup 

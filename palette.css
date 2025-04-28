@@ -667,3 +667,45 @@ input[type="number"]::-webkit-inner-spin-button {
     border-left: 1px solid var(--border-color);
     border-bottom-right-radius: 12px; /* Match container radius */
 }
+
+.state-management-group {
+    justify-content: flex-start; /* Align buttons to start */
+    gap: 1rem;
+}
+
+.reset-button {
+    background-color: #8b0000; /* Dark red */
+    border-color: #700000;
+}
+.reset-button:hover {
+    background-color: #a00000;
+    border-color: #8b0000;
+}
+
+/* NEW: Popout Status Message Styles */
+#popout-status-message {
+    font-size: 1.2rem; /* Smaller font */
+    margin-left: 1rem; /* Space from title */
+    margin-right: 1rem; /* Space before buttons */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Prevent excessive width */
+}
+#popout-status-message.visible {
+    opacity: 1;
+}
+#popout-status-message.error {
+    color: #ff6b6b; /* Light red for error */
+}
+#popout-status-message.success {
+    color: #6bcb77; /* Light green for success */
+}
+
+/* NEW: Palette IO Group Styling */
+.palette-io-group {
+    justify-content: flex-start; /* Align buttons to start */
+    gap: 1rem;
+}
