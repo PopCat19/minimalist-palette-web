@@ -43,158 +43,54 @@
                     Helvetica, Arial, sans-serif, "Apple Color Emoji",
                     "Segoe UI Emoji", "Segoe UI Symbol"; /* Modern font stack */
                 margin: 0;
-                padding: 20px; /* Increased padding */
+                padding: 0;
+                overflow: hidden;
                 min-height: 100vh;
+                width: 100vw; /* Ensure body takes full width */
                 box-sizing: border-box;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
             }
 
-            /* --- Controls Area --- */
-            #controls-area { /* New wrapper for all controls */
+            /* --- Canvas Viewport (Pannable Area) --- */
+            #canvas-viewport {
                 width: 100%;
-                max-width: 800px; /* Allow slightly wider controls */
-                margin-bottom: 25px;
-                background-color: var(--surface-color-1);
-                padding: 15px 20px;
-                border-radius: var(--border-radius);
-                display: flex;
-                flex-direction: column; /* Stack control groups */
-                gap: 8px; /* Updated gap */
+                height: 100vh;
+                overflow: hidden; /* Crucial for JS panning */
+                position: relative; /* Context for absolute positioning of palette */
+                cursor: grab;
+                background-color: var(--bg-color); /* Match body */
+            }
+            #canvas-viewport.grabbing {
+                cursor: grabbing;
             }
 
-            .control-group { /* Wrapper for logical groups of controls */
-                display: flex;
-                flex-wrap: wrap; /* Allow wrapping */
-                align-items: center;
-                gap: 8px; /* Updated gap */
-                padding-bottom: 10px;
-                border-bottom: 1px solid var(--border-color); /* Separator */
-            }
-            .control-group:last-child {
-                border-bottom: none; /* No border for the last group */
-                padding-bottom: 0;
-            }
-
-            .control-group h3 { /* Optional headings for groups */
-                margin: 0 0 5px 0;
-                font-size: 14px;
-                font-weight: 600;
-                color: var(--text-color-muted);
-                width: 100%; /* Make heading span full width */
-                flex-basis: 100%;
-            }
-
-            /* Shared button styles */
-            .control-button {
-                background-color: var(--button-color);
-                color: var(--button-text-color);
-                border: 1px solid transparent; /* Add border for focus */
-                padding: 9px 16px;
-                border-radius: var(--border-radius);
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 500;
-                transition: all 0.2s ease;
-                white-space: nowrap;
-            }
-            .control-button:hover {
-                background-color: var(--button-hover-color);
-                border-color: var(--accent-color);
-            }
-            .control-button:focus-visible { /* Better focus */
-                 outline: none;
-                 border-color: var(--accent-color);
-            }
-            .control-button:disabled {
-                background-color: #333;
-                color: #777;
-                cursor: not-allowed;
-                border-color: transparent;
-            }
-
-            /* Specific Control Styling */
-            #interpolation-controls label,
-            #saturation-controls label {
-                cursor: pointer;
-                user-select: none;
-                margin-right: 5px;
-                font-size: 13px;
-                color: var(--text-color-muted);
-            }
-            #interpolation-controls input[type="checkbox"] {
-                margin-right: 10px;
-                vertical-align: middle;
-                accent-color: var(--accent-color); /* Style checkbox */
-            }
-
-            /* Slider/Number Input Groups */
-            .slider-group {
-                display: flex;
-                align-items: center;
-                gap: 8px; /* Updated gap */
-            }
-            #interpolation-steps-group {
-                 display: none; /* Hidden by default */
-            }
-            #interpolation-controls input[type="checkbox"]:checked ~ #interpolation-steps-group {
-                 display: flex; /* Show when checkbox is checked */
-            }
-
-            input[type="range"] { /* Style sliders */
-                 width: 120px;
-                 height: 5px;
-                 cursor: pointer;
-                 accent-color: var(--accent-color);
-                 vertical-align: middle;
-            }
-            input[type="number"] { /* Style number inputs */
-                 width: 50px;
-                 background-color: var(--surface-color-2);
-                 color: var(--text-color);
-                 border: 1px solid var(--border-color);
-                 border-radius: 4px;
-                 padding: 4px 6px;
-                 font-size: 12px;
-                 text-align: center;
-                 -moz-appearance: textfield; /* Firefox */
-            }
-            input[type="number"]::-webkit-outer-spin-button,
-            input[type="number"]::-webkit-inner-spin-button {
-                 -webkit-appearance: none;
-                 margin: 0;
-            }
-             input[type="number"]:focus-visible {
-                 outline: none;
-                 border-color: var(--accent-color);
-             }
-
-            /* --- Palette Area --- */
+            /* --- Palette Container (Moved by JS) --- */
             #palette-container {
-                width: 100%;
-                max-width: calc(100% - 40px); /* Max width respecting body padding */
-                overflow-x: auto;
-                overflow-y: hidden;
-                padding-bottom: 10px;
-                border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
+                position: absolute;
+                top: 50px; /* Initial offset */
+                left: 50px; /* Initial offset */
                 background-color: var(--surface-color-1);
-                padding: var(--cell-spacing);
+                border-radius: var(--border-radius);
+                padding: var(--cell-spacing); /* Space around table */
+                border: 1px solid var(--border-color);
+                /* Remove width/max-width, let content size it */
+                /* No overflow handling needed here */
+                /* box-shadow removed */
             }
 
             table {
                 border-collapse: separate;
                 border-spacing: var(--cell-spacing);
-                width: auto;
-                min-width: 100%;
+                width: auto; /* Let content determine width */
                 table-layout: fixed;
                 background-color: var(--surface-color-1);
             }
 
             td {
                 width: var(--cell-size);
-                padding: var(--cell-padding-y) var(--cell-padding-x); /* Use separate padding vars */
+                padding: var(--cell-padding-y) var(--cell-padding-x);
                 text-align: center;
                 vertical-align: middle;
                 border-radius: var(--border-radius);
@@ -210,156 +106,177 @@
                     box-shadow 0.2s ease-out,
                     font-weight 0.1s ease-out,
                     background-color 0.2s ease,
-                    border-radius 0.2s ease; /* Added border-radius to transition */
+                    border-radius 0.2s ease;
                 word-wrap: break-word;
             }
-
-            td:hover {
-                font-weight: 600; /* Slightly bolder */
-            }
-
-            td.swatch {
-                cursor: pointer;
-            }
-            td.swatch:hover {
-                border-radius: 50%; /* Transform to circle */
-                z-index: 10; /* Bring to front */
-            }
-            td.interpolated {
-                /* opacity: 0.95; */ /* Keep subtle */
-            }
+            td:hover { font-weight: 600; }
+            td.swatch { cursor: pointer; }
+            td.swatch:hover { border-radius: 50%; z-index: 10; }
+            td.interpolated { /* opacity: 0.95; */ }
             td.label.interpolated-label {
                 color: var(--text-color-muted);
                 font-style: italic;
                 font-size: smaller;
-                background-color: transparent; /* Make placeholder labels less prominent */
+                background-color: transparent;
                 border: 1px dashed var(--border-color);
             }
-
             td.copied::after {
                 content: "Copied!";
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
-                color: var(--text-color);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                font-size: 10px; /* Slightly larger text */
-                font-weight: bold;
-                border-radius: inherit;
-                animation: fadeOut 1s forwards;
-                z-index: 5; /* Ensure it's above cell content */
+                position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+                background-color: rgba(0, 0, 0, 0.75); color: var(--text-color);
+                display: flex; justify-content: center; align-items: center;
+                font-size: 10px; font-weight: bold; border-radius: inherit;
+                animation: fadeOut 1s forwards; z-index: 5;
             }
-            @keyframes fadeOut {
-                0% { opacity: 1; }
-                80% { opacity: 1; }
-                100% { opacity: 0; }
+            @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+
+            /* --- Config Toggle Button --- */
+            #config-toggle-button {
+                position: fixed;
+                top: 15px;
+                right: 15px;
+                z-index: 1100;
+                background-color: var(--surface-color-1);
+                color: var(--text-color-muted);
+                border: 1px solid var(--border-color);
+                border-radius: 50%; /* Circle */
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                line-height: 38px; /* Center icon vertically */
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            }
+            #config-toggle-button:hover {
+                color: var(--text-color);
+                background-color: var(--surface-color-2);
+                border-color: var(--accent-color);
             }
 
-            /* --- Modal Styles --- */
-            .modal {
-                display: none;
+            /* --- Config Modal --- */
+            #config-modal {
                 position: fixed;
-                z-index: 1000;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                overflow: auto;
-                background-color: rgba(0, 0, 0, 0.8); /* Darker overlay */
-                padding: 40px 20px; /* Add padding for scroll */
-                backdrop-filter: blur(3px); /* Optional: blur background */
-            }
-            .modal-content {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0.95);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
+                z-index: 1050;
                 background-color: var(--surface-color-1);
-                color: var(--text-color);
-                margin: 2% auto; /* Adjust vertical margin */
-                padding: 30px; /* Increased padding */
-                border: none; /* Remove border, use shadow */
+                border: 1px solid var(--border-color);
                 border-radius: var(--border-radius);
-                width: 85%;
-                max-width: 750px;
-                position: relative;
-            }
-            .modal-header { /* Add a header section */
+                padding: 25px;
+                width: 90%;
+                max-width: 550px;
+                max-height: 80vh;
+                overflow-y: auto;
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
+                flex-direction: column;
+                gap: 20px; /* Gap between sections in modal */
+            }
+            #config-modal.visible {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+                visibility: visible;
+                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0s;
+            }
+
+            /* Close button for modal */
+            .modal-close-button {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: none;
+                border: none;
+                font-size: 24px;
+                line-height: 1;
+                color: var(--text-color-muted);
+                cursor: pointer;
+            }
+            .modal-close-button:hover { color: var(--text-color); }
+
+            /* Sections within modal */
+            .config-section {
                 padding-bottom: 15px;
                 border-bottom: 1px solid var(--border-color);
             }
-            .modal-header h2 {
-                 margin: 0;
-                 font-size: 18px;
-                 font-weight: 600;
-            }
-            .close-button {
-                color: var(--text-color-muted);
-                font-size: 26px;
-                font-weight: bold;
-                line-height: 1;
-                background: none;
-                border: none;
-                padding: 0 5px;
-                cursor: pointer;
-                transition: color 0.2s ease;
-            }
-            .close-button:hover,
-            .close-button:focus {
+            .config-section:last-child { border-bottom: none; padding-bottom: 0; }
+
+            .config-section h3 {
+                margin: 0 0 15px 0;
+                font-size: 16px;
+                font-weight: 600;
                 color: var(--text-color);
-                outline: none;
             }
+
+            /* Controls moved into modal */
+            .control-group { /* Re-style for modal context */
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px; /* Adjust gap for modal */
+                padding-bottom: 0; /* Remove padding */
+                border-bottom: none; /* Remove border */
+            }
+
+            .control-button { /* Base styles remain */
+                /* Adjust padding/size if needed for modal */
+            }
+
+            #interpolation-controls,
+            #saturation-controls {
+                 width: 100%; /* Take full width in modal */
+                 display: flex;
+                 flex-wrap: wrap;
+                 align-items: center;
+                 gap: 10px;
+            }
+            #interpolation-controls label,
+            #saturation-controls label { /* Styles remain */ }
+            input[type="checkbox"] { /* Styles remain */ }
+            .slider-group { /* Styles remain */ }
+            input[type="range"] { /* Styles remain, maybe adjust width */ width: 150px; }
+            input[type="number"] { /* Styles remain */ }
+
+            /* Palette Editor section in modal */
+            #palette-editor-section {
+                display: none; /* Hidden by default */
+            }
+            #config-modal.editor-visible #palette-editor-section {
+                display: block;
+            }
+
             #palette-input {
                 width: 100%;
-                min-height: 280px; /* Taller */
+                min-height: 200px; /* Adjust height for modal */
                 background-color: var(--surface-color-2);
-                color: var(--text-color); /* Use main text color */
+                color: var(--text-color);
                 border: 1px solid var(--border-color);
-                border-radius: var(--border-radius);
-                padding: 12px;
-                font-family:
-                    "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace; /* Better mono stack */
+                border-radius: 8px; /* Smaller radius for input */
+                padding: 10px;
+                font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
                 font-size: 13px;
                 box-sizing: border-box;
                 resize: vertical;
-                margin-bottom: 20px; /* More space */
-                white-space: pre;
-                overflow-wrap: normal;
-                overflow-x: auto;
+                margin-bottom: 15px;
+                white-space: pre; overflow-wrap: normal; overflow-x: auto;
             }
-             #palette-input:focus-visible {
-                  outline: none;
-                  border-color: var(--accent-color);
-                  box-shadow: 0 0 0 1px var(--accent-color);
-             }
+            #palette-input:focus-visible { outline: none; border-color: var(--accent-color); }
 
-            #update-button { /* Style modal button like others */
-                background-color: var(--accent-color); /* Use accent color */
-                color: #ffffff;
-                border: 1px solid transparent;
-                padding: 10px 22px;
-                border-radius: var(--border-radius);
-                cursor: pointer;
-                font-size: 14px;
-                font-weight: 500;
+            #update-button {
+                background-color: var(--accent-color);
+                color: #ffffff; border: none;
+                padding: 9px 18px;
+                border-radius: 8px;
+                cursor: pointer; font-size: 14px; font-weight: 500;
                 transition: all 0.2s ease;
-                display: block; /* Keep as block */
-                width: fit-content; /* Size to content */
-                margin: 0 auto; /* Center */
+                display: block; width: fit-content; margin: 0 auto;
             }
-            #update-button:hover {
-                background-color: #3a80d2; /* Darker accent */
-                border-color: transparent;
-            }
-             #update-button:focus-visible { /* Better focus */
-                 outline: none;
-                 border-color: #ffffff;
-             }
+            #update-button:hover { background-color: #3a80d2; }
+            #update-button:focus-visible { outline: none; border-color: #ffffff; }
 
             /* --- Responsive Adjustments --- */
             @media (max-width: 768px) {
@@ -367,20 +284,15 @@
                     --cell-spacing: 2px;
                     --cell-padding-y: 4px;
                     --cell-padding-x: 6px;
-                    --border-radius: 16px; /* Adjusted responsive radius */
+                    --border-radius: 16px;
                 }
-                body { padding: 15px; }
-                #controls-area { padding: 12px 15px; gap: 8px; margin-bottom: 20px;} /* Updated gap */
-                .control-group { gap: 8px; padding-bottom: 8px; } /* Updated gap */
-                .control-button { padding: 8px 14px; font-size: 12px; }
-                 input[type="range"] { width: 100px; }
+                #config-modal { width: 95%; padding: 20px; gap: 15px; }
+                .config-section h3 { font-size: 15px; margin-bottom: 12px; }
+                 input[type="range"] { width: 120px; }
                  input[type="number"] { width: 45px; font-size: 11px; }
                 td { font-size: 8px; }
                 td.copied::after { font-size: 9px; }
-                .modal-content { width: 92%; padding: 20px; }
-                #palette-input { min-height: 220px; font-size: 12px; }
-                #update-button { padding: 9px 18px; font-size: 13px; }
-                .modal-header h2 { font-size: 16px; }
+                #palette-input { min-height: 180px; font-size: 12px; }
             }
 
             @media (max-width: 480px) {
@@ -388,46 +300,83 @@
                     --cell-spacing: 2px;
                     --cell-padding-y: 3px;
                     --cell-padding-x: 5px;
-                    --border-radius: 12px; /* Adjusted responsive radius */
+                    --border-radius: 12px;
                 }
-                 body { padding: 10px; }
-                 #controls-area { padding: 10px; gap: 8px; margin-bottom: 15px;} /* Updated gap */
-                 .control-group { flex-direction: column; align-items: stretch; gap: 8px;} /* Stack group items, updated gap */
-                 .control-group h3 { margin-bottom: 8px; }
-                 .control-button { width: 100%; text-align: center; padding: 10px 12px; } /* Full width buttons */
-                 #interpolation-controls, #saturation-controls { /* Improve alignment when stacked */
-                     display: flex;
+                #config-toggle-button { width: 36px; height: 36px; font-size: 18px; line-height: 34px; }
+                #config-modal {
+                     padding: 15px;
+                     gap: 12px;
+                }
+                 .control-group { /* Stack controls vertically */
                      flex-direction: column;
-                     align-items: flex-start;
+                     align-items: stretch;
                      gap: 8px;
                  }
-                 .slider-group { width: 100%; justify-content: space-between;} /* Space out slider/number */
-                 input[type="range"] { width: calc(100% - 70px); } /* Adjust slider width */
+                 .control-button { width: 100%; text-align: center; padding: 10px 12px; } /* Full width buttons */
+                 #interpolation-controls, #saturation-controls {
+                     flex-direction: column; align-items: flex-start; gap: 8px;
+                 }
+                 .slider-group { width: 100%; justify-content: space-between;}
+                 input[type="range"] { width: calc(100% - 70px); }
                  input[type="number"] { width: 50px; }
                 td { font-size: 7px; }
                 td.copied::after { font-size: 8px; }
-                .modal { padding: 20px 10px; }
-                .modal-content { width: 95%; padding: 15px; }
-                .modal-header { padding-bottom: 10px; margin-bottom: 15px; }
-                #palette-input { min-height: 180px; }
+                #palette-input { min-height: 150px; }
                 #update-button { width: 100%; } /* Full width modal button */
             }
         </style>
     </head>
     <body>
-        <div id="controls-area"> <!-- Renamed and restructured -->
-             <div class="control-group"> <!-- Group for Palette Actions -->
-                 <!-- <h3>Palette Actions</h3> Optional Heading -->
-                 <button id="edit-palette-button" class="control-button">
-                     Edit Palette Data
-                 </button>
-                 <button id="export-png-button" class="control-button">
-                     Export as PNG
-                 </button>
-             </div>
-             <div class="control-group"> <!-- Group for Appearance Adjustments -->
-                 <!-- <h3>Adjustments</h3> Optional Heading -->
-                 <div id="interpolation-controls"> <!-- Keep IDs for JS -->
+        <!-- Config Toggle Button -->
+        <button id="config-toggle-button" aria-label="Open Configuration">⚙️</button>
+
+        <!-- Pannable Viewport -->
+        <div id="canvas-viewport">
+            <!-- Palette Container (moved by JS) -->
+            <div id="palette-container">
+                <table id="palette-table">
+                    <tbody>
+                        <!-- Table rows will be generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Configuration Modal -->
+        <div id="config-modal">
+            <button class="modal-close-button" aria-label="Close Configuration">&times;</button>
+
+            <div class="config-section">
+                <h3>Palette Actions</h3>
+                <div class="control-group">
+                     <button id="edit-palette-button" class="control-button">
+                         Edit Palette Data
+                     </button>
+                     <button id="export-png-button" class="control-button">
+                         Export as PNG
+                     </button>
+                 </div>
+            </div>
+
+             <div class="config-section" id="palette-editor-section">
+                 <!-- <h3>Edit Palette</h3> -->
+                 <label
+                    for="palette-input"
+                    style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 14px;"
+                >
+                    Palette Data (Space-Delimited rows, #Hex for colors):
+                </label>
+                <textarea
+                    id="palette-input"
+                    spellcheck="false"
+                    placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
+                ></textarea>
+                <button id="update-button">Update Palette from Text</button>
+            </div>
+
+            <div class="config-section">
+                <h3>Adjustments</h3>
+                 <div id="interpolation-controls" class="control-group">
                      <label for="interpolation-toggle">
                          Distribute Shades (Vertical):
                      </label>
@@ -446,9 +395,7 @@
                          />
                      </div>
                  </div>
-             </div>
-             <div class="control-group">
-                  <div id="saturation-controls"> <!-- Keep IDs for JS -->
+                  <div id="saturation-controls" class="control-group">
                      <label for="saturation-offset-slider">Saturation Offset:</label>
                      <div id="saturation-offset-group" class="slider-group">
                          <input
@@ -465,36 +412,6 @@
                      </div>
                   </div>
              </div>
-        </div>
-
-        <div id="palette-container">
-            <table id="palette-table">
-                <tbody>
-                    <!-- Table rows will be generated by JavaScript -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- The Modal -->
-        <div id="edit-modal" class="modal">
-            <div class="modal-content">
-                 <div class="modal-header"> <!-- Added Modal Header -->
-                     <h2>Edit Palette Data</h2>
-                     <button class="close-button" id="close-modal-button" aria-label="Close modal">&times;</button> <!-- Use button for accessibility -->
-                 </div>
-                <label
-                    for="palette-input"
-                    style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 14px;"
-                >
-                    Palette Data (Space-Delimited rows, #Hex for colors):
-                </label>
-                <textarea
-                    id="palette-input"
-                    spellcheck="false"
-                    placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
-                ></textarea>
-                <button id="update-button">Update Palette from Text</button>
-            </div>
         </div>
 
         <script>
@@ -852,47 +769,42 @@
             ];
 
             // --- State Variables ---
-            let currentGridData = [...sourceGridData.map((row) => [...row])]; // Holds data being displayed (start with a copy)
+            let currentGridData = [...sourceGridData.map((row) => [...row])];
             let isInterpolationEnabled = false;
             let interpolationSteps = 1;
-            let saturationOffset = 0; // NEW: Saturation offset state (-100 to 100)
+            let saturationOffset = 0;
+            // --- NEW: Panning State ---
+            let isPanning = false;
+            let startX, startY, currentX, currentY;
+            let paletteOffsetX = 50; // Initial offset matches CSS
+            let paletteOffsetY = 50;
 
             // --- DOM Elements ---
-            const paletteInput = document.getElementById("palette-input");
-            const updateButton = document.getElementById("update-button");
-            const paletteTable = document.getElementById("palette-table");
-            const tableBody = paletteTable.getElementsByTagName("tbody")[0];
-            const modal = document.getElementById("edit-modal");
-            const openModalButton = document.getElementById(
-                "edit-palette-button",
-            );
-            const closeModalButton =
-                document.getElementById("close-modal-button");
-            const exportPngButton =
-                document.getElementById("export-png-button");
-            // Interpolation Controls
-            const interpolationToggle = document.getElementById(
-                "interpolation-toggle",
-            );
-            const interpolationStepsGroup = document.getElementById(
-                "interpolation-steps-group",
-            );
-            const stepsSlider = document.getElementById(
-                "interpolation-steps-slider",
-            );
-            const stepsNumber = document.getElementById(
-                "interpolation-steps-number",
-            );
-            // NEW: Saturation Controls
-            const saturationOffsetSlider = document.getElementById(
-                "saturation-offset-slider",
-            );
-            const saturationOffsetNumber = document.getElementById(
-                "saturation-offset-number",
-            );
+            // Palette display elements
+            const canvasViewport = document.getElementById('canvas-viewport');
+            const paletteContainer = document.getElementById('palette-container');
+            const paletteTable = document.getElementById('palette-table');
+            const tableBody = paletteTable.getElementsByTagName('tbody')[0];
+
+            // Config Modal elements
+            const configToggleButton = document.getElementById('config-toggle-button');
+            const configModal = document.getElementById('config-modal');
+            const closeModalButton = configModal.querySelector('.modal-close-button'); // Find close button inside modal
+            const editPaletteButton = document.getElementById('edit-palette-button');
+            const paletteEditorSection = document.getElementById('palette-editor-section');
+            const paletteInput = document.getElementById('palette-input');
+            const updateButton = document.getElementById('update-button');
+            const exportPngButton = document.getElementById('export-png-button');
+
+            // Adjustment controls (now inside modal)
+            const interpolationToggle = document.getElementById('interpolation-toggle');
+            const interpolationStepsGroup = document.getElementById('interpolation-steps-group');
+            const stepsSlider = document.getElementById('interpolation-steps-slider');
+            const stepsNumber = document.getElementById('interpolation-steps-number');
+            const saturationOffsetSlider = document.getElementById('saturation-offset-slider');
+            const saturationOffsetNumber = document.getElementById('saturation-offset-number');
 
             // --- Helper Functions ---
-
             function isValidHex(str) {
                 return (
                     typeof str === "string" &&
@@ -1175,7 +1087,6 @@
             }
 
             // Render the palette table from grid data
-            // Render the palette table from grid data
             function renderPalette(gridData) {
                 tableBody.innerHTML = ""; // Clear previous content
                 if (!Array.isArray(gridData)) {
@@ -1276,160 +1187,201 @@
                 renderPalette(currentGridData);
             }
 
+            // --- NEW: Panning Logic ---
+            function startPan(event) {
+                isPanning = true;
+                startX = event.clientX || event.touches[0].clientX;
+                startY = event.clientY || event.touches[0].clientY;
+                canvasViewport.classList.add('grabbing');
+                // Prevent text selection during drag
+                event.preventDefault();
+            }
+
+            function panMove(event) {
+                if (!isPanning) return;
+                event.preventDefault();
+                currentX = event.clientX || event.touches[0].clientX;
+                currentY = event.clientY || event.touches[0].clientY;
+
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+
+                paletteOffsetX += dx;
+                paletteOffsetY += dy;
+
+                paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px)`;
+
+                // Update start for next move delta
+                startX = currentX;
+                startY = currentY;
+            }
+
+            function endPan() {
+                if (isPanning) {
+                     isPanning = false;
+                     canvasViewport.classList.remove('grabbing');
+                }
+            }
+
             // --- Event Listeners ---
 
-            // Modal Events
-            openModalButton.addEventListener("click", () => {
-                paletteInput.value = convertToSimpleFormat(sourceGridData);
-                modal.style.display = "block";
-            });
-            closeModalButton.addEventListener("click", () => {
-                modal.style.display = "none";
-            });
-            window.addEventListener("click", (event) => {
-                if (event.target == modal) {
-                    modal.style.display = "none";
+            // Panning Listeners
+            canvasViewport.addEventListener('mousedown', startPan);
+            canvasViewport.addEventListener('mousemove', panMove);
+            canvasViewport.addEventListener('mouseup', endPan);
+            canvasViewport.addEventListener('mouseleave', endPan); // Stop panning if mouse leaves viewport
+            // Touch Events for mobile
+            canvasViewport.addEventListener('touchstart', startPan, { passive: false }); // passive: false to allow preventDefault
+            canvasViewport.addEventListener('touchmove', panMove, { passive: false });
+            canvasViewport.addEventListener('touchend', endPan);
+            canvasViewport.addEventListener('touchcancel', endPan);
+
+            // Config Modal Toggle Listeners
+            configToggleButton.addEventListener('click', () => {
+                configModal.classList.toggle('visible');
+                // Hide editor when opening modal initially
+                if (configModal.classList.contains('visible')) {
+                    configModal.classList.remove('editor-visible');
                 }
             });
+            closeModalButton.addEventListener('click', () => {
+                configModal.classList.remove('visible');
+            });
+            // Optional: Close modal on background click
+            // configModal.addEventListener('click', (event) => {
+            //     if (event.target === configModal) { // Click was directly on the modal background
+            //         configModal.classList.remove('visible');
+            //     }
+            // });
 
-            // Update Button (Modal)
-            updateButton.addEventListener("click", () => {
+            // Show/Hide Palette Editor within Modal
+            editPaletteButton.addEventListener('click', () => {
+                paletteInput.value = convertToSimpleFormat(sourceGridData); // Load current source data
+                configModal.classList.add('editor-visible'); // Show the editor section
+            });
+
+            // Update Button (now inside config modal)
+            updateButton.addEventListener('click', () => {
                 const textData = paletteInput.value;
                 try {
                     const newDataParsed = parseSimpleFormat(textData);
-                    if (
-                        !Array.isArray(newDataParsed) ||
-                        newDataParsed.length === 0 ||
-                        !Array.isArray(newDataParsed[0])
-                    ) {
+                    if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
                         throw new Error("Parsed data is not a valid grid.");
                     }
-
-                    sourceGridData = newDataParsed; // Update the source
-
-                    // Reset view to show the new source data without interpolation
-                    isInterpolationEnabled = false;
+                    sourceGridData = newDataParsed;
+                    isInterpolationEnabled = false; // Reset interpolation
                     interpolationToggle.checked = false;
-                    // Keep current saturation offset
-                    currentGridData = sourceGridData.map((row) => [...row]); // Update current view to new source copy
-                    renderPalette(currentGridData); // Render with current saturation offset
-                    modal.style.display = "none";
-                    alert(
-                        "Palette source updated. Shade distribution disabled.",
-                    );
+                    currentGridData = sourceGridData.map(row => [...row]);
+                    renderPalette(currentGridData); // Re-render main palette
+                    configModal.classList.remove('editor-visible'); // Hide editor section
+                    configModal.classList.remove('visible'); // Close modal after update
+                    alert('Palette source updated. Shade distribution disabled.');
                 } catch (error) {
-                    console.error(
-                        "Error parsing or processing text input:",
-                        error,
-                    );
-                    alert(
-                        `Failed to update palette:\n${error.message}\n\nPlease check the format.`,
-                    );
+                    console.error("Error parsing or processing text input:", error);
+                    alert(`Failed to update palette:\n${error.message}\n\nPlease check the format.`);
                 }
             });
 
-            // Export PNG Event Listener
-            exportPngButton.addEventListener("click", () => {
-                exportPngButton.disabled = true; // Disable button during export
-                exportPngButton.textContent = "Exporting...";
+            // Export PNG Event Listener (Target remains paletteTable)
+            exportPngButton.addEventListener('click', () => {
+                // Disable button temporarily
+                exportPngButton.disabled = true;
+                exportPngButton.textContent = 'Exporting...';
 
+                 // Ensure the modal is closed or doesn't interfere (optional, usually fine)
+                 // configModal.classList.remove('visible');
+
+                // Slight delay to allow UI to settle if needed
                 setTimeout(() => {
+                    // Determine the background color to use
+                    const tableBgColor = getComputedStyle(paletteContainer).backgroundColor;
+
                     html2canvas(paletteTable, {
-                        backgroundColor:
-                            getComputedStyle(paletteTable).backgroundColor,
+                        backgroundColor: tableBgColor, // Use container BG for capture
                         useCORS: true,
                         logging: false,
+                        // Position/offset adjustments might be needed if transform interferes
+                        // x: paletteContainer.offsetLeft, // Experiment if capture is off
+                        // y: paletteContainer.offsetTop,
                     })
-                        .then((canvas) => {
-                            const pngUrl = canvas.toDataURL("image/png");
-                            const downloadLink = document.createElement("a");
-                            downloadLink.href = pngUrl;
-                            downloadLink.download = "palette.png";
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            document.body.removeChild(downloadLink);
-                            exportPngButton.disabled = false;
-                            exportPngButton.textContent = "Export as PNG";
-                        })
-                        .catch((err) => {
-                            console.error("Error exporting PNG:", err);
-                            alert(
-                                "Error exporting palette as PNG. See console for details.",
-                            );
-                            exportPngButton.disabled = false;
-                            exportPngButton.textContent = "Export as PNG";
-                        });
-                }, 150);
+                    .then(canvas => {
+                        const pngUrl = canvas.toDataURL('image/png');
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = pngUrl;
+                        downloadLink.download = 'palette.png';
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                    })
+                    .catch(err => {
+                        console.error('Error exporting PNG:', err);
+                        alert('Error exporting palette as PNG. See console for details.');
+                    })
+                    .finally(() => {
+                        // Re-enable button
+                        exportPngButton.disabled = false;
+                        exportPngButton.textContent = 'Export as PNG';
+                    });
+                }, 150); // Delay
             });
 
-            // Interpolation Toggle Listener
-            interpolationToggle.addEventListener("change", (event) => {
+            // Interpolation/Saturation Listeners (No changes needed, IDs are the same)
+            interpolationToggle.addEventListener('change', (event) => {
                 isInterpolationEnabled = event.target.checked;
-                updatePaletteView(); // Regenerates grid if needed and re-renders
+                updatePaletteView();
             });
-
-            // Interpolation Steps Slider Listener
-            stepsSlider.addEventListener("input", (event) => {
+            stepsSlider.addEventListener('input', (event) => {
                 interpolationSteps = parseInt(event.target.value, 10);
-                stepsNumber.value = interpolationSteps; // Sync number input
-                if (isInterpolationEnabled) {
-                    updatePaletteView(); // Regenerates grid and re-renders
-                }
+                stepsNumber.value = interpolationSteps;
+                if (isInterpolationEnabled) { updatePaletteView(); }
             });
-
-            // Interpolation Steps Number Input Listener
-            stepsNumber.addEventListener("input", (event) => {
+            stepsNumber.addEventListener('input', (event) => {
                 let value = parseInt(event.target.value, 10);
                 const min = parseInt(stepsNumber.min, 10);
                 const max = parseInt(stepsNumber.max, 10);
-                if (isNaN(value)) {
-                    value = min;
-                } else if (value < min) {
-                    value = min;
-                } else if (value > max) {
-                    value = max;
-                }
+                if (isNaN(value)) { value = min; }
+                else if (value < min) { value = min; }
+                else if (value > max) { value = max; }
                 stepsNumber.value = value;
                 interpolationSteps = value;
-                stepsSlider.value = interpolationSteps; // Sync slider
-                if (isInterpolationEnabled) {
-                    updatePaletteView(); // Regenerates grid and re-renders
-                }
+                stepsSlider.value = interpolationSteps;
+                if (isInterpolationEnabled) { updatePaletteView(); }
             });
-
-            // --- NEW: Saturation Event Listeners ---
-            saturationOffsetSlider.addEventListener("input", (event) => {
+            saturationOffsetSlider.addEventListener('input', (event) => {
                 saturationOffset = parseInt(event.target.value, 10);
-                saturationOffsetNumber.value = saturationOffset; // Sync number input
-                // No need to regenerate the grid, just re-render with the new offset
-                renderPalette(currentGridData);
+                saturationOffsetNumber.value = saturationOffset;
+                renderPalette(currentGridData); // Just re-render
             });
-
-            saturationOffsetNumber.addEventListener("input", (event) => {
+            saturationOffsetNumber.addEventListener('input', (event) => {
                 let value = parseInt(event.target.value, 10);
                 const min = parseInt(saturationOffsetNumber.min, 10);
                 const max = parseInt(saturationOffsetNumber.max, 10);
-                if (isNaN(value)) {
-                    value = 0; // Default to 0 if invalid
-                } else if (value < min) {
-                    value = min;
-                } else if (value > max) {
-                    value = max;
-                }
-                saturationOffsetNumber.value = value; // Update input field
+                if (isNaN(value)) { value = 0; }
+                else if (value < min) { value = min; }
+                else if (value > max) { value = max; }
+                saturationOffsetNumber.value = value;
                 saturationOffset = value;
-                saturationOffsetSlider.value = saturationOffset; // Sync slider
-                // No need to regenerate the grid, just re-render with the new offset
-                renderPalette(currentGridData);
+                saturationOffsetSlider.value = saturationOffset;
+                renderPalette(currentGridData); // Just re-render
             });
-            // --- END NEW Saturation Listeners ---
 
             // --- Initial Load ---
-            stepsSlider.value = interpolationSteps; // Set initial slider value
-            stepsNumber.value = interpolationSteps; // Set initial number value
-            saturationOffsetSlider.value = saturationOffset; // Set initial saturation slider
-            saturationOffsetNumber.value = saturationOffset; // Set initial saturation number
-            renderPalette(currentGridData); // Render the initial data (copy of source)
+            function initializeApp() {
+                // Set initial control values (if needed, should match defaults)
+                stepsSlider.value = interpolationSteps;
+                stepsNumber.value = interpolationSteps;
+                saturationOffsetSlider.value = saturationOffset;
+                saturationOffsetNumber.value = saturationOffset;
+
+                // Set initial palette position
+                paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px)`;
+
+                // Render the initial palette
+                renderPalette(currentGridData);
+            }
+
+            initializeApp(); // Run initial setup
+
         </script>
     </body>
 </html>
