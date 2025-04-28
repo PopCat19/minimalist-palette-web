@@ -145,6 +145,1005 @@ body {
     border: var(--border-width) solid var(--border-color);
     /* Add overflow hidden potentially if outlines clip */
     /* overflow: hidden; */
+    /* --- NEW: Set transform origin to top-left to match JS --- */
+    transform-origin: 0 0;
+}
+
+/* NEW: Grid Container Styles */
+#palette-grid {
+    display: grid;
+    /* Assuming 27 columns based on JS data structure */
+    grid-template-columns: repeat(27, minmax(var(--cell-min-size), 1fr)); /* Allow cells to grow */
+    gap: 8px; /* Replaced var(--cell-spacing) */
+    padding: 8px; /* Replaced var(--cell-spacing) */
+    width: max-content; /* Ensure grid shrinks/grows with content */
+    box-sizing: border-box;
+}
+
+/* MODIFIED: Styles for the cell div (now a direct grid item) */
+.cell-content {
+    aspect-ratio: 1 / 1; /* Make cell square */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--cell-internal-padding);
+    background-color: var(--surface-color-2);
+    border-radius: var(--border-radius-small); /* Use a defined radius */
+    color: var(--text-color); /* Explicit default color */
+    word-wrap: break-word; /* Keep word wrap */
+    overflow: hidden; /* Prevent content spillover */
+    text-overflow: ellipsis; /* Add ellipsis for overflow */
+    white-space: nowrap; /* Prevent wrapping that might break layout */
+    box-sizing: border-box;
+    transition:
+        background-color var(--transition-duration) var(--transition-timing),
+        border-radius var(--transition-duration) var(--transition-timing),
+        outline var(--transition-duration) var(--transition-timing); /* Add outline transition */
+    font-size: var(--cell-content-font-size);
+    position: relative; /* Needed for ::after pseudo-element */
+}
+
+.cell-content.legend-label {
+    font-weight: bold;
+    color: var(--text-color); /* Ensure legend labels are clearly visible */
+}
+
+.cell-content.swatch {
+    cursor: pointer;
+}
+
+.cell-content.swatch:hover {
+     /* Hover effect now handled by JS adding box-shadow */
+     border-radius: var(--border-radius-small); /* Keep radius */
+     z-index: 1; /* Keep z-index */
+}
+
+.cell-content.label.interpolated-label {
+     background-color: transparent;
+     border: var(--border-width) dashed var(--placeholder-border-color);
+     color: var(--placeholder-text-color);
+     font-style: italic;
+}
+
+/* Keep copied feedback as it targets .cell-content */
+.cell-content.copied::after {
+    content: "Copied!";
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--modal-overlay-color);
+    color: var(--text-color-light-bg); /* Ensure contrast */
+    display: flex; justify-content: center; align-items: center;
+    font-size: var(--copied-feedback-font-size);
+    font-weight: bold;
+    border-radius: var(--border-radius-small);
+    animation: fadeOut var(--copied-fade-duration) forwards;
+    z-index: var(--z-index-copied-feedback);
+}
+
+/* --- Config Toggle Button --- */
+#config-toggle-button {
+    /* Removed position: fixed, bottom, left, transform, z-index */
+    /* Keep appearance styles */
+    background-color: var(--surface-color-1);
+    color: var(--text-color-muted);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--config-button-padding);
+    font-size: var(--config-button-font-size);
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-timing);
+    box-shadow: var(--config-button-shadow);
+}
+#config-toggle-button:hover {
+    color: var(--text-color);
+    background-color: var(--surface-color-2);
+    border-color: var(--accent-color);
+}
+
+/* NEW: Active state for config button */
+#config-toggle-button.active {
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg); /* Contrast with accent color */
+    border-color: var(--accent-color);
+    box-shadow: none; /* Optional: Remove shadow when active */
+}
+
+/* --- Config Modal --- */
+#config-modal {
+    position: fixed;
+    /* NEW: Define top/bottom constraints */
+    /* top: 2rem; */ /* Remove top constraint */
+    bottom: 7.5rem; /* Keep gap above bottom controls */
+    left: 50%;
+    transform: translateX(-50%) scale(0.95);
+    /* transform-origin: center center; */ /* Adjust origin */
+    transform-origin: bottom center; /* Revert to bottom origin */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration);
+    z-index: var(--z-index-modal);
+    background-color: rgba(26, 26, 26, 0.75);
+    border: var(--border-width-val) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--modal-padding);
+    width: 90%;
+    max-width: var(--modal-max-width);
+    max-height: 80vh; /* Keep max-height */
+    overflow-y: auto; /* Ensure this is present */
+    display: flex;
+    flex-direction: column;
+    gap: var(--modal-gap);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+}
+#config-modal.visible {
+    transform: translateX(-50%) scale(1);
+        opacity: 1;
+    visibility: visible;
+    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 10px; /* Keep positional offsets */
+    right: 10px; /* Keep positional offsets */
+    background: none;
+    border: none;
+    font-size: var(--modal-close-button-font-size);
+    line-height: 1;
+    color: var(--text-color-muted);
+    cursor: pointer;
+}
+.modal-close-button:hover { color: var(--text-color); }
+
+.config-section {
+    padding-bottom: var(--modal-section-padding-bottom);
+    border-bottom: var(--border-width) solid var(--border-color);
+}
+.config-section:last-child { border-bottom: none; padding-bottom: 0; }
+
+.config-section h3 {
+    margin: 0 0 var(--modal-title-margin-bottom) 0;
+    font-size: var(--modal-title-font-size);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* NEW: Styling for Adjustment Group Wrappers */
+.adjustment-group {
+    margin-bottom: 15px; /* Space between adjustment sections */
+}
+.adjustment-group:last-child {
+    margin-bottom: 0;
+}
+
+/* NEW: Styling for subheaders within adjustment groups */
+.adjustment-subheader {
+    font-size: 13px; /* Slightly smaller than section h3 */
+    font-weight: 500;
+    color: var(--text-color-muted);
+    margin: 0 0 8px 0; /* Spacing below subheader */
+    padding-top: 5px; /* Add a little space above if needed */
+    border-top: 1px solid var(--border-color); /* Separator line above */
+}
+/* Remove top border/padding for the very first adjustment group's subheader */
+.adjustment-group:first-of-type .adjustment-subheader {
+    border-top: none;
+    padding-top: 0;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    /* Restore space-between for general control groups */
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 0; /* Remove bottom margin, handled by adjustment-group */
+    flex-wrap: wrap; /* Allow internal wrapping if needed */
+}
+
+/* Styling for the Export controls wrapper */
+.export-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Tighter gap for scale input/button */
+}
+
+.export-scale-label {
+    font-size: var(--zoom-label-font-size); /* Reuse zoom label size */
+    color: var(--text-color-muted);
+}
+
+#export-scale-input {
+    width: 45px; /* Smaller width */
+    padding: 3px 4px; /* Adjust padding */
+    /* Inherits number input styles */
+}
+
+.export-controls-group span {
+    margin-left: -2px; /* Pull 'x' closer to number input */
+    margin-right: 5px; /* Space before button */
+    color: var(--text-color-muted);
+}
+
+.control-button {
+    /* Base styles, specific overrides below */
+    cursor: pointer;
+    border-radius: var(--border-radius-small);
+    border: var(--border-width) solid var(--border-color); /* Default border */
+    background-color: var(--button-color);
+    color: var(--button-text-color);
+    padding: var(--update-button-padding); /* Use a common button padding */
+    font-size: var(--button-font-size);
+    font-weight: 500;
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+ .control-button:hover {
+     background-color: var(--button-hover-color);
+     border-color: var(--accent-color); /* Highlight border on hover */
+ }
+ .control-button:focus-visible {
+     outline: none;
+     border-color: var(--accent-color); /* Highlight border on focus */
+ }
+
+#interpolation-controls,
+#saturation-controls,
+#zoom-controls { /* Combine styles for similar layout */
+     display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: flex-start; /* Align items to the start */
+    gap: 10px; /* Replaced var(--control-group-gap) */
+    margin-bottom: 15px; /* Space below the controls section */
+}
+#interpolation-controls label,
+#saturation-controls label,
+#zoom-controls label { /* Common label styles */
+    cursor: pointer;
+    user-select: none;
+    margin-right: var(--zoom-label-margin-right);
+    font-size: var(--zoom-label-font-size); /* Use consistent label size */
+    color: var(--text-color-muted);
+}
+input[type="checkbox"] {
+     cursor: pointer;
+     accent-color: var(--accent-color);
+}
+.slider-group {
+     display: flex;
+     align-items: center;
+    gap: 10px; /* Replaced var(--control-group-gap) */ /* Use consistent gap */
+    flex-grow: 1; /* Allow slider group to take available space */
+    min-width: 180px; /* Prevent extreme shrinking */
+}
+input[type="range"] {
+     /* width: var(--slider-width); */ /* REMOVED fixed width */
+     flex-grow: 1; /* NEW: Allow slider to grow */
+     min-width: 8rem; /* NEW: Prevent slider becoming too small */
+     height: var(--slider-height);
+    cursor: pointer;
+     accent-color: var(--accent-color);
+     vertical-align: middle;
+}
+input[type="number"] {
+     width: var(--number-input-width);
+     background-color: var(--surface-color-2);
+     color: var(--text-color);
+     border: var(--border-width) solid var(--border-color);
+     border-radius: var(--border-radius-input);
+     padding: var(--number-input-padding);
+     font-size: var(--number-input-font-size);
+     text-align: center;
+     -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+}
+ input[type="number"]:focus-visible {
+     outline: none;
+     border-color: var(--accent-color);
+ }
+
+#palette-editor-section {
+    display: none;
+}
+#config-modal.editor-visible #palette-editor-section {
+    display: block;
+}
+/* Label specific styling */
+ #palette-editor-section > label[for="palette-input"] {
+     display: block;
+     margin-bottom: 10px; /* Specific margin */
+     font-weight: 500;
+     font-size: var(--modal-label-font-size);
+ }
+
+#palette-input {
+    width: 100%;
+    min-height: var(--palette-input-min-height);
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 14px; /* Reduced radius */
+    padding: var(--palette-input-padding);
+    font-family: var(--monospace-font-family);
+    font-size: var(--input-font-size);
+    box-sizing: border-box;
+    resize: vertical;
+    margin-bottom: var(--palette-input-margin-bottom);
+    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+}
+#palette-input:focus-visible { outline: none; border-color: var(--accent-color); }
+
+#update-button { /* Specific styles for the main update button */
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg); /* Ensure contrast */
+    border: none;
+    padding: var(--update-button-padding);
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    font-size: var(--button-font-size);
+    font-weight: 500;
+    transition: all var(--transition-duration) var(--transition-timing);
+    display: block; width: fit-content; margin: 0 auto;
+}
+#update-button:hover { background-color: #3a80d2; } /* Keep specific hover */
+#update-button:focus-visible { outline: none; border-color: var(--text-color-light-bg); }
+
+
+ #zoom-slider {
+      width: var(--slider-width); /* Reuse standard slider width */
+ }
+ #zoom-number {
+      width: var(--zoom-number-input-width); /* Specific width if needed */
+ }
+
+/* --- NEW Bottom Controls Container --- */
+#bottom-controls {
+    position: fixed;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1075;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: nowrap; /* ADDED: Explicitly prevent wrapping by default */
+    min-width: max-content; /* NEW: Ensure container tries to fit content */
+    /* justify-content: center; */ /* REMOVED: Apply wrap only in media query */
+    background-color: rgba(26, 26, 26, 0.75);
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    border: var(--border-width) solid var(--border-color);
+    box-shadow: var(--config-button-shadow);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+}
+
+/* NEW: Prevent children from shrinking, potentially causing wrapping */
+#bottom-controls > * {
+    flex-shrink: 0;
+}
+
+/* --- Media Query for Smaller Screens --- */
+@media (max-width: 700px) { /* Increased breakpoint from 550px */
+    #bottom-controls {
+        flex-wrap: wrap; /* OVERRIDE: Allow wrapping on small screens */
+        justify-content: center;
+        min-width: auto; /* NEW: Reset min-width when wrapping is allowed */
+    }
+
+    /* Optional: Adjust gaps or padding if needed on wrap */
+    #bottom-controls {
+        gap: 10px; /* Slightly smaller gap when wrapped */
+    }
+}
+
+/* Adjust Zoom Controls for new location */
+#zoom-controls {
+    margin-bottom: 0; /* Remove margin from when it was in modal */
+    flex-wrap: nowrap; /* Prevent wrapping of label/slider/input */
+    /* Keep other styles like flex, gap, etc. inherited from .control-group */
+}
+
+/* --- Specific adjustments for Generate Row controls --- */
+#generate-x-controls {
+    justify-content: flex-start; /* OVERRIDE: Keep elements grouped at start */
+    gap: 5px; /* Tighter gap for more controls */
+    /* flex-wrap: wrap; */ /* Inherited from .control-group */
+}
+
+/* Adjust spacing for the connecting labels */
+#generate-x-controls .from-label,
+#generate-x-controls .and-label {
+    margin-left: 5px; 
+}
+
+#generate-x-controls input[type="number"] {
+    width: 55px; /* Slightly smaller width */
+    flex-grow: 0; /* Prevent growing */
+    padding: 3px 4px; /* Adjust padding */
+}
+
+#generate-x-controls span {
+    margin-left: -2px; /* Pull 'x' closer to number input */
+    margin-right: 5px; /* Space before next element */
+    color: var(--text-color-muted);
+}
+
+#generate-x-controls button {
+    /* padding: 6px 12px; */ /* Use default button padding */
+    flex-grow: 0; /* Prevent growing (width: 100% handles it) */
+    /* margin-left: 5px; */ /* Remove left margin */
+    width: 100%; /* Make button full width */
+    margin-top: 8px; /* Add space above when it wraps (or always) */
+}
+
+/* --- Responsive Adjustments Removed --- */
+/* @media (max-width: 768px) { ... } */
+
+/* @media (max-width: 480px) { ... }  */
+
+/* --- Pop-out Editor Styles --- */
+#popout-editor {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 100px; /* Initial position (can be centered by JS later) */
+    left: 100px;
+    z-index: 1080; /* NEW: Above config modal and bottom controls */
+    background-color: rgba(30, 30, 30, 0.8); /* Slightly different semi-transparent BG */
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 12px; /* Smaller radius */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 400px; /* Fixed width - initial width */
+    /* max-width: 80vw; */ /* REMOVE: Max width constraint */
+    /* NEW: Min dimensions */
+    min-width: 250px;
+    min-height: 200px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    overflow: hidden; /* Prevents content spilling during resize */
+    flex-direction: column;
+}
+
+.popout-header {
+    display: flex;
+    justify-content: space-between; /* Keep space-between for title vs buttons */
+    align-items: center;
+    /* padding: 6px 10px; */
+    padding: 0.6rem 1rem; /* Use rem */
+    background-color: rgba(40, 40, 40, 0.85); /* Darker header */
+    cursor: move; /* Indicate draggable */
+    border-bottom: 1px solid var(--border-color);
+    gap: 0.8rem; /* Add gap between title/buttons/close */
+}
+
+.popout-title {
+    font-weight: 500;
+    /* font-size: 14px; */
+    font-size: 1.4rem; /* Use rem */
+    white-space: nowrap; /* Prevent title wrapping */
+    margin-right: auto; /* Push buttons to the right */
+}
+
+#popout-close-button {
+    background: none;
+    border: none;
+    /* font-size: 20px; */
+    font-size: 2rem; /* Use rem */
+    line-height: 1;
+    color: var(--text-color-muted);
+    cursor: pointer;
+    /* padding: 0 4px; */
+    padding: 0 0.4rem; /* Use rem */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+#popout-close-button:hover {
+    color: var(--text-color);
+}
+
+#popout-palette-input {
+    width: 100%; /* Corrected: Use 100% with border-box */
+    /* min-height: 300px; */
+    min-height: var(--palette-input-min-height); /* Use variable */
+    /* max-height: 60vh; */ /* REMOVE: Prevent excessive height */
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: none; /* Remove border, container has one */
+    border-radius: 0; /* No radius needed inside */
+    padding: 10px;
+    margin: 0; /* Remove default margin */
+    font-family: var(--monospace-font-family);
+    font-size: var(--input-font-size);
+    box-sizing: border-box;
+    /* resize: vertical; */ /* REMOVE: Allow only vertical resize - We handle resize via handle */
+    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+    flex-grow: 1; /* Allow textarea to fill available space */
+}
+#popout-palette-input:focus-visible {
+    outline: none;
+}
+
+#popout-update-button {
+    /* display: block; */ /* No longer needed */
+    /* width: auto; */ /* No longer needed */
+    /* margin: 10px auto 10px auto; */ /* No longer needed */
+    /* Uses .control-button styles for appearance */
+    /* padding: 8px 15px; */
+    padding: 0.6rem 1.2rem; /* Slightly smaller padding for header */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* --- NEW: Pop-out Resize Handle Styles --- */
+#popout-resize-handle {
+    position: absolute;
+         bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nwse-resize; /* Diagonal resize cursor */
+    /* Optional: Add a visual indicator */
+    /* background-color: rgba(255, 255, 255, 0.2); */
+    /* border-top: 1px solid var(--border-color); */
+    border-left: 1px solid var(--border-color);
+    border-bottom-right-radius: 12px; /* Match container radius */
+}
+
+.state-management-group {
+    justify-content: flex-start; /* Align buttons to start */
+    gap: 1rem;
+}
+
+.reset-button {
+    background-color: #8b0000; /* Dark red */
+    border-color: #700000;
+}
+.reset-button:hover {
+    background-color: #a00000;
+    border-color: #8b0000;
+}
+
+/* NEW: Popout Status Message Styles */
+#popout-status-message {
+    font-size: 1.2rem; /* Smaller font */
+    margin-left: 1rem; /* Space from title */
+    margin-right: 1rem; /* Space before buttons */
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Prevent excessive width */
+}
+#popout-status-message.visible {
+    opacity: 1;
+}
+#popout-status-message.error {
+    color: #ff6b6b; /* Light red for error */
+}
+#popout-status-message.success {
+    color: #6bcb77; /* Light green for success */
+}
+
+/* NEW: Palette IO Group Styling */
+.palette-io-group {
+    justify-content: flex-start; /* Align buttons to start */
+    gap: 1rem;
+}
+
+/* --- NEW: HSL/HEX Color Picker Modal Styles --- */
+#color-picker-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Fixed position relative to viewport */
+    /* REMOVED: top, left, transform */
+    /* Set initial position (can be changed by user/JS) */
+    top: 150px;
+    left: 150px;
+    /* transform-origin: center center; */ /* No longer needed */
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1100; /* Above popout editor */
+    background-color: rgba(30, 30, 30, 0.85); /* Slightly more opaque than popout */
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 10px; /* Slightly smaller radius */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    /* REMOVED: Fixed width */
+    /* width: 300px; */
+    /* ADDED: Min/Max dimensions and Flex layout */
+    min-width: 280px; /* Adjusted min-width */
+    min-height: 300px; /* Adjusted min-height from 350px */
+    max-width: 90vw;
+    max-height: 85vh; /* Add max-height */
+    display: flex; /* Use flex for internal layout */
+    flex-direction: column;
+    overflow: hidden; /* Hide overflow during resize */
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
+                   visibility 0s linear var(--transition-duration); /* Keep visibility transition */
+    /* REMOVED: Transform transition */
+}
+
+#color-picker-modal.visible {
+    display: flex; /* Use flex when visible */
+         opacity: 1;
+         visibility: visible;
+    /* REMOVED: transform for showing */
+         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
+                   visibility 0s linear 0s; /* Keep visibility transition */
+    /* REMOVED: Transform transition */
+}
+
+.color-picker-header {
+    display: flex;
+    /* justify-content: space-between; */ /* REMOVED */
+    align-items: center;
+    padding: 0.6rem 0.8rem; /* Adjusted padding */
+    background-color: rgba(40, 40, 40, 0.9); /* Darker header */
+    border-bottom: 1px solid var(--border-color);
+    cursor: move; /* ADDED: Draggable cursor */
+    flex-shrink: 0; /* Prevent header shrinking */
+    gap: 0.8rem; /* Add gap between elements */
+}
+
+.color-picker-title {
+    font-weight: 500;
+    font-size: 1.4rem;
+    color: var(--text-color);
+    margin-right: auto; /* Push buttons to the right */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis */
+}
+
+/* Apply button styling adjustments for header */
+#picker-apply-button {
+    /* Inherits .control-button styles */
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg);
+    border: none;
+    padding: 0.4rem 1rem; /* Slightly smaller padding */
+    font-size: 1.3rem; /* Slightly smaller font */
+    flex-shrink: 0; /* Prevent shrinking */
+    order: 1; /* Ensure it comes before the close button visually if needed */
+}
+#picker-apply-button:hover {
+    background-color: #3a80d2;
+}
+
+/* Use the same close button style as the config modal */
+#color-picker-close-button {
+    /* Styles inherited from .modal-close-button */
+    position: static;
+    top: auto;
+    right: auto;
+    flex-shrink: 0;
+    order: 2; /* Ensure it comes after the apply button visually if needed */
+    padding: 0 0.4rem; /* Fine-tune padding */
+    font-size: 2rem; /* Adjust size if needed */
+}
+
+.color-picker-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex-grow: 1; /* Allow body to take available space */
+    overflow-y: auto; /* Allow scrolling if content exceeds height */
+}
+
+#color-picker-preview {
+        width: 100%; 
+    height: 6rem; /* 60px preview height */
+    border-radius: var(--border-radius-input);
+    border: 1px solid var(--border-color);
+    background-color: #888; /* Placeholder */
+    }
+
+.color-picker-controls {
+    display: flex;
+         flex-direction: column;
+    gap: 1rem;
+}
+
+.picker-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.picker-control-group label {
+    font-size: 1.2rem; /* Smaller labels */
+    color: var(--text-color-muted);
+    width: 1.5rem; /* Fixed width for alignment */
+    text-align: right;
+}
+
+.picker-control-group input[type="range"] {
+    flex-grow: 1; /* Slider takes remaining space */
+    height: var(--slider-height);
+    cursor: pointer;
+    accent-color: var(--accent-color);
+    vertical-align: middle;
+}
+
+.picker-control-group input[type="number"] {
+    width: 4rem; /* 40px width */
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-input);
+    padding: var(--number-input-padding);
+    font-size: var(--number-input-font-size);
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.picker-control-group input[type="number"]::-webkit-outer-spin-button,
+.picker-control-group input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+}
+.picker-control-group input[type="number"]:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.picker-control-group span {
+    font-size: 1.1rem;
+    color: var(--text-color-muted);
+}
+
+.picker-control-group.hex-group label {
+    width: auto; /* Allow HEX label to size naturally */
+    margin-right: 0.4rem;
+}
+
+.picker-control-group.hex-group input[type="text"] {
+    flex-grow: 1;
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-input);
+    padding: var(--number-input-padding); /* Reuse padding */
+    font-family: var(--monospace-font-family);
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+.picker-control-group.hex-group input[type="text"]:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.picker-control-group .copy-button {
+    padding: 0.4rem 0.8rem; /* Smaller padding */
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* --- NEW: Color Picker Resize Handle --- */
+#color-picker-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nwse-resize;
+    border-left: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color); /* Add top border for visibility */
+    border-bottom-right-radius: 10px; /* Match container radius */
+    background-color: rgba(255, 255, 255, 0.1); /* Slight visual indicator */
+}
+
+/* --- NEW: Style for Color Picker Toggle Button --- */
+#color-pick-toggle-button {
+    /* Inherit base styles from #config-toggle-button */
+    background-color: var(--surface-color-1);
+    color: var(--text-color-muted);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--config-button-padding);
+    font-size: var(--config-button-font-size);
+    font-weight: 500;
+        text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-timing);
+    box-shadow: var(--config-button-shadow);
+}
+#color-pick-toggle-button:hover {
+    color: var(--text-color);
+    background-color: var(--surface-color-2);
+    border-color: var(--accent-color);
+}
+
+/* Active state for the color picker button */
+#color-pick-toggle-button.active {
+    background-color: var(--accent-color); /* Use accent color like config button */
+    color: var(--text-color-light-bg); /* Contrast with accent color */
+    border-color: var(--accent-color);
+    box-shadow: none;
+}
+
+/* --- NEW: Cursor change when color picking --- */
+body.color-picking-active #palette-grid .cell-content.swatch {
+    cursor: crosshair; /* Change cursor for swatches */
+}
+/* Prevent hover shadow when picking */
+body.color-picking-active #palette-grid .cell-content.swatch:hover {
+    box-shadow: none; /* Optional: disable hover shadow in pick mode */
+    z-index: 0; /* Optional: prevent z-index change in pick mode */
+}
+
+/* NEW: Style for selected swatches */
+.cell-content.selected {
+    /* Use box-shadow for persistent selection indicator */
+    box-shadow: inset 0 0 0 3px var(--accent-color) !important; /* Use !important to override hover temporarily */
+    /* outline: 3px solid var(--accent-color); */ /* Alternative: outline */
+    /* outline-offset: -3px; */
+    z-index: 2; /* Bring selected cells slightly forward */
+}
+
+/* NEW: Style for disabled control groups in picker */
+.picker-control-group.disabled {
+    opacity: 0.5;
+    pointer-events: none; /* Prevent interaction */
+}
+.picker-control-group.disabled label,
+.picker-control-group.disabled span {
+    /* Optional: Dim labels/spans as well */
+     color: #777;
+}
+
+/* --- Specific adjustments for Generate Row controls --- */
+html {
+    font-size: 10px; /* Base font size for 1rem = 10px scaling */
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
+:root {
+    /* --- Base Layout & Sizing (using rem) --- */
+    --cell-min-size: 3.2rem; /* 32px */
+    --cell-spacing: 0.8rem; /* 8px */
+    --cell-internal-padding: 0.3em; /* Keep em for padding relative to cell font-size */
+    --container-padding: var(--cell-spacing);
+    --viewport-width: 100vw;
+    --viewport-height: 100vh;
+
+    /* --- Typography (using rem where appropriate, em for relative scaling) --- */
+    --base-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --monospace-font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
+    --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Keep em/vw for responsive cell labels */
+    --cell-content-font-size: 0.9rem; /* smaller -> approx 9px base */
+    --config-button-font-size: 1.3rem; /* 13px */
+    --modal-title-font-size: 1.6rem; /* 16px */
+    --modal-label-font-size: 1.4rem; /* 14px */
+    --input-font-size: 1.3rem; /* 13px */
+    --button-font-size: 1.4rem; /* 14px */
+    --copied-feedback-font-size: 1rem; /* 10px */
+
+    /* --- Colors --- */
+    /* Refined Theme */
+    --bg-color: #0f0f0f;
+    --surface-color-1: #1a1a1a; /* Container, Modal */
+    --surface-color-2: #2a2a2a; /* Cells, Inputs */
+    --accent-color: #4a90e2;
+    --button-color: #3f3f3f;
+    --button-text-color: #e0e0e0;
+    --button-hover-color: #555555;
+    --text-color: #f0f0f0;
+    --text-color-muted: #aaaaaa;
+    --text-color-dark-bg: #000000; /* Text on light backgrounds */
+    --text-color-light-bg: #FFFFFF; /* Text on dark backgrounds */
+    --border-color: #404040;
+    --modal-overlay-color: rgba(0, 0, 0, 0.75); /* For copied feedback */
+    --placeholder-border-color: var(--border-color); /* Dashed border for empty interpolated cells */
+    --placeholder-text-color: var(--text-color-muted);
+
+    /* --- Borders & Radii (using rem) --- */
+    --border-radius: 2.4rem; /* 24px */
+    --border-radius-small: 1.6rem; /* 16px */
+    --border-radius-input: 0.4rem; /* 4px */
+    --border-width: 0.1rem; /* 1px - use 0.1rem or keep as 1px? 1px might be better for consistency */
+    /* Let's keep border-width as 1px for crispness */
+    --border-width-val: 1px;
+
+    /* --- Transitions & Animations --- */
+    --transition-duration: 0.2s;
+    --transition-timing: ease;
+    --copied-fade-duration: 1s;
+
+    /* --- Components (using rem) --- */
+    /* Modal */
+    --modal-padding: 2.5rem; /* 25px */
+    --modal-max-width: 55rem; /* 550px */
+    /* --modal-max-height: 80vh; */ /* Keep vh for viewport height */
+    --modal-gap: 2rem; /* 20px */
+    --modal-section-padding-bottom: 1.5rem; /* 15px */
+    --modal-title-margin-bottom: 1.5rem; /* 15px */
+    --modal-close-button-font-size: 2.4rem; /* 24px */
+    /* Config Button */
+    --config-button-padding: 0.8rem 1.5rem; /* 8px 15px */
+    /* Controls (inside modal) */
+    --control-group-gap: 1rem; /* 10px */
+    --slider-width: 15rem; /* 150px */
+    --slider-height: 0.5rem; /* 5px */
+    --number-input-width: 5rem; /* 50px */
+    --number-input-padding: 0.4rem 0.6rem; /* 4px 6px */
+    --number-input-font-size: 1.2rem; /* 12px */
+    /* Palette Input (Popout & Modal - use rem for consistency) */
+    --palette-input-min-height: 20rem; /* 200px */
+    --palette-input-padding: 1rem; /* 10px */
+    --palette-input-margin-bottom: 1.5rem; /* 15px */
+    /* Update Button */
+    --update-button-padding: 0.9rem 1.8rem; /* 9px 18px */
+     /* Zoom Controls */
+     --zoom-label-margin-right: 0.5rem; /* 5px */
+     --zoom-label-font-size: 1.3rem; /* 13px */
+     --zoom-number-input-width: 5rem; /* 50px */
+
+
+    /* --- Shadows & Z-Index --- */
+    --config-button-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    --z-index-modal: 1050;
+    --z-index-config-button: 1100;
+    --z-index-copied-feedback: 5;
+
+    /* --- Responsive Overrides Removed --- */
+    /* --responsive-cell-spacing: 2px; ... */
+    /* ... other responsive variables ... */
+    /* --small-palette-input-min-height: 150px; */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--base-font-family);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    min-height: var(--viewport-height);
+    width: var(--viewport-width);
+    /* box-sizing removed, handled by html/* rules */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 1.6rem; /* Default body font size (16px at 100% scale) */
+}
+
+/* --- Canvas Viewport (Pannable Area) --- */
+#canvas-viewport {
+    width: 100%; /* Use 100% instead of viewport unit to fill parent */
+    height: var(--viewport-height);
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    background-color: var(--bg-color);
+    /* Removed SVG background pattern */
+    /* Added radial-gradient dot pattern */
+    background-image: radial-gradient(#222 1px, transparent 1px); /* Dot color and size */
+    background-size: 15px 15px; /* Spacing of the dots */
+}
+#canvas-viewport.grabbing {
+    cursor: grabbing;
+}
+
+/* --- Palette Container (Moved by JS) --- */
+#palette-container {
+    position: absolute;
+    top: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
+    left: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
+    background-color: var(--surface-color-1);
+    border-radius: var(--border-radius);
+    padding: 0; /* Set padding to 0 */
+    border: var(--border-width) solid var(--border-color);
+    /* Add overflow hidden potentially if outlines clip */
+    /* overflow: hidden; */
 }
 
 /* NEW: Grid Container Styles */
