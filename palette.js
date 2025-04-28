@@ -356,27 +356,29 @@ let currentGridData = [...sourceGridData.map((row) => [...row])];
 let isInterpolationEnabled = false;
 let interpolationSteps = 1;
 let saturationOffset = 0;
-// --- NEW: Panning State ---
+// --- Panning State --- // Renamed for clarity
 let isPanning = false;
 let startX, startY, currentX, currentY;
 let paletteOffsetX = 50; // Initial offset matches CSS
 let paletteOffsetY = 50;
-// --- NEW: Zoom State ---
+// --- Zoom State ---
 let scale = 1;
 const minScale = 0.1;
 const maxScale = 5;
 const scaleStep = 0.1;
 const zoomDebounceDelay = 10; // Optional: debounce zoom updates slightly
 let zoomTimeout;
-// --- NEW: Click vs Drag State ---
+// --- Click vs Drag State --- // Renamed for clarity
 const dragThreshold = 5; // Pixels to differentiate click from drag
-let mouseHasMoved = false;
-let mouseDownPos = { x: 0, y: 0 };
-// --- NEW: Track forced cell size ---
-// let lastForcedCellSizePx = null; // REMOVED - No longer needed
-// --- NEW: Local Storage Key ---
+let pointerHasMoved = false; // Renamed from mouseHasMoved
+let pointerDownPos = { x: 0, y: 0 }; // Renamed from mouseDownPos
+// --- NEW: Flag to track if touch event handled the action ---
+let touchEventHandled = false;
+// --- NEW: Touch Device Detection ---
+const isTouchDevice = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+// --- Local Storage Key ---
 const localStorageKey = 'minimalistPaletteAppState';
-// --- NEW: Color Picker State ---
+// --- Color Picker State ---
 let pickerTargetRow = -1;
 let pickerTargetCol = -1;
 let isPickerUpdating = false; // Prevent recursive updates
@@ -872,55 +874,124 @@ function renderPalette(gridData) {
                     cellContentDiv.dataset.sourceHex = originalHexColor; // Fallback for generated/interpolated
                 }
 
-                // --- REVISED Click Listener (Handles Multi-Select & Drag Prevention) ---
-                cellContentDiv.addEventListener("click", (event) => {
-                    // --- NEW: Prevent click action if mouse was dragged ---
-                    if (mouseHasMoved) {
-                        // console.log("Click ignored due to drag."); // Optional debug log
+                // --- Touch End Listener (Handles Touch Selection/Picking) ---
+                if (isTouchDevice) {
+                    cellContentDiv.addEventListener('touchend', (event) => {
+                        // Prevent default behavior that might follow touchend (like triggering click immediately or zoom)
+                        // event.preventDefault(); // Might be needed, test carefully
+
+                        // If pointer moved significantly, it was a pan ending on this cell, ignore tap
+                    if (pointerHasMoved) {
+                            // console.log("TouchEnd ignored due to pointer move.");
+                            touchEventHandled = false; // Ensure flag is reset if ignored
                         return;
                     }
-                    // --- END NEW ---
 
+                        // If not in color picking mode, let the click handler deal with copy
+                        if (!isColorPickingMode || isInterpolationEnabled) {
+                            touchEventHandled = false; // Let click handler proceed for copy
+                        return;
+                    }
+
+                        // --- Handle Touch Selection ---
+                        // console.log("TouchEnd handling selection."); // Optional debug log
+                        const touchRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
+                        const touchCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
+
+                        if (touchRowIndex >= sourceGridData.length || touchCellIndex >= sourceGridData[touchRowIndex].length) {
+                             console.warn("TouchEnd cell outside source data bounds.");
+        return;
+    }
+                        const touchedSourceHex = sourceGridData[touchRowIndex][touchCellIndex];
+                        const touchedHsl = hexToHsl(touchedSourceHex);
+
+                        if (!touchedHsl) {
+                            console.warn("Could not get HSL for touched cell:", touchedSourceHex);
+        return;
+                        }
+
+                        handleSwatchSelection(event, touchRowIndex, touchCellIndex, touchedHsl);
+
+                        // After selection is handled, check if we should open the picker
+                        if (selectedCells.length > 0) {
+                            const firstSelectedCoords = selectedCells[0];
+                            openColorPicker(firstSelectedCoords[0], firstSelectedCoords[1], event);
+                        } else {
+                            if (colorPickerModal.classList.contains('visible')) {
+                                closeColorPicker();
+                            }
+                        }
+
+                        // Set flag indicating touch handled this interaction
+                        touchEventHandled = true;
+                        // Prevent the browser from firing a 'click' event after this touchend
+                        event.preventDefault();
+
+                    }, { passive: false }); // Use passive:false if preventDefault is needed
+                }
+                // --- END Touch End Listener ---
+
+                // --- REVISED Click Listener (Handles Desktop Clicks/Copying & Fallback) ---
+                cellContentDiv.addEventListener("click", (event) => {
+                    // If a touch event already handled this action, or if the pointer moved, bail out
+                    if (touchEventHandled || pointerHasMoved) {
+                        // console.log(`Click ignored: touchHandled=${touchEventHandled}, pointerMoved=${pointerHasMoved}`);
+                        // Reset touch flag after checking, ready for next potential independent click
+                        touchEventHandled = false;
+                        return;
+                    }
+
+                    // console.log("Click handling action."); // Optional debug log
                     const clickRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
                     const clickCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
 
-                    // Ensure coordinates are valid for sourceGridData before proceeding
                     if (clickRowIndex >= sourceGridData.length || clickCellIndex >= sourceGridData[clickRowIndex].length) {
                         console.warn("Clicked cell outside source data bounds.");
                         return;
                     }
-
                     const clickedSourceHex = sourceGridData[clickRowIndex][clickCellIndex];
                     const clickedHsl = hexToHsl(clickedSourceHex);
 
                     if (!clickedHsl) {
                         console.warn("Could not get HSL for clicked cell:", clickedSourceHex);
-                        return; // Don't proceed if color is invalid in source
+                        return;
                     }
 
-                    if (isColorPickingMode && !isInterpolationEnabled) {
-                        handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl);
+                    // --- Desktop Color Picking / Standard Copy ---
+                    // Use shiftKey check ONLY for non-touch devices
+                    const isDesktopShiftClick = !isTouchDevice && event.shiftKey;
 
-                        // After selection is handled, check if we should open the picker
-                        if (selectedCells.length > 0) {
-                            // Open picker using the FIRST selected cell's data
+                    if (isColorPickingMode && !isInterpolationEnabled && isDesktopShiftClick) {
+                         // Desktop Shift+Click multi-select
+                         handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl);
+
+                         if (selectedCells.length > 0) {
                             const firstSelectedCoords = selectedCells[0];
                             openColorPicker(firstSelectedCoords[0], firstSelectedCoords[1], event);
                         } else {
-                            // If selection resulted in empty array, close picker if open
                             if (colorPickerModal.classList.contains('visible')) {
                                 closeColorPicker();
                             }
                         }
+                    } else if (isColorPickingMode && !isInterpolationEnabled && !isTouchDevice) {
+                        // Desktop single click in pick mode (selects only this cell)
+                        handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl); // Will clear previous selection
+                        openColorPicker(clickRowIndex, clickCellIndex, event); // Open picker for this cell
+
                     } else {
-                        // Standard copy behavior if not in pick mode or if interpolation is on
-                        copyToClipboard(adjustedHexText, cellContentDiv);
+                        // Standard copy behavior (Not in pick mode, or interpolation on, or touch device click fallback)
+                        const displayedHex = cellContentDiv.textContent;
+                        copyToClipboard(displayedHex, cellContentDiv);
+
                         if (isColorPickingMode && isInterpolationEnabled) {
                            console.log("Color picking disabled while interpolation is active. Copied adjusted color.");
                         }
-                        // Clear selection if user clicks to copy
                         clearSelection();
+                        if (colorPickerModal.classList.contains('visible')) {
+                           closeColorPicker();
+                        }
                     }
+                    // --- END ---
                 });
                 // --- END REVISED Click Listener ---
 
@@ -971,31 +1042,45 @@ function renderPalette(gridData) {
     });
 }
 
-// --- NEW: Function to handle swatch selection logic ---
+// --- NEW: Function to handle swatch selection logic (MODIFIED for Touch/Click Distinction) ---
 function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
-    const isShiftPressed = event.shiftKey;
+    // Determine if multi-select action is intended based on event type and state
+    // For touch, multi-select is the default in pick mode.
+    // For click, only if Shift key is pressed.
+    const isMultiSelectIntent = (event.type === 'touchend' && isTouchDevice && isColorPickingMode) ||
+                                (event.type === 'click' && !isTouchDevice && event.shiftKey);
+
     const cellId = `${rowIndex}-${colIndex}`;
     const existingIndex = selectedCells.findIndex(coord => coord[0] === rowIndex && coord[1] === colIndex);
     const targetDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${rowIndex}"][data-cell-index="${colIndex}"]`);
 
-    if (!targetDiv) return; // Should not happen
+    if (!targetDiv) return;
 
-    if (isShiftPressed) {
+    if (isMultiSelectIntent) {
+        // --- Multi-select logic (add/remove/check similarity) ---
         if (existingIndex > -1) {
             // Already selected, deselect it
             selectedCells.splice(existingIndex, 1);
             targetDiv.classList.remove('selected');
-            targetDiv.style.boxShadow = 'none'; // Remove selection shadow
+            targetDiv.style.boxShadow = 'none';
         } else {
             // Not selected, try to add
             if (selectedCells.length === 0) {
-                // First selection with Shift
+                // First selection
                 selectedCells.push([rowIndex, colIndex]);
                 targetDiv.classList.add('selected');
                 targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
             } else {
                 // Check S/L similarity with the FIRST selected cell
                 const firstSelectedCoords = selectedCells[0];
+                 if (firstSelectedCoords[0] >= sourceGridData.length || firstSelectedCoords[1] >= sourceGridData[firstSelectedCoords[0]].length) {
+                     console.warn("First selected cell out of bounds during multi-select add. Clearing.");
+                     clearSelection();
+                     selectedCells.push([rowIndex, colIndex]); // Select current as new first
+                     targetDiv.classList.add('selected');
+                     targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                     return;
+                 }
                 const firstSelectedHex = sourceGridData[firstSelectedCoords[0]][firstSelectedCoords[1]];
                 const firstSelectedHsl = hexToHsl(firstSelectedHex);
 
@@ -1004,29 +1089,35 @@ function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
                     const lDiff = Math.abs(clickedHsl.l - firstSelectedHsl.l);
 
                     if (sDiff <= multiSelectTolerance || lDiff <= multiSelectTolerance) {
-                        // Condition met, add to selection
                         selectedCells.push([rowIndex, colIndex]);
                         targetDiv.classList.add('selected');
                         targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
                     } else {
-                        // Condition not met
-                        alert(`Cannot add to selection. Saturation or Luminance differs too much from the first selected color (S: ${firstSelectedHsl.s}, L: ${firstSelectedHsl.l}). Clicked S: ${clickedHsl.s}, L: ${clickedHsl.l}`);
-                        // Maybe flash the cell briefly? (Optional)
+                        // Condition not met - Start new selection with this cell
+                        console.log("New selection started: Dissimilar color tapped/clicked in multi-select intent.");
+                        clearSelection();
+                        selectedCells.push([rowIndex, colIndex]);
+                        targetDiv.classList.add('selected');
+                        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
                     }
                 } else {
-                    console.warn("Could not get HSL for first selected cell.");
+                     console.warn("Could not get HSL for first selected cell during multi-select check.");
+                     clearSelection();
+                     selectedCells.push([rowIndex, colIndex]);
+                     targetDiv.classList.add('selected');
+                     targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
                 }
             }
         }
-    } else {
-        // Shift NOT pressed - start a new selection
-        clearSelection(); // Clear previous selection visuals and data
+    } else { // Not a multi-select intent (e.g., simple click on desktop without shift)
+        // Standard single select: Clear previous, select current
+        clearSelection();
         selectedCells.push([rowIndex, colIndex]);
         targetDiv.classList.add('selected');
         targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
     }
 
-    console.log("Selected Cells:", selectedCells);
+    // console.log("Selected Cells:", selectedCells); // Keep for debugging
 }
 
 // --- NEW: Function to clear selection state and visuals ---
@@ -1059,8 +1150,10 @@ function updatePaletteView() {
 
 // --- NEW: Panning Logic ---
 function startPan(event) {
-    // Don't pan if clicking on interactive elements within the viewport, like popout headers/resizers
-    if (event.target.closest('#popout-editor') || event.target.closest('#color-picker-modal')) {
+    // Don't pan if clicking on interactive elements within the viewport
+    // Check for popout, color picker, OR if the target is a swatch in color pick mode on touch
+    const targetIsSwatch = event.target.classList.contains('cell-content') && event.target.classList.contains('swatch');
+    if (event.target.closest('#popout-editor') || event.target.closest('#color-picker-modal') || (isTouchDevice && isColorPickingMode && targetIsSwatch)) {
         return;
     }
 
@@ -1068,31 +1161,31 @@ function startPan(event) {
     const coords = getEventCoords(event); // Use helper for coords
     startX = coords.x;
     startY = coords.y;
-    // --- NEW: Store mouse down position and reset move flag ---
-    mouseDownPos = { x: startX, y: startY };
-    mouseHasMoved = false;
-    // --- END NEW ---
+    // --- Store pointer down position and reset move flag ---
+    pointerDownPos = { x: startX, y: startY }; // Use renamed var
+    pointerHasMoved = false; // Use renamed var
+    // --- END ---
     canvasViewport.classList.add('grabbing');
-    // Prevent text selection during drag
+    // Prevent text selection during drag / default touch actions like scroll
     event.preventDefault();
 }
 
 function panMove(event) {
     if (!isPanning) return;
-    event.preventDefault();
+    event.preventDefault(); // Prevent scroll during pan
     const coords = getEventCoords(event); // Use helper for coords
     currentX = coords.x;
     currentY = coords.y;
 
-    // --- NEW: Check if mouse has moved beyond threshold ---
-    if (!mouseHasMoved) {
-        const dxAbs = Math.abs(currentX - mouseDownPos.x);
-        const dyAbs = Math.abs(currentY - mouseDownPos.y);
+    // --- Check if pointer has moved beyond threshold --- // Use renamed vars
+    if (!pointerHasMoved) {
+        const dxAbs = Math.abs(currentX - pointerDownPos.x);
+        const dyAbs = Math.abs(currentY - pointerDownPos.y);
         if (dxAbs > dragThreshold || dyAbs > dragThreshold) {
-            mouseHasMoved = true;
+            pointerHasMoved = true;
         }
     }
-    // --- END NEW ---
+    // --- END ---
 
     const dx = currentX - startX;
     const dy = currentY - startY;
@@ -1112,7 +1205,15 @@ function endPan() {
     if (isPanning) {
          isPanning = false;
          canvasViewport.classList.remove('grabbing');
+         // Reset pointerHasMoved *after* potential click/touchend handlers might have checked it.
+         // Use a small delay to ensure handlers can read the value before reset.
+         setTimeout(() => {
+             pointerHasMoved = false;
+             // console.log("Reset pointerHasMoved"); // Optional debug log
+         }, 50); // 50ms delay might be enough
     }
+    // Reset touch handled flag regardless
+    touchEventHandled = false;
 }
 
 // --- REVISED: Zoom Logic (triggered by controls) ---
@@ -1596,9 +1697,16 @@ let resizeStartX, resizeStartY, resizeInitialWidth, resizeInitialHeight;
 const SNAP_THRESHOLD = 20; // Pixels within which snapping occurs
 const SNAP_GAP = 16;       // Pixels gap from the edge when snapped
 
-// --- Popout Drag Functions (UPDATED for Touch & Snap) ---
+// --- Popout Drag Functions (UPDATED for Touch & Button Check) ---
 function startPopoutDrag(event) {
-    // Prevent drag if resizing is active (or vice-versa, though less likely)
+    // --- NEW: Prevent drag if target is a button inside the header ---
+    if (event.target.closest('button')) {
+        // console.log("Popout drag prevented: Target is a button.");
+        return;
+    }
+    // --- END NEW ---
+
+    // Prevent drag if resizing is active
     if (isResizingPopout) return;
 
     isDraggingPopout = true;
@@ -1681,8 +1789,15 @@ function stopPopoutDrag() {
     }
 }
 
-// --- Popout Resize Functions (UPDATED for Touch & Snap) ---
+// --- Popout Resize Functions (UPDATED for Touch & Button Check - Unlikely but safe) ---
 function startPopoutResize(event) {
+     // --- NEW: Prevent resize if target is not the handle itself (optional but safer) ---
+     if (event.target !== popoutResizeHandle) {
+        // console.log("Popout resize prevented: Target not resize handle.");
+        return;
+     }
+    // --- END NEW ---
+
     // Prevent resize if dragging is active
     if (isDraggingPopout) return;
 
@@ -2395,6 +2510,13 @@ colorPickToggleButton.addEventListener('click', () => {
 
 // --- NEW: Color Picker Drag Functions ---
 function startColorPickerDrag(event) {
+    // --- NEW: Prevent drag if target is a button inside the header ---
+    if (event.target.closest('button')) {
+        // console.log("Color Picker drag prevented: Target is a button.");
+        return;
+    }
+    // --- END NEW ---
+
     if (isResizingColorPicker) return; // Don't drag if resizing
 
     isDraggingColorPicker = true;
@@ -2456,6 +2578,13 @@ function stopColorPickerDrag() {
 
 // --- NEW: Color Picker Resize Functions ---
 function startColorPickerResize(event) {
+     // --- NEW: Prevent resize if target is not the handle itself (optional but safer) ---
+     if (event.target !== colorPickerResizeHandle) {
+        // console.log("Color Picker resize prevented: Target not resize handle.");
+        return;
+     }
+     // --- END NEW ---
+
     if (isDraggingColorPicker) return; // Don't resize if dragging
 
     isResizingColorPicker = true;
