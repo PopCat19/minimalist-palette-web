@@ -383,6 +383,9 @@ let isResizingColorPicker = false;
 let cpResizeStartX, cpResizeStartY, cpResizeInitialWidth, cpResizeInitialHeight;
 // --- NEW: Color Picking Mode State ---
 let isColorPickingMode = false;
+// ... existing variables ...
+let selectedCells = []; // NEW: Array to store [row, col] of selected cells
+const multiSelectTolerance = 2; // NEW: Tolerance for S/L matching
 
 // --- DOM Elements ---
 // Palette display elements
@@ -843,78 +846,188 @@ function renderPalette(gridData) {
             paletteGrid.appendChild(cellContentDiv);
 
             const isInterpolatedLabelPlaceholder = cellData === "-";
+            // Add data attributes for easy access to coordinates
+                cellContentDiv.dataset.rowIndex = rowIndex;
+                cellContentDiv.dataset.cellIndex = cellIndex;
 
             if (isValidHex(cellData)) {
-                const originalHexColor = cellData;
+                const originalHexColor = cellData; // Use current cell data for display
+                // Apply saturation offset *only for display* if needed
                 const adjustedHexColor = adjustSaturation(originalHexColor, saturationOffset);
-                const adjustedHexText = adjustedHexColor.substring(1).toUpperCase(); // Text to display/copy
+                const adjustedHexText = adjustedHexColor.substring(1).toUpperCase();
                 const textColor = getTextColor(adjustedHexColor);
 
                 cellContentDiv.style.backgroundColor = adjustedHexColor;
                 cellContentDiv.textContent = adjustedHexText;
                 cellContentDiv.style.color = textColor;
                 cellContentDiv.classList.add("swatch");
-                cellContentDiv.dataset.originalHex = originalHexColor; // Store original for editing
-                // Store indices relative to the *currently rendered* grid for potential use
-                // IMPORTANT: For editing, we rely on interpolation being OFF, so these indices *will* match sourceGridData
-                cellContentDiv.dataset.rowIndex = rowIndex;
-                cellContentDiv.dataset.cellIndex = cellIndex;
+                // Store original hex from source data if applicable (check bounds)
+                if (rowIndex < sourceGridData.length && cellIndex < sourceGridData[rowIndex].length) {
+                    cellContentDiv.dataset.sourceHex = sourceGridData[rowIndex][cellIndex];
+                } else {
+                    cellContentDiv.dataset.sourceHex = originalHexColor; // Fallback for generated/interpolated
+                }
 
-                // --- REVISED Click Listener (Checks Picker Mode) ---
-                cellContentDiv.addEventListener("click", (event) => { // Add event parameter
+                // --- REVISED Click Listener (Handles Multi-Select) ---
+                cellContentDiv.addEventListener("click", (event) => {
                     const clickRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
                     const clickCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
 
+                    // Ensure coordinates are valid for sourceGridData before proceeding
+                    if (clickRowIndex >= sourceGridData.length || clickCellIndex >= sourceGridData[clickRowIndex].length) {
+                        console.warn("Clicked cell outside source data bounds.");
+                        return;
+                    }
+
+                    const clickedSourceHex = sourceGridData[clickRowIndex][clickCellIndex];
+                    const clickedHsl = hexToHsl(clickedSourceHex);
+
+                    if (!clickedHsl) {
+                        console.warn("Could not get HSL for clicked cell:", clickedSourceHex);
+                        return; // Don't proceed if color is invalid in source
+                    }
+
                     if (isColorPickingMode && !isInterpolationEnabled) {
-                        // If pick mode is ON and interpolation is OFF, open the picker
-                        // Use the stored indices, which refer to sourceGridData in this state
-                        console.log(`Opening picker for sourceGridData[${clickRowIndex}][${clickCellIndex}]`);
-                        // Pass the event to the open function
-                        openColorPicker(clickRowIndex, clickCellIndex, event);
+                        handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl);
+
+                        // After selection is handled, check if we should open the picker
+                        if (selectedCells.length > 0) {
+                            // Open picker using the FIRST selected cell's data
+                            const firstSelectedCoords = selectedCells[0];
+                            openColorPicker(firstSelectedCoords[0], firstSelectedCoords[1], event);
+                        } else {
+                            // If selection resulted in empty array, close picker if open
+                            if (colorPickerModal.classList.contains('visible')) {
+                                closeColorPicker();
+                            }
+                        }
                     } else {
-                        // Otherwise (pick mode OFF or interpolation ON), copy the displayed value
-                        console.log(`Copying displayed color: ${adjustedHexText}`);
+                        // Standard copy behavior if not in pick mode or if interpolation is on
                         copyToClipboard(adjustedHexText, cellContentDiv);
                         if (isColorPickingMode && isInterpolationEnabled) {
                            console.log("Color picking disabled while interpolation is active. Copied adjusted color.");
-                           // Optional: Add visual feedback here if desired
                         }
+                        // Clear selection if user clicks to copy
+                        clearSelection();
                     }
                 });
                 // --- END REVISED Click Listener ---
 
+                // --- Update mouseover/mouseout to respect selection ---
                 cellContentDiv.addEventListener('mouseover', () => {
-                    // Only show hover effect if NOT in color picking mode
-                    if (!isColorPickingMode) {
-                    cellContentDiv.style.boxShadow = `inset 0 0 0 2px ${textColor}`;
+                    if (!isColorPickingMode && !cellContentDiv.classList.contains('selected')) { // Don't show hover if selected
+                        cellContentDiv.style.boxShadow = `inset 0 0 0 2px ${textColor}`;
                     }
                 });
                 cellContentDiv.addEventListener('mouseout', () => {
-                     cellContentDiv.style.boxShadow = 'none'; // Always remove on mouseout
+                    if (!cellContentDiv.classList.contains('selected')) { // Don't remove shadow if selected
+                        cellContentDiv.style.boxShadow = 'none';
+                    }
                 });
 
+                // --- Apply initial selected style if cell is in selectedCells ---
+                if (selectedCells.some(coord => coord[0] === rowIndex && coord[1] === cellIndex)) {
+                    cellContentDiv.classList.add('selected');
+                    // Apply shadow style directly as mouseout won't run initially
+                    cellContentDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                }
+
+
             } else if (typeof cellData === "string") {
-                // Label rendering remains the same
+                // Label rendering
                 cellContentDiv.textContent = cellData;
                 cellContentDiv.classList.add("label");
                 if (isInterpolatedLabelPlaceholder) {
                     cellContentDiv.classList.add("interpolated-label");
                 } else {
-                    cellContentDiv.style.color = getTextColor('#2a2a2a');
+                    cellContentDiv.style.color = getTextColor('#2a2a2a'); // Use a fixed background for text color calc
                     if (cellIndex === 0 || cellIndex === rowData.length - 1 || rowIndex === 0 || rowIndex === gridData.length - 1) {
                         cellContentDiv.classList.add("legend-label");
                     }
                 }
+                 // Prevent labels from being selectable
+                cellContentDiv.style.pointerEvents = 'none';
             } else {
-                 // Error handling remains the same
+                 // Error handling
                  console.warn(`Invalid cell data type at row ${rowIndex}, cell ${cellIndex}:`, typeof cellData, cellData);
                 cellContentDiv.textContent = "?";
                 cellContentDiv.style.backgroundColor = "#555";
                 cellContentDiv.style.color = "var(--text-color)";
                  cellContentDiv.classList.add("invalid");
+                 cellContentDiv.style.pointerEvents = 'none'; // Prevent invalid cells from being selectable
             }
         });
     });
+}
+
+// --- NEW: Function to handle swatch selection logic ---
+function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
+    const isShiftPressed = event.shiftKey;
+    const cellId = `${rowIndex}-${colIndex}`;
+    const existingIndex = selectedCells.findIndex(coord => coord[0] === rowIndex && coord[1] === colIndex);
+    const targetDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${rowIndex}"][data-cell-index="${colIndex}"]`);
+
+    if (!targetDiv) return; // Should not happen
+
+    if (isShiftPressed) {
+        if (existingIndex > -1) {
+            // Already selected, deselect it
+            selectedCells.splice(existingIndex, 1);
+            targetDiv.classList.remove('selected');
+            targetDiv.style.boxShadow = 'none'; // Remove selection shadow
+        } else {
+            // Not selected, try to add
+            if (selectedCells.length === 0) {
+                // First selection with Shift
+                selectedCells.push([rowIndex, colIndex]);
+                targetDiv.classList.add('selected');
+                targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+            } else {
+                // Check S/L similarity with the FIRST selected cell
+                const firstSelectedCoords = selectedCells[0];
+                const firstSelectedHex = sourceGridData[firstSelectedCoords[0]][firstSelectedCoords[1]];
+                const firstSelectedHsl = hexToHsl(firstSelectedHex);
+
+                if (firstSelectedHsl) {
+                    const sDiff = Math.abs(clickedHsl.s - firstSelectedHsl.s);
+                    const lDiff = Math.abs(clickedHsl.l - firstSelectedHsl.l);
+
+                    if (sDiff <= multiSelectTolerance || lDiff <= multiSelectTolerance) {
+                        // Condition met, add to selection
+                        selectedCells.push([rowIndex, colIndex]);
+                        targetDiv.classList.add('selected');
+                        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                    } else {
+                        // Condition not met
+                        alert(`Cannot add to selection. Saturation or Luminance differs too much from the first selected color (S: ${firstSelectedHsl.s}, L: ${firstSelectedHsl.l}). Clicked S: ${clickedHsl.s}, L: ${clickedHsl.l}`);
+                        // Maybe flash the cell briefly? (Optional)
+                    }
+                } else {
+                    console.warn("Could not get HSL for first selected cell.");
+                }
+            }
+        }
+    } else {
+        // Shift NOT pressed - start a new selection
+        clearSelection(); // Clear previous selection visuals and data
+        selectedCells.push([rowIndex, colIndex]);
+        targetDiv.classList.add('selected');
+        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+    }
+
+    console.log("Selected Cells:", selectedCells);
+}
+
+// --- NEW: Function to clear selection state and visuals ---
+function clearSelection() {
+    selectedCells.forEach(coord => {
+        const cellDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${coord[0]}"][data-cell-index="${coord[1]}"]`);
+        if (cellDiv) {
+            cellDiv.classList.remove('selected');
+            cellDiv.style.boxShadow = 'none';
+        }
+    });
+    selectedCells = []; // Reset the array
 }
 
 // Update the view based on interpolation state
@@ -1923,40 +2036,66 @@ function updatePickerFromHex() {
     isPickerUpdating = false;
 }
 
-function openColorPicker(rowIndex, cellIndex, event = null) { // Add event parameter with default null
+function openColorPicker(rowIndex, cellIndex, event = null) {
+    // Check if source data exists for the coordinates (use first selected)
+    if (rowIndex >= sourceGridData.length || cellIndex >= sourceGridData[rowIndex].length) {
+         console.error(`Invalid coordinates for sourceGridData: [${rowIndex}][${cellIndex}]`);
+         clearSelection(); // Clear potentially invalid selection
+         return;
+    }
     const originalHex = sourceGridData[rowIndex][cellIndex];
 
     if (!isValidHex(originalHex)) {
         console.error(`Cannot open picker: Cell at source[${rowIndex}][${cellIndex}] is not a valid HEX color.`, originalHex);
+        clearSelection(); // Clear invalid selection
         return;
     }
 
-    pickerTargetRow = rowIndex;
-    pickerTargetCol = cellIndex;
+    // We no longer store targetRow/Col globally, rely on selectedCells
+    // pickerTargetRow = rowIndex;
+    // pickerTargetCol = cellIndex;
 
     const hsl = hexToHsl(originalHex);
     if (!hsl) {
         console.error("Error converting initial HEX to HSL:", originalHex);
+        clearSelection(); // Clear invalid selection
         return;
     }
 
     isPickerUpdating = true;
 
-    // Set initial values for controls
+    // --- Determine if Multi-Select Mode ---
+    const isMultiSelect = selectedCells.length > 1;
+
+    // Set initial values based on the *first* selected cell
     pickerHueSlider.value = hsl.h;
     pickerHueNumber.value = hsl.h;
     pickerSatSlider.value = hsl.s;
     pickerSatNumber.value = hsl.s;
     pickerLumSlider.value = hsl.l;
     pickerLumNumber.value = hsl.l;
-    pickerHexInput.value = originalHex.toUpperCase();
-    updatePickerPreview(originalHex);
+    pickerHexInput.value = isMultiSelect ? "Multiple" : originalHex.toUpperCase();
+    updatePickerPreview(originalHex); // Preview always shows the first selected
+
+    // --- Enable/Disable Controls based on mode ---
+    pickerHueSlider.disabled = isMultiSelect;
+    pickerHueNumber.disabled = isMultiSelect;
+    pickerHexInput.disabled = isMultiSelect; // Disable HEX input in multi-mode
+
+    // Add/Remove visual class for disabled state
+    pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
+    pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
+
+    // --- Update Title ---
+    colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
+
 
     isPickerUpdating = false;
 
-    // --- NEW: Position modal near cursor if event is provided ---
+    // --- Positioning Logic --- (Keep existing)
     if (event) {
-        const modalWidth = colorPickerModal.offsetWidth;
+        // ... (positioning code remains the same) ...
+         const modalWidth = colorPickerModal.offsetWidth;
         const modalHeight = colorPickerModal.offsetHeight;
         const viewportWidth = window.innerWidth; // Use window for full viewport width
         const viewportHeight = window.innerHeight; // Use window for full viewport height
@@ -1985,104 +2124,120 @@ function openColorPicker(rowIndex, cellIndex, event = null) { // Add event param
 
         colorPickerModal.style.left = `${left}px`;
         colorPickerModal.style.top = `${top}px`;
-    } else {
-        // Optional: Add fallback positioning if event is not available
-        // e.g., center it or use last known position
-        // If left/top are not set, it will use the CSS default (150px/150px)
-        // or the last dragged position if the user moved it.
     }
-    // --- END NEW ---
-
+    // --- End Positioning ---
 
     // Show the modal
     colorPickerModal.classList.add('visible');
 
-    // --- Deactivate picker mode ---
-    // ... existing code ...
+    // --- Deactivate picker mode (but don't clear selection yet) ---
+    isColorPickingMode = false;
+    colorPickToggleButton.classList.remove('active');
+    document.body.classList.remove('color-picking-active');
+    console.log("Color Picker opened, Pick Mode automatically turned OFF.");
 
     // Optionally focus the first element
-    // ... existing code ...
+    requestAnimationFrame(() => {
+        // Focus Saturation slider in multi-select, Hue otherwise
+        if (isMultiSelect) {
+            pickerSatSlider.focus();
+        } else {
+            pickerHueSlider.focus();
+        }
+    });
 }
 
 function closeColorPicker() {
     colorPickerModal.classList.remove('visible');
-    pickerTargetRow = -1; // Reset target indices
-    pickerTargetCol = -1;
+    // Clear selection when picker is closed manually
+    clearSelection();
+    // Re-enable potentially disabled controls for next time
+    pickerHueSlider.disabled = false;
+    pickerHueNumber.disabled = false;
+    pickerHexInput.disabled = false;
+    pickerHueSlider.closest('.picker-control-group').classList.remove('disabled');
+    pickerHexInput.closest('.picker-control-group').classList.remove('disabled');
+
 }
 
-// --- NEW: Color Picker Event Listeners ---
-
-// HSL Sliders
-pickerHueSlider.addEventListener('input', () => { pickerHueNumber.value = pickerHueSlider.value; updatePickerFromHsl(); });
-pickerSatSlider.addEventListener('input', () => { pickerSatNumber.value = pickerSatSlider.value; updatePickerFromHsl(); });
-pickerLumSlider.addEventListener('input', () => { pickerLumNumber.value = pickerLumSlider.value; updatePickerFromHsl(); });
-
-// HSL Number Inputs (using 'change' for final value after potential manual entry/spinners)
-pickerHueNumber.addEventListener('change', () => {
-    let val = parseInt(pickerHueNumber.value, 10);
-    val = isNaN(val) ? 0 : Math.max(0, Math.min(360, val)); // Clamp 0-360
-    pickerHueNumber.value = val; // Update input visually
-    pickerHueSlider.value = val;
-    updatePickerFromHsl();
-});
-pickerSatNumber.addEventListener('change', () => {
-    let val = parseInt(pickerSatNumber.value, 10);
-    val = isNaN(val) ? 50 : Math.max(0, Math.min(100, val)); // Clamp 0-100
-    pickerSatNumber.value = val;
-    pickerSatSlider.value = val;
-    updatePickerFromHsl();
-});
-pickerLumNumber.addEventListener('change', () => {
-    let val = parseInt(pickerLumNumber.value, 10);
-    val = isNaN(val) ? 50 : Math.max(0, Math.min(100, val)); // Clamp 0-100
-    pickerLumNumber.value = val;
-    pickerLumSlider.value = val;
-    updatePickerFromHsl();
-});
-
-// HEX Input (using 'change' to validate when user finishes editing)
-pickerHexInput.addEventListener('change', () => {
-    updatePickerFromHex();
-});
-// Optional: Live update from HEX input (can be laggy/janky)
-// pickerHexInput.addEventListener('input', () => { updatePickerFromHex(); });
+// --- Event Listeners ---
 
 // Buttons
 pickerApplyButton.addEventListener('click', () => {
-    const finalHex = pickerHexInput.value;
-    if (isValidHex(finalHex) && pickerTargetRow !== -1 && pickerTargetCol !== -1) {
-        sourceGridData[pickerTargetRow][pickerTargetCol] = finalHex; // Update source data directly
-        updatePaletteView(); // Re-render the main grid (will use source data as interpolation is off)
-        closeColorPicker();
+    if (selectedCells.length === 0) {
+        console.warn("Apply clicked with no cells selected.");
+        closeColorPicker(); // Close picker and ensure selection is cleared
+        return;
+    }
+
+    const isMultiSelect = selectedCells.length > 1;
+
+    if (isMultiSelect) {
+        // Apply changes to multiple cells (S and L only)
+        const newS = parseInt(pickerSatNumber.value, 10);
+        const newL = parseInt(pickerLumNumber.value, 10);
+
+        if (isNaN(newS) || isNaN(newL)) {
+            alert("Invalid Saturation or Luminance value.");
+            return;
+        }
+
+        selectedCells.forEach(coord => {
+            const [rowIndex, colIndex] = coord;
+            // Bounds check just in case
+            if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
+                const originalHex = sourceGridData[rowIndex][colIndex];
+                const originalHsl = hexToHsl(originalHex);
+                if (originalHsl) {
+                    // Use original H, new S, new L
+                    const finalHex = hslToHex(originalHsl.h, newS, newL);
+                    sourceGridData[rowIndex][colIndex] = finalHex;
+                } else {
+                    console.warn(`Could not process original color for cell [${rowIndex}, ${colIndex}] during multi-apply.`);
+                }
+            }
+        });
+        console.log(`Applied S:${newS}, L:${newL} to ${selectedCells.length} cells.`);
+
     } else {
-        alert("Invalid HEX code. Cannot apply.");
-        console.error("Apply failed: Invalid HEX or target indices missing.", finalHex, pickerTargetRow, pickerTargetCol);
+        // Apply changes to a single cell (H, S, L)
+        const [rowIndex, colIndex] = selectedCells[0]; // Get the single selected cell
+        const finalHex = pickerHexInput.value; // Get hex from input (which should be enabled)
+
+        if (isValidHex(finalHex)) {
+             // Bounds check just in case
+            if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
+                sourceGridData[rowIndex][colIndex] = finalHex;
+                console.log(`Applied ${finalHex} to cell [${rowIndex}, ${colIndex}].`);
+            } else {
+                 console.warn(`Invalid coordinates for single apply: [${rowIndex}, ${colIndex}]`);
+            }
+        } else {
+            alert("Invalid HEX code. Cannot apply.");
+            console.error("Single apply failed: Invalid HEX.", finalHex);
+            return; // Don't close picker or clear selection on error
+        }
     }
+
+    // Success: Update view, close picker, and clear selection state
+    updatePaletteView();
+    closeColorPicker(); // This now also calls clearSelection()
 });
 
-colorPickerCloseButton.addEventListener('click', closeColorPicker);
 
-pickerCopyHexButton.addEventListener('click', () => {
-    copyToClipboard(pickerHexInput.value, pickerCopyHexButton); // Use copy button for feedback
-});
-
-// Add Esc key listener for color picker modal
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && colorPickerModal.classList.contains('visible')) {
-        closeColorPicker();
-    }
-});
-
-// --- NEW: Color Pick Toggle Button Listener ---
+// Color Pick Toggle Button Listener
 colorPickToggleButton.addEventListener('click', () => {
     isColorPickingMode = !isColorPickingMode;
     colorPickToggleButton.classList.toggle('active', isColorPickingMode);
     document.body.classList.toggle('color-picking-active', isColorPickingMode);
     console.log("Color Picking Mode:", isColorPickingMode ? "ON" : "OFF");
 
-    // Optional: Close color picker if it's open when mode is turned off
-    if (!isColorPickingMode && colorPickerModal.classList.contains('visible')) {
-        closeColorPicker();
+    // Clear selection when toggling mode off
+    if (!isColorPickingMode) {
+        clearSelection();
+        if (colorPickerModal.classList.contains('visible')) {
+            closeColorPicker(); // Also close picker if open
+        }
     }
 });
 
@@ -2263,6 +2418,9 @@ function initializeApp() {
     document.body.classList.remove('color-picking-active');
 
     updatePaletteView();
+
+    // Clear selection on initial load
+    clearSelection();
 }
 
 initializeApp(); // Run initial setup 

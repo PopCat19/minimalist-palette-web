@@ -974,4 +974,24 @@ body.color-picking-active #palette-grid .cell-content.swatch:hover {
     z-index: 0; /* Optional: prevent z-index change in pick mode */
 }
 
+/* NEW: Style for selected swatches */
+.cell-content.selected {
+    /* Use box-shadow for persistent selection indicator */
+    box-shadow: inset 0 0 0 3px var(--accent-color) !important; /* Use !important to override hover temporarily */
+    /* outline: 3px solid var(--accent-color); */ /* Alternative: outline */
+    /* outline-offset: -3px; */
+    z-index: 2; /* Bring selected cells slightly forward */
+}
+
+/* NEW: Style for disabled control groups in picker */
+.picker-control-group.disabled {
+    opacity: 0.5;
+    pointer-events: none; /* Prevent interaction */
+}
+.picker-control-group.disabled label,
+.picker-control-group.disabled span {
+    /* Optional: Dim labels/spans as well */
+     color: #777;
+}
+
 /* --- Specific adjustments for Generate Row controls --- */
