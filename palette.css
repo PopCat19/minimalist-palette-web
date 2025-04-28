@@ -277,7 +277,7 @@ body {
 }
 #config-modal.visible {
     transform: translateX(-50%) scale(1);
-    opacity: 1;
+        opacity: 1;
     visibility: visible;
     transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
 }
@@ -389,7 +389,7 @@ body {
 #interpolation-controls,
 #saturation-controls,
 #zoom-controls { /* Combine styles for similar layout */
-    display: flex;
+     display: flex;
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
     justify-content: flex-start; /* Align items to the start */
     gap: 10px; /* Replaced var(--control-group-gap) */
@@ -409,14 +409,16 @@ input[type="checkbox"] {
      accent-color: var(--accent-color);
 }
 .slider-group {
-    display: flex;
-    align-items: center;
+     display: flex;
+     align-items: center;
     gap: 10px; /* Replaced var(--control-group-gap) */ /* Use consistent gap */
     flex-grow: 1; /* Allow slider group to take available space */
     min-width: 180px; /* Prevent extreme shrinking */
 }
 input[type="range"] {
-     width: var(--slider-width);
+     /* width: var(--slider-width); */ /* REMOVED fixed width */
+     flex-grow: 1; /* NEW: Allow slider to grow */
+     min-width: 8rem; /* NEW: Prevent slider becoming too small */
      height: var(--slider-height);
     cursor: pointer;
      accent-color: var(--accent-color);
@@ -501,21 +503,41 @@ input[type="number"]::-webkit-inner-spin-button {
 #bottom-controls {
     position: fixed;
     bottom: 15px;
-    left: 50%; /* Changed from 15px */
-    transform: translateX(-50%); /* Added for centering */
-    z-index: 1075; /* Above canvas, below modal */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1075;
     display: flex;
     align-items: center;
-    gap: 15px; /* Space between button and zoom */
-    /* background-color: var(--surface-color-1); */
-    background-color: rgba(26, 26, 26, 0.75); /* Decreased opacity for more blur visibility */
+    gap: 15px;
+    flex-wrap: nowrap; /* ADDED: Explicitly prevent wrapping by default */
+    min-width: max-content; /* NEW: Ensure container tries to fit content */
+    /* justify-content: center; */ /* REMOVED: Apply wrap only in media query */
+    background-color: rgba(26, 26, 26, 0.75);
     padding: 8px 12px;
     border-radius: var(--border-radius);
     border: var(--border-width) solid var(--border-color);
     box-shadow: var(--config-button-shadow);
-    /* Add backdrop blur */
-    -webkit-backdrop-filter: blur(15px); /* Increased blur radius */
-    backdrop-filter: blur(15px); /* Increased blur radius */
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+}
+
+/* NEW: Prevent children from shrinking, potentially causing wrapping */
+#bottom-controls > * {
+    flex-shrink: 0;
+}
+
+/* --- Media Query for Smaller Screens --- */
+@media (max-width: 700px) { /* Increased breakpoint from 550px */
+    #bottom-controls {
+        flex-wrap: wrap; /* OVERRIDE: Allow wrapping on small screens */
+        justify-content: center;
+        min-width: auto; /* NEW: Reset min-width when wrapping is allowed */
+    }
+
+    /* Optional: Adjust gaps or padding if needed on wrap */
+    #bottom-controls {
+        gap: 10px; /* Slightly smaller gap when wrapped */
+    }
 }
 
 /* Adjust Zoom Controls for new location */
@@ -656,7 +678,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* --- NEW: Pop-out Resize Handle Styles --- */
 #popout-resize-handle {
     position: absolute;
-    bottom: 0;
+         bottom: 0;
     right: 0;
     width: 15px;
     height: 15px;
@@ -709,3 +731,247 @@ input[type="number"]::-webkit-inner-spin-button {
     justify-content: flex-start; /* Align buttons to start */
     gap: 1rem;
 }
+
+/* --- NEW: HSL/HEX Color Picker Modal Styles --- */
+#color-picker-modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Fixed position relative to viewport */
+    /* REMOVED: top, left, transform */
+    /* Set initial position (can be changed by user/JS) */
+    top: 150px;
+    left: 150px;
+    /* transform-origin: center center; */ /* No longer needed */
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1100; /* Above popout editor */
+    background-color: rgba(30, 30, 30, 0.85); /* Slightly more opaque than popout */
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 10px; /* Slightly smaller radius */
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    /* REMOVED: Fixed width */
+    /* width: 300px; */
+    /* ADDED: Min/Max dimensions and Flex layout */
+    min-width: 280px; /* Adjusted min-width */
+    min-height: 300px; /* Adjusted min-height from 350px */
+    max-width: 90vw;
+    max-height: 85vh; /* Add max-height */
+    display: flex; /* Use flex for internal layout */
+    flex-direction: column;
+    overflow: hidden; /* Hide overflow during resize */
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
+                   visibility 0s linear var(--transition-duration); /* Keep visibility transition */
+    /* REMOVED: Transform transition */
+}
+
+#color-picker-modal.visible {
+    display: flex; /* Use flex when visible */
+         opacity: 1;
+         visibility: visible;
+    /* REMOVED: transform for showing */
+         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
+                   visibility 0s linear 0s; /* Keep visibility transition */
+    /* REMOVED: Transform transition */
+}
+
+.color-picker-header {
+    display: flex;
+    /* justify-content: space-between; */ /* REMOVED */
+    align-items: center;
+    padding: 0.6rem 0.8rem; /* Adjusted padding */
+    background-color: rgba(40, 40, 40, 0.9); /* Darker header */
+    border-bottom: 1px solid var(--border-color);
+    cursor: move; /* ADDED: Draggable cursor */
+    flex-shrink: 0; /* Prevent header shrinking */
+    gap: 0.8rem; /* Add gap between elements */
+}
+
+.color-picker-title {
+    font-weight: 500;
+    font-size: 1.4rem;
+    color: var(--text-color);
+    margin-right: auto; /* Push buttons to the right */
+    white-space: nowrap; /* Prevent wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ellipsis */
+}
+
+/* Apply button styling adjustments for header */
+#picker-apply-button {
+    /* Inherits .control-button styles */
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg);
+    border: none;
+    padding: 0.4rem 1rem; /* Slightly smaller padding */
+    font-size: 1.3rem; /* Slightly smaller font */
+    flex-shrink: 0; /* Prevent shrinking */
+    order: 1; /* Ensure it comes before the close button visually if needed */
+}
+#picker-apply-button:hover {
+    background-color: #3a80d2;
+}
+
+/* Use the same close button style as the config modal */
+#color-picker-close-button {
+    /* Styles inherited from .modal-close-button */
+    position: static;
+    top: auto;
+    right: auto;
+    flex-shrink: 0;
+    order: 2; /* Ensure it comes after the apply button visually if needed */
+    padding: 0 0.4rem; /* Fine-tune padding */
+    font-size: 2rem; /* Adjust size if needed */
+}
+
+.color-picker-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex-grow: 1; /* Allow body to take available space */
+    overflow-y: auto; /* Allow scrolling if content exceeds height */
+}
+
+#color-picker-preview {
+        width: 100%; 
+    height: 6rem; /* 60px preview height */
+    border-radius: var(--border-radius-input);
+    border: 1px solid var(--border-color);
+    background-color: #888; /* Placeholder */
+    }
+
+.color-picker-controls {
+    display: flex;
+         flex-direction: column;
+    gap: 1rem;
+}
+
+.picker-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.picker-control-group label {
+    font-size: 1.2rem; /* Smaller labels */
+    color: var(--text-color-muted);
+    width: 1.5rem; /* Fixed width for alignment */
+    text-align: right;
+}
+
+.picker-control-group input[type="range"] {
+    flex-grow: 1; /* Slider takes remaining space */
+    height: var(--slider-height);
+    cursor: pointer;
+    accent-color: var(--accent-color);
+    vertical-align: middle;
+}
+
+.picker-control-group input[type="number"] {
+    width: 4rem; /* 40px width */
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-input);
+    padding: var(--number-input-padding);
+    font-size: var(--number-input-font-size);
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.picker-control-group input[type="number"]::-webkit-outer-spin-button,
+.picker-control-group input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+}
+.picker-control-group input[type="number"]:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.picker-control-group span {
+    font-size: 1.1rem;
+    color: var(--text-color-muted);
+}
+
+.picker-control-group.hex-group label {
+    width: auto; /* Allow HEX label to size naturally */
+    margin-right: 0.4rem;
+}
+
+.picker-control-group.hex-group input[type="text"] {
+    flex-grow: 1;
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-input);
+    padding: var(--number-input-padding); /* Reuse padding */
+    font-family: var(--monospace-font-family);
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+.picker-control-group.hex-group input[type="text"]:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.picker-control-group .copy-button {
+    padding: 0.4rem 0.8rem; /* Smaller padding */
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* --- NEW: Color Picker Resize Handle --- */
+#color-picker-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nwse-resize;
+    border-left: 1px solid var(--border-color);
+    border-top: 1px solid var(--border-color); /* Add top border for visibility */
+    border-bottom-right-radius: 10px; /* Match container radius */
+    background-color: rgba(255, 255, 255, 0.1); /* Slight visual indicator */
+}
+
+/* --- NEW: Style for Color Picker Toggle Button --- */
+#color-pick-toggle-button {
+    /* Inherit base styles from #config-toggle-button */
+    background-color: var(--surface-color-1);
+    color: var(--text-color-muted);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--config-button-padding);
+    font-size: var(--config-button-font-size);
+    font-weight: 500;
+        text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-timing);
+    box-shadow: var(--config-button-shadow);
+}
+#color-pick-toggle-button:hover {
+    color: var(--text-color);
+    background-color: var(--surface-color-2);
+    border-color: var(--accent-color);
+}
+
+/* Active state for the color picker button */
+#color-pick-toggle-button.active {
+    background-color: var(--accent-color); /* Use accent color like config button */
+    color: var(--text-color-light-bg); /* Contrast with accent color */
+    border-color: var(--accent-color);
+    box-shadow: none;
+}
+
+/* --- NEW: Cursor change when color picking --- */
+body.color-picking-active #palette-grid .cell-content.swatch {
+    cursor: crosshair; /* Change cursor for swatches */
+}
+/* Prevent hover shadow when picking */
+body.color-picking-active #palette-grid .cell-content.swatch:hover {
+    box-shadow: none; /* Optional: disable hover shadow in pick mode */
+    z-index: 0; /* Optional: prevent z-index change in pick mode */
+}
+
+/* --- Specific adjustments for Generate Row controls --- */

@@ -19,6 +19,8 @@
         <div id="bottom-controls">
             <!-- Config Toggle Button (Moved inside) -->
             <button id="config-toggle-button" aria-label="Open Configuration">Config</button>
+            <!-- NEW: Color Picker Toggle Button -->
+            <button id="color-pick-toggle-button" aria-label="Toggle Color Picker Mode">Pick Color</button>
 
             <!-- Zoom Controls (Moved here) -->
             <div id="zoom-controls" class="control-group">
@@ -50,6 +52,45 @@
             <!-- NEW: Resize Handle -->
             <div id="popout-resize-handle"></div>
         </div>
+
+        <!-- NEW: HSL/HEX Color Picker Modal -->
+        <div id="color-picker-modal">
+            <div class="color-picker-header">
+                <span class="color-picker-title">Edit Color</span>
+                <button id="picker-apply-button" class="control-button apply-button">Apply</button>
+                <button id="color-picker-close-button" class="modal-close-button" aria-label="Close Color Picker">&times;</button>
+            </div>
+            <div class="color-picker-body">
+                <div id="color-picker-preview"></div>
+                <div class="color-picker-controls">
+                    <div class="picker-control-group">
+                        <label for="picker-hue-slider">H:</label>
+                        <input type="range" id="picker-hue-slider" min="0" max="360" step="1">
+                        <input type="number" id="picker-hue-number" min="0" max="360" step="1">
+                    </div>
+                    <div class="picker-control-group">
+                        <label for="picker-sat-slider">S:</label>
+                        <input type="range" id="picker-sat-slider" min="0" max="100" step="1">
+                        <input type="number" id="picker-sat-number" min="0" max="100" step="1">
+                        <span>%</span>
+                    </div>
+                    <div class="picker-control-group">
+                        <label for="picker-lum-slider">L:</label>
+                        <input type="range" id="picker-lum-slider" min="0" max="100" step="1">
+                        <input type="number" id="picker-lum-number" min="0" max="100" step="1">
+                        <span>%</span>
+                    </div>
+                    <div class="picker-control-group hex-group">
+                        <label for="picker-hex-input">HEX:</label>
+                        <input type="text" id="picker-hex-input" spellcheck="false">
+                        <button id="picker-copy-hex-button" class="control-button copy-button" aria-label="Copy HEX Code">Copy</button>
+                    </div>
+                </div>
+            </div>
+            <!-- NEW: Resize Handle -->
+            <div id="color-picker-resize-handle"></div>
+        </div>
+        <!-- END Color Picker Modal -->
 
         <!-- Configuration Modal -->
         <div id="config-modal">

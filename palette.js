@@ -372,6 +372,17 @@ let zoomTimeout;
 // let lastForcedCellSizePx = null; // REMOVED - No longer needed
 // --- NEW: Local Storage Key ---
 const localStorageKey = 'minimalistPaletteAppState';
+// --- NEW: Color Picker State ---
+let pickerTargetRow = -1;
+let pickerTargetCol = -1;
+let isPickerUpdating = false; // Prevent recursive updates
+// --- NEW: Color Picker Drag/Resize State ---
+let isDraggingColorPicker = false;
+let pickerStartX, pickerStartY, pickerInitialX, pickerInitialY;
+let isResizingColorPicker = false;
+let cpResizeStartX, cpResizeStartY, cpResizeInitialWidth, cpResizeInitialHeight;
+// --- NEW: Color Picking Mode State ---
+let isColorPickingMode = false;
 
 // --- DOM Elements ---
 // Palette display elements
@@ -429,6 +440,25 @@ const resetStateButton = document.getElementById('reset-state-button');
 const exportPaletteButton = document.getElementById('export-palette-button');
 const importPaletteButton = document.getElementById('import-palette-button');
 const importPaletteFileInput = document.getElementById('import-palette-file-input');
+
+// --- NEW: Color Picker Modal Elements ---
+const colorPickerModal = document.getElementById('color-picker-modal');
+const colorPickerCloseButton = document.getElementById('color-picker-close-button');
+const colorPickerPreview = document.getElementById('color-picker-preview');
+const pickerHueSlider = document.getElementById('picker-hue-slider');
+const pickerHueNumber = document.getElementById('picker-hue-number');
+const pickerSatSlider = document.getElementById('picker-sat-slider');
+const pickerSatNumber = document.getElementById('picker-sat-number');
+const pickerLumSlider = document.getElementById('picker-lum-slider');
+const pickerLumNumber = document.getElementById('picker-lum-number');
+const pickerHexInput = document.getElementById('picker-hex-input');
+const pickerCopyHexButton = document.getElementById('picker-copy-hex-button');
+const pickerCancelButton = document.getElementById('picker-cancel-button');
+const pickerApplyButton = document.getElementById('picker-apply-button');
+// --- NEW: Color Pick Toggle Button Element ---
+const colorPickToggleButton = document.getElementById('color-pick-toggle-button');
+const colorPickerHeader = colorPickerModal.querySelector('.color-picker-header'); // NEW: Header ref
+const colorPickerResizeHandle = document.getElementById('color-picker-resize-handle'); // NEW: Resize handle ref
 
 // --- Helper Functions ---
 function isValidHex(str) {
@@ -491,42 +521,38 @@ function interpolateHexColor(hex1, hex2, steps) {
     return interpolatedColors;
 }
 
-// --- NEW: HSL Conversion and Adjustment ---
+// --- REVISED: HSL Conversion and Adjustment ---
 function rgbToHsl(r, g, b) {
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    const max = Math.max(r, g, b),
-        min = Math.min(r, g, b);
-    let h,
-        s,
-        l = (max + min) / 2;
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2; // Initialize h
 
-    if (max == min) {
-        h = s = 0; // achromatic
-    } else {
+    if (max !== min) {
         const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         switch (max) {
-            case r:
-                h = (g - b) / d + (g < b ? 6 : 0);
-                break;
-            case g:
-                h = (b - r) / d + 2;
-                break;
-            case b:
-                h = (r - g) / d + 4;
-                break;
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
         }
         h /= 6;
     }
-    return { h, s, l }; // h, s, l are in [0, 1] range
+    // Return h in degrees (0-360), s and l in percent (0-100)
+    return {
+        h: Math.round(h * 360),
+        s: Math.round(s * 100),
+        l: Math.round(l * 100),
+    };
 }
 
 function hslToRgb(h, s, l) {
+    // Convert h, s, l from picker range (0-360, 0-100, 0-100) to calculation range (0-1, 0-1, 0-1)
+    h /= 360;
+    s /= 100;
+    l /= 100;
     let r, g, b;
 
-    if (s == 0) {
+    if (s === 0) {
         r = g = b = l; // achromatic
     } else {
         const hue2rgb = (p, q, t) => {
@@ -550,27 +576,69 @@ function hslToRgb(h, s, l) {
     };
 }
 
+// --- NEW: Combined Converters for Picker ---
+function hexToHsl(hex) {
+    const rgb = hexToRgb(hex);
+    return rgb ? rgbToHsl(rgb.r, rgb.g, rgb.b) : null; // Returns h(0-360), s(0-100), l(0-100)
+}
+
+function hslToHex(h, s, l) {
+    const rgb = hslToRgb(h, s, l);
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+}
+
 function adjustSaturation(hexColor, offsetPercent) {
     const rgb = hexToRgb(hexColor);
-    if (!rgb) return hexColor; // Return original if invalid
+    if (!rgb) return hexColor;
 
-    const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+    const hslRaw = rgbToHslRaw(rgb.r, rgb.g, rgb.b); // Use raw HSL (0-1 range)
 
-    // --- NEW: Check if the color is neutral (very low saturation) ---
-    const saturationThreshold = 0.01; // Adjust as needed
-    if (hsl.s < saturationThreshold) {
-        return hexColor; // Return original color if it's neutral
+    const saturationThreshold = 0.01;
+    if (hslRaw.s < saturationThreshold) {
+        return hexColor;
     }
-    // --- END NEW ---
 
-    // Adjust saturation: offset is -100 to 100, convert to -1.0 to 1.0
     const offset = offsetPercent / 100;
-    hsl.s = Math.max(0, Math.min(1, hsl.s + offset)); // Clamp between 0 and 1
+    hslRaw.s = Math.max(0, Math.min(1, hslRaw.s + offset)); // Clamp between 0 and 1
 
-    const newRgb = hslToRgb(hsl.h, hsl.s, hsl.l);
+    const newRgb = hslToRgbRaw(hslRaw.h, hslRaw.s, hslRaw.l); // Use raw HSL
     return rgbToHex(newRgb.r, newRgb.g, newRgb.b);
 }
-// --- END NEW HSL ---
+
+// Keep original HSL calculation helpers for adjustSaturation (operating on 0-1 range)
+function rgbToHslRaw(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h=0, s=0, l = (max + min) / 2;
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    return { h, s, l }; // h, s, l are in [0, 1] range
+}
+function hslToRgbRaw(h, s, l) {
+    let r, g, b;
+    if (s == 0) { r = g = b = l; }
+    else {
+        const hue2rgb = (p, q, t) => {
+            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            return p;
+        };
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+}
 
 // NEW: Function to parse 'x' value from labels like '100x'
 function parseXValue(label) {
@@ -770,72 +838,80 @@ function renderPalette(gridData) {
         }
 
         rowData.forEach((cellData, cellIndex) => {
-            // --- CREATE INNER DIV (becomes the main cell div) ---
             const cellContentDiv = document.createElement('div');
-            cellContentDiv.classList.add('cell-content'); // Keep this base class
-            paletteGrid.appendChild(cellContentDiv); // Append directly to the grid container
-            // --- END INNER DIV ---
+            cellContentDiv.classList.add('cell-content');
+            paletteGrid.appendChild(cellContentDiv);
 
             const isInterpolatedLabelPlaceholder = cellData === "-";
 
             if (isValidHex(cellData)) {
-                // It's a color swatch
                 const originalHexColor = cellData;
                 const adjustedHexColor = adjustSaturation(originalHexColor, saturationOffset);
-                const adjustedHexText = adjustedHexColor.substring(1).toUpperCase();
-                const textColor = getTextColor(adjustedHexColor); // Get text color for contrast
+                const adjustedHexText = adjustedHexColor.substring(1).toUpperCase(); // Text to display/copy
+                const textColor = getTextColor(adjustedHexColor);
 
-                // --- Apply styles and content to CELL DIV ---
                 cellContentDiv.style.backgroundColor = adjustedHexColor;
                 cellContentDiv.textContent = adjustedHexText;
                 cellContentDiv.style.color = textColor;
-                cellContentDiv.classList.add("swatch"); // Add swatch class to the cell div
-                cellContentDiv.dataset.originalHex = originalHexColor.substring(1).toUpperCase();
-                cellContentDiv.dataset.adjustedHex = adjustedHexText;
+                cellContentDiv.classList.add("swatch");
+                cellContentDiv.dataset.originalHex = originalHexColor; // Store original for editing
+                // Store indices relative to the *currently rendered* grid for potential use
+                // IMPORTANT: For editing, we rely on interpolation being OFF, so these indices *will* match sourceGridData
+                cellContentDiv.dataset.rowIndex = rowIndex;
+                cellContentDiv.dataset.cellIndex = cellIndex;
 
-                cellContentDiv.addEventListener("click", () => {
-                    copyToClipboard(adjustedHexText, cellContentDiv); // Target cell div for copy feedback
+                // --- REVISED Click Listener (Checks Picker Mode) ---
+                cellContentDiv.addEventListener("click", (event) => { // Add event parameter
+                    const clickRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
+                    const clickCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
+
+                    if (isColorPickingMode && !isInterpolationEnabled) {
+                        // If pick mode is ON and interpolation is OFF, open the picker
+                        // Use the stored indices, which refer to sourceGridData in this state
+                        console.log(`Opening picker for sourceGridData[${clickRowIndex}][${clickCellIndex}]`);
+                        // Pass the event to the open function
+                        openColorPicker(clickRowIndex, clickCellIndex, event);
+                    } else {
+                        // Otherwise (pick mode OFF or interpolation ON), copy the displayed value
+                        console.log(`Copying displayed color: ${adjustedHexText}`);
+                        copyToClipboard(adjustedHexText, cellContentDiv);
+                        if (isColorPickingMode && isInterpolationEnabled) {
+                           console.log("Color picking disabled while interpolation is active. Copied adjusted color.");
+                           // Optional: Add visual feedback here if desired
+                        }
+                    }
                 });
+                // --- END REVISED Click Listener ---
 
-                // --- NEW: Hover effect using box-shadow ---
                 cellContentDiv.addEventListener('mouseover', () => {
-                    // Apply inset shadow using the calculated text color for contrast
+                    // Only show hover effect if NOT in color picking mode
+                    if (!isColorPickingMode) {
                     cellContentDiv.style.boxShadow = `inset 0 0 0 2px ${textColor}`;
+                    }
                 });
                 cellContentDiv.addEventListener('mouseout', () => {
-                    // Remove the shadow on mouse out
-                    cellContentDiv.style.boxShadow = 'none';
+                     cellContentDiv.style.boxShadow = 'none'; // Always remove on mouseout
                 });
-                // --- END NEW Hover ---
 
             } else if (typeof cellData === "string") {
-                // It's a label or placeholder
-                // --- Apply styles and content to CELL DIV ---
+                // Label rendering remains the same
                 cellContentDiv.textContent = cellData;
-                cellContentDiv.classList.add("label"); // Add label class to the cell div
+                cellContentDiv.classList.add("label");
                 if (isInterpolatedLabelPlaceholder) {
-                    cellContentDiv.classList.add("interpolated-label"); // Add placeholder class to the cell div
+                    cellContentDiv.classList.add("interpolated-label");
                 } else {
-                    cellContentDiv.style.color = getTextColor('#2a2a2a'); // Set contrast vs default inner background
-                    // --- NEW: Add class for bolding legends ---
+                    cellContentDiv.style.color = getTextColor('#2a2a2a');
                     if (cellIndex === 0 || cellIndex === rowData.length - 1 || rowIndex === 0 || rowIndex === gridData.length - 1) {
-                        cellContentDiv.classList.add("legend-label"); // Add legend class to the cell div
+                        cellContentDiv.classList.add("legend-label");
                     }
                 }
-                // --- END CELL DIV STYLING ---
             } else {
-                // Invalid data
-                console.warn(
-                    `Invalid cell data type at row ${rowIndex}, cell ${cellIndex}:`,
-                    typeof cellData,
-                    cellData,
-                );
-                // --- Apply styles and content to CELL DIV ---
+                 // Error handling remains the same
+                 console.warn(`Invalid cell data type at row ${rowIndex}, cell ${cellIndex}:`, typeof cellData, cellData);
                 cellContentDiv.textContent = "?";
                 cellContentDiv.style.backgroundColor = "#555";
                 cellContentDiv.style.color = "var(--text-color)";
-                cellContentDiv.classList.add("invalid"); // Add an invalid class for potential styling
-                // --- END CELL DIV STYLING ---
+                 cellContentDiv.classList.add("invalid");
             }
         });
     });
@@ -1719,9 +1795,433 @@ resetStateButton.addEventListener('click', () => {
 // --- NEW: Palette Export Listener ---
 exportPaletteButton.addEventListener('click', exportPaletteData);
 
-// --- Palette Import Logic (Placeholder for next step) ---
-// importPaletteButton.addEventListener('click', () => { ... });
-// importPaletteFileInput.addEventListener('change', (event) => { ... });
+// --- Palette Import Logic --- (Implementation)
+function handlePaletteImport(file) {
+    if (!file || !file.type.match('text.*')) {
+        console.warn('No text file selected or file type not supported.');
+        alert('Please select a valid .txt file.');
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = (event) => {
+        const textData = event.target.result;
+        try {
+            const newDataParsed = parseSimpleFormat(textData);
+            if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
+                throw new Error("Imported data is not a valid grid. Check format.");
+            }
+            // Basic validation: check if first/last cell of first row looks like a label (e.g., ends with 'x')
+            // This is a heuristic and might need refinement
+            if (newDataParsed.length > 0 && newDataParsed[0].length > 0) {
+                const firstCell = newDataParsed[0][0];
+                const lastCell = newDataParsed[0][newDataParsed[0].length - 1];
+                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') { // || !firstCell.endsWith('x') || !lastCell.endsWith('x') -> Removed endsWith check for more flexibility
+                    console.warn('Imported data format warning: First/last cells of first row may not be labels.');
+                    // Optionally, you could alert the user here, but let's allow import for now.
+                }
+            }
+
+            sourceGridData = newDataParsed;
+            isInterpolationEnabled = false; // Reset interpolation
+            interpolationToggle.checked = false;
+            currentGridData = sourceGridData.map(row => [...row]);
+            renderPalette(currentGridData); // Re-render main palette
+
+            alert('Palette imported successfully!');
+            console.log('Palette data imported from file:', file.name);
+
+            // If popout is open, update its content too
+            if (popoutEditor.style.display === 'flex') {
+                popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
+                showPopoutStatus('Palette imported.', false); // Show status in popout
+            }
+
+        } catch (error) {
+            console.error("Error parsing or processing imported file:", error);
+            alert(`Error importing palette: ${error.message}`);
+        }
+    };
+
+    reader.onerror = (event) => {
+        console.error("File reading error:", event.target.error);
+        alert('Error reading the selected file.');
+    };
+
+    reader.readAsText(file); // Read the file as text
+}
+
+importPaletteButton.addEventListener('click', () => {
+    importPaletteFileInput.click(); // Trigger the hidden file input
+});
+
+importPaletteFileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        handlePaletteImport(file);
+    }
+    // Reset the input value so the change event fires even if the same file is selected again
+    event.target.value = null;
+});
+
+// --- NEW: Color Picker Functions ---
+function updatePickerPreview(hex) {
+    colorPickerPreview.style.backgroundColor = hex;
+    // Optional: Update hue slider background dynamically
+    // pickerHueSlider.style.background = \`linear-gradient(to right, hsl(0, 100%, 50%), hsl(60, 100%, 50%), hsl(120, 100%, 50%), hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%))\`;
+}
+
+function updatePickerFromHsl() {
+    if (isPickerUpdating) return;
+    isPickerUpdating = true;
+
+    const h = parseInt(pickerHueNumber.value, 10);
+    const s = parseInt(pickerSatNumber.value, 10);
+    const l = parseInt(pickerLumNumber.value, 10);
+
+    if (isNaN(h) || isNaN(s) || isNaN(l)) {
+        isPickerUpdating = false;
+        return; // Avoid errors if inputs are temporarily invalid
+    }
+
+    const newHex = hslToHex(h, s, l);
+    pickerHexInput.value = newHex.toUpperCase();
+    updatePickerPreview(newHex);
+
+    isPickerUpdating = false;
+}
+
+function updatePickerFromHex() {
+    if (isPickerUpdating) return;
+    isPickerUpdating = true;
+
+    let hex = pickerHexInput.value;
+    if (!hex.startsWith('#')) {
+        hex = '#' + hex;
+    }
+
+    if (isValidHex(hex)) {
+        const hsl = hexToHsl(hex);
+        if (hsl) {
+            pickerHueSlider.value = hsl.h;
+            pickerHueNumber.value = hsl.h;
+            pickerSatSlider.value = hsl.s;
+            pickerSatNumber.value = hsl.s;
+            pickerLumSlider.value = hsl.l;
+            pickerLumNumber.value = hsl.l;
+            updatePickerPreview(hex);
+            pickerHexInput.value = hex.toUpperCase(); // Ensure # and uppercase
+        } else {
+            console.warn("Could not convert valid HEX to HSL:", hex);
+        }
+    } else {
+        // Maybe add visual feedback for invalid hex
+        console.log("Invalid HEX input:", hex);
+    }
+
+    isPickerUpdating = false;
+}
+
+function openColorPicker(rowIndex, cellIndex, event = null) { // Add event parameter with default null
+    const originalHex = sourceGridData[rowIndex][cellIndex];
+
+    if (!isValidHex(originalHex)) {
+        console.error(`Cannot open picker: Cell at source[${rowIndex}][${cellIndex}] is not a valid HEX color.`, originalHex);
+        return;
+    }
+
+    pickerTargetRow = rowIndex;
+    pickerTargetCol = cellIndex;
+
+    const hsl = hexToHsl(originalHex);
+    if (!hsl) {
+        console.error("Error converting initial HEX to HSL:", originalHex);
+        return;
+    }
+
+    isPickerUpdating = true;
+
+    // Set initial values for controls
+    pickerHueSlider.value = hsl.h;
+    pickerHueNumber.value = hsl.h;
+    pickerSatSlider.value = hsl.s;
+    pickerSatNumber.value = hsl.s;
+    pickerLumSlider.value = hsl.l;
+    pickerLumNumber.value = hsl.l;
+    pickerHexInput.value = originalHex.toUpperCase();
+    updatePickerPreview(originalHex);
+
+    isPickerUpdating = false;
+
+    // --- NEW: Position modal near cursor if event is provided ---
+    if (event) {
+        const modalWidth = colorPickerModal.offsetWidth;
+        const modalHeight = colorPickerModal.offsetHeight;
+        const viewportWidth = window.innerWidth; // Use window for full viewport width
+        const viewportHeight = window.innerHeight; // Use window for full viewport height
+        const padding = 10; // Minimum distance from viewport edge
+
+        let left = event.clientX + 15; // Position slightly offset from cursor
+        let top = event.clientY + 15;
+
+        // Adjust if position is too far right
+        if (left + modalWidth + padding > viewportWidth) {
+            left = event.clientX - modalWidth - 15; // Position to the left of cursor
+        }
+        // Adjust if position is too far left (in case left positioning pushes it < 0)
+        if (left < padding) {
+            left = padding;
+        }
+
+        // Adjust if position is too low
+        if (top + modalHeight + padding > viewportHeight) {
+            top = event.clientY - modalHeight - 15; // Position above cursor
+        }
+        // Adjust if position is too high (in case top positioning pushes it < 0)
+        if (top < padding) {
+            top = padding;
+        }
+
+        colorPickerModal.style.left = `${left}px`;
+        colorPickerModal.style.top = `${top}px`;
+    } else {
+        // Optional: Add fallback positioning if event is not available
+        // e.g., center it or use last known position
+        // If left/top are not set, it will use the CSS default (150px/150px)
+        // or the last dragged position if the user moved it.
+    }
+    // --- END NEW ---
+
+
+    // Show the modal
+    colorPickerModal.classList.add('visible');
+
+    // --- Deactivate picker mode ---
+    // ... existing code ...
+
+    // Optionally focus the first element
+    // ... existing code ...
+}
+
+function closeColorPicker() {
+    colorPickerModal.classList.remove('visible');
+    pickerTargetRow = -1; // Reset target indices
+    pickerTargetCol = -1;
+}
+
+// --- NEW: Color Picker Event Listeners ---
+
+// HSL Sliders
+pickerHueSlider.addEventListener('input', () => { pickerHueNumber.value = pickerHueSlider.value; updatePickerFromHsl(); });
+pickerSatSlider.addEventListener('input', () => { pickerSatNumber.value = pickerSatSlider.value; updatePickerFromHsl(); });
+pickerLumSlider.addEventListener('input', () => { pickerLumNumber.value = pickerLumSlider.value; updatePickerFromHsl(); });
+
+// HSL Number Inputs (using 'change' for final value after potential manual entry/spinners)
+pickerHueNumber.addEventListener('change', () => {
+    let val = parseInt(pickerHueNumber.value, 10);
+    val = isNaN(val) ? 0 : Math.max(0, Math.min(360, val)); // Clamp 0-360
+    pickerHueNumber.value = val; // Update input visually
+    pickerHueSlider.value = val;
+    updatePickerFromHsl();
+});
+pickerSatNumber.addEventListener('change', () => {
+    let val = parseInt(pickerSatNumber.value, 10);
+    val = isNaN(val) ? 50 : Math.max(0, Math.min(100, val)); // Clamp 0-100
+    pickerSatNumber.value = val;
+    pickerSatSlider.value = val;
+    updatePickerFromHsl();
+});
+pickerLumNumber.addEventListener('change', () => {
+    let val = parseInt(pickerLumNumber.value, 10);
+    val = isNaN(val) ? 50 : Math.max(0, Math.min(100, val)); // Clamp 0-100
+    pickerLumNumber.value = val;
+    pickerLumSlider.value = val;
+    updatePickerFromHsl();
+});
+
+// HEX Input (using 'change' to validate when user finishes editing)
+pickerHexInput.addEventListener('change', () => {
+    updatePickerFromHex();
+});
+// Optional: Live update from HEX input (can be laggy/janky)
+// pickerHexInput.addEventListener('input', () => { updatePickerFromHex(); });
+
+// Buttons
+pickerApplyButton.addEventListener('click', () => {
+    const finalHex = pickerHexInput.value;
+    if (isValidHex(finalHex) && pickerTargetRow !== -1 && pickerTargetCol !== -1) {
+        sourceGridData[pickerTargetRow][pickerTargetCol] = finalHex; // Update source data directly
+        updatePaletteView(); // Re-render the main grid (will use source data as interpolation is off)
+        closeColorPicker();
+    } else {
+        alert("Invalid HEX code. Cannot apply.");
+        console.error("Apply failed: Invalid HEX or target indices missing.", finalHex, pickerTargetRow, pickerTargetCol);
+    }
+});
+
+colorPickerCloseButton.addEventListener('click', closeColorPicker);
+
+pickerCopyHexButton.addEventListener('click', () => {
+    copyToClipboard(pickerHexInput.value, pickerCopyHexButton); // Use copy button for feedback
+});
+
+// Add Esc key listener for color picker modal
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && colorPickerModal.classList.contains('visible')) {
+        closeColorPicker();
+    }
+});
+
+// --- NEW: Color Pick Toggle Button Listener ---
+colorPickToggleButton.addEventListener('click', () => {
+    isColorPickingMode = !isColorPickingMode;
+    colorPickToggleButton.classList.toggle('active', isColorPickingMode);
+    document.body.classList.toggle('color-picking-active', isColorPickingMode);
+    console.log("Color Picking Mode:", isColorPickingMode ? "ON" : "OFF");
+
+    // Optional: Close color picker if it's open when mode is turned off
+    if (!isColorPickingMode && colorPickerModal.classList.contains('visible')) {
+        closeColorPicker();
+    }
+});
+
+// --- NEW: Color Picker Drag Functions ---
+function startColorPickerDrag(event) {
+    if (isResizingColorPicker) return; // Don't drag if resizing
+
+    isDraggingColorPicker = true;
+    pickerInitialX = colorPickerModal.offsetLeft;
+    pickerInitialY = colorPickerModal.offsetTop;
+    const coords = getEventCoords(event);
+    pickerStartX = coords.x;
+    pickerStartY = coords.y;
+
+    document.addEventListener('mousemove', dragColorPicker);
+    document.addEventListener('mouseup', stopColorPickerDrag);
+    document.addEventListener('touchmove', dragColorPicker, { passive: false });
+    document.addEventListener('touchend', stopColorPickerDrag);
+
+    colorPickerHeader.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
+    if (event.type === 'touchstart') {
+        event.preventDefault();
+    }
+}
+
+function dragColorPicker(event) {
+    if (!isDraggingColorPicker) return;
+    const coords = getEventCoords(event);
+    const dx = coords.x - pickerStartX;
+    const dy = coords.y - pickerStartY;
+
+    let newLeft = pickerInitialX + dx;
+    let newTop = pickerInitialY + dy;
+
+    // Basic boundary checks (optional, could add snapping later)
+    const viewportWidth = canvasViewport.clientWidth;
+    const viewportHeight = canvasViewport.clientHeight;
+    const modalWidth = colorPickerModal.offsetWidth;
+    const modalHeight = colorPickerModal.offsetHeight;
+
+    newLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth));
+    newTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight));
+
+    colorPickerModal.style.left = `${newLeft}px`;
+    colorPickerModal.style.top = `${newTop}px`;
+
+    if (event.type === 'touchmove') {
+        event.preventDefault();
+    }
+}
+
+function stopColorPickerDrag() {
+    if (isDraggingColorPicker) {
+        isDraggingColorPicker = false;
+        document.removeEventListener('mousemove', dragColorPicker);
+        document.removeEventListener('mouseup', stopColorPickerDrag);
+        document.removeEventListener('touchmove', dragColorPicker);
+        document.removeEventListener('touchend', stopColorPickerDrag);
+        colorPickerHeader.style.cursor = 'move';
+        document.body.style.userSelect = '';
+    }
+}
+
+// --- NEW: Color Picker Resize Functions ---
+function startColorPickerResize(event) {
+    if (isDraggingColorPicker) return; // Don't resize if dragging
+
+    isResizingColorPicker = true;
+    const coords = getEventCoords(event);
+    cpResizeStartX = coords.x;
+    cpResizeStartY = coords.y;
+    cpResizeInitialWidth = colorPickerModal.offsetWidth;
+    cpResizeInitialHeight = colorPickerModal.offsetHeight;
+
+    document.addEventListener('mousemove', resizeColorPicker);
+    document.addEventListener('mouseup', stopColorPickerResize);
+    document.addEventListener('touchmove', resizeColorPicker, { passive: false });
+    document.addEventListener('touchend', stopColorPickerResize);
+
+    document.body.style.cursor = 'nwse-resize';
+    document.body.style.userSelect = 'none';
+    if (event.type === 'touchstart') {
+        event.preventDefault();
+    }
+}
+
+function resizeColorPicker(event) {
+    if (!isResizingColorPicker) return;
+    const coords = getEventCoords(event);
+    const dx = coords.x - cpResizeStartX;
+    const dy = coords.y - cpResizeStartY;
+
+    const minWidth = parseInt(getComputedStyle(colorPickerModal).minWidth, 10) || 250;
+    const minHeight = parseInt(getComputedStyle(colorPickerModal).minHeight, 10) || 300;
+    const currentLeft = colorPickerModal.offsetLeft;
+    const currentTop = colorPickerModal.offsetTop;
+    const viewportWidth = canvasViewport.clientWidth;
+    const viewportHeight = canvasViewport.clientHeight;
+
+    let newWidth = cpResizeInitialWidth + dx;
+    let newHeight = cpResizeInitialHeight + dy;
+
+    // Enforce minimum dimensions
+    newWidth = Math.max(minWidth, newWidth);
+    newHeight = Math.max(minHeight, newHeight);
+
+    // Enforce maximum dimensions (prevent resizing beyond viewport edges)
+    newWidth = Math.min(newWidth, viewportWidth - currentLeft);
+    newHeight = Math.min(newHeight, viewportHeight - currentTop);
+
+    colorPickerModal.style.width = `${newWidth}px`;
+    colorPickerModal.style.height = `${newHeight}px`;
+
+    if (event.type === 'touchmove') {
+        event.preventDefault();
+    }
+}
+
+function stopColorPickerResize() {
+    if (isResizingColorPicker) {
+        isResizingColorPicker = false;
+        document.removeEventListener('mousemove', resizeColorPicker);
+        document.removeEventListener('mouseup', stopColorPickerResize);
+        document.removeEventListener('touchmove', resizeColorPicker);
+        document.removeEventListener('touchend', stopColorPickerResize);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+    }
+}
+
+// --- NEW: Add Color Picker Drag/Resize Listeners ---
+colorPickerHeader.addEventListener('mousedown', startColorPickerDrag);
+colorPickerHeader.addEventListener('touchstart', startColorPickerDrag, { passive: false });
+colorPickerResizeHandle.addEventListener('mousedown', startColorPickerResize);
+colorPickerResizeHandle.addEventListener('touchstart', startColorPickerResize, { passive: false });
+
+// --- NEW: Color Pick Toggle Button Listener ---
+// ... existing listener ...
 
 // --- Initial Load --- (Restoring definition)
 function initializeApp() {
@@ -1756,6 +2256,13 @@ function initializeApp() {
 
     // Render the initial palette (using final state)
     updatePaletteView(); // Use updatePaletteView to handle potential initial interpolation
+
+    // Ensure initial state of picker mode button and body class is correct
+    isColorPickingMode = false; // Explicitly start with picker mode off
+    colorPickToggleButton.classList.remove('active');
+    document.body.classList.remove('color-picking-active');
+
+    updatePaletteView();
 }
 
 initializeApp(); // Run initial setup 
