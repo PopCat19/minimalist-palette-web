@@ -2224,6 +2224,69 @@ pickerApplyButton.addEventListener('click', () => {
     closeColorPicker(); // This now also calls clearSelection()
 });
 
+// --- NEW: Color Picker Control Event Listeners ---
+
+// Close Button
+colorPickerCloseButton.addEventListener('click', closeColorPicker);
+
+// HSL Sliders and Number Inputs Synchronization
+[pickerHueSlider, pickerHueNumber].forEach(el => {
+    el.addEventListener('input', () => {
+        if (isPickerUpdating || pickerHueSlider.disabled) return; // Check disabled state
+        const h = parseInt(el.value, 10);
+        if (!isNaN(h)) {
+            pickerHueSlider.value = h;
+            pickerHueNumber.value = h;
+            updatePickerFromHsl();
+        }
+    });
+});
+
+[pickerSatSlider, pickerSatNumber].forEach(el => {
+    el.addEventListener('input', () => {
+        if (isPickerUpdating) return;
+        const s = parseInt(el.value, 10);
+        if (!isNaN(s)) {
+            pickerSatSlider.value = s;
+            pickerSatNumber.value = s;
+            updatePickerFromHsl();
+        }
+    });
+});
+
+[pickerLumSlider, pickerLumNumber].forEach(el => {
+    el.addEventListener('input', () => {
+        if (isPickerUpdating) return;
+        const l = parseInt(el.value, 10);
+        if (!isNaN(l)) {
+            pickerLumSlider.value = l;
+            pickerLumNumber.value = l;
+            updatePickerFromHsl();
+        }
+    });
+});
+
+// HEX Input Listener
+pickerHexInput.addEventListener('change', () => { // Use 'change' to trigger after blur or Enter
+     if (isPickerUpdating || pickerHexInput.disabled) return; // Check disabled state
+    updatePickerFromHex();
+});
+
+// Copy HEX Button
+pickerCopyHexButton.addEventListener('click', () => {
+    const hexValue = pickerHexInput.value;
+    // Only copy if it's a valid hex (or "Multiple" if we want to prevent copying that)
+    if (isValidHex(hexValue)) {
+         // Use the existing copy function but target the button itself for feedback
+        copyToClipboard(hexValue, pickerCopyHexButton);
+    } else if (hexValue !== "Multiple") {
+        console.warn("Attempted to copy invalid HEX:", hexValue);
+        // Optional: Add visual feedback for failed copy
+        pickerCopyHexButton.textContent = 'Invalid';
+        setTimeout(() => { pickerCopyHexButton.textContent = 'Copy'; }, 1500);
+    }
+});
+
 
 // Color Pick Toggle Button Listener
 colorPickToggleButton.addEventListener('click', () => {
