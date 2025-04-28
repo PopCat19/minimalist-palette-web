@@ -392,6 +392,8 @@ let isColorPickingMode = false;
 // ... existing variables ...
 let selectedCells = []; // NEW: Array to store [row, col] of selected cells
 const multiSelectTolerance = 2; // NEW: Tolerance for S/L matching
+// --- NEW: Anchor for range selection ---
+let selectionAnchor = null; // Stores [row, col] of the first cell clicked
 
 // --- DOM Elements ---
 // Palette display elements
@@ -931,67 +933,135 @@ function renderPalette(gridData) {
                 }
                 // --- END Touch End Listener ---
 
-                // --- REVISED Click Listener (Handles Desktop Clicks/Copying & Fallback) ---
+                // --- REVISED Click Listener (Handles Desktop Clicks, Multi-Select, Range Select) ---
                 cellContentDiv.addEventListener("click", (event) => {
                     // If a touch event already handled this action, or if the pointer moved, bail out
                     if (touchEventHandled || pointerHasMoved) {
-                        // console.log(`Click ignored: touchHandled=${touchEventHandled}, pointerMoved=${pointerHasMoved}`);
-                        // Reset touch flag after checking, ready for next potential independent click
-                        touchEventHandled = false;
+                        touchEventHandled = false; // Reset flag after check
                         return;
                     }
+                    // Touch devices don't have Ctrl/Shift easily, ignore range select for them
+                    if (isTouchDevice) return; // Let touchend handle touch interaction
 
-                    // console.log("Click handling action."); // Optional debug log
+                    // --- Desktop Click Logic ---
                     const clickRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
                     const clickCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
 
                     if (clickRowIndex >= sourceGridData.length || clickCellIndex >= sourceGridData[clickRowIndex].length) {
-                        console.warn("Clicked cell outside source data bounds.");
-                        return;
+                        console.warn("Clicked cell outside source data bounds."); return;
                     }
                     const clickedSourceHex = sourceGridData[clickRowIndex][clickCellIndex];
-                    const clickedHsl = hexToHsl(clickedSourceHex);
-
-                    if (!clickedHsl) {
-                        console.warn("Could not get HSL for clicked cell:", clickedSourceHex);
+                    // Only proceed if it's a valid swatch cell
+                     if (!isValidHex(clickedSourceHex)) {
+                         console.log("Clicked on a non-swatch cell (label/invalid). Ignoring selection.");
                         return;
                     }
+                    const clickedHsl = hexToHsl(clickedSourceHex); // Needed for similarity check later
 
-                    // --- Desktop Color Picking / Standard Copy ---
-                    // Use shiftKey check ONLY for non-touch devices
-                    const isDesktopShiftClick = !isTouchDevice && event.shiftKey;
+                    // --- Determine Action based on Modifiers ---
+                    const isCtrlShiftClick = event.ctrlKey && event.shiftKey;
+                    const isShiftClick = event.shiftKey && !event.ctrlKey; // Exclusive Shift
+                    const isSimpleClick = !event.shiftKey && !event.ctrlKey;
 
-                    if (isColorPickingMode && !isInterpolationEnabled && isDesktopShiftClick) {
-                         // Desktop Shift+Click multi-select
-                         handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl);
-
-                         if (selectedCells.length > 0) {
-                            const firstSelectedCoords = selectedCells[0];
-                            openColorPicker(firstSelectedCoords[0], firstSelectedCoords[1], event);
+                    // 1. Ctrl + Shift Click: Range Selection
+                    if (isCtrlShiftClick && isColorPickingMode && !isInterpolationEnabled) {
+                        console.log("Ctrl+Shift Click detected.");
+                        if (!selectionAnchor) {
+                            // First click in a potential range select sequence
+                            console.log("Setting anchor point.");
+                            clearSelection(); // Clear any previous selection
+                            selectedCells.push([clickRowIndex, clickCellIndex]);
+                            selectionAnchor = [clickRowIndex, clickCellIndex]; // Set anchor
+                            applySelectionStyles(selectionAnchor); // Apply style to anchor
                         } else {
+                            // Anchor already exists, perform range selection
+                            console.log("Performing range selection.");
+                            const [anchorRow, anchorCol] = selectionAnchor;
+                            const targetRow = clickRowIndex;
+                            const targetCol = clickCellIndex;
+
+                            const minRow = Math.min(anchorRow, targetRow);
+                            const maxRow = Math.max(anchorRow, targetRow);
+                            const minCol = Math.min(anchorCol, targetCol);
+                            const maxCol = Math.max(anchorCol, targetCol);
+
+                            // Clear previous visual selection ONLY (keep anchor)
+                            selectedCells.forEach(coord => {
+                                 const cellDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${coord[0]}"][data-cell-index="${coord[1]}"]`);
+                                 if (cellDiv) {
+                                     cellDiv.classList.remove('selected');
+                                     cellDiv.style.boxShadow = 'none';
+                                 }
+                             });
+                            selectedCells = []; // Reset selected cells array
+
+                            // Select cells within the rectangle
+                            for (let r = minRow; r <= maxRow; r++) {
+                                for (let c = minCol; c <= maxCol; c++) {
+                                    // Check bounds and if it's a valid swatch in source data
+                                    if (r < sourceGridData.length &&
+                                        c < sourceGridData[r].length &&
+                                        isValidHex(sourceGridData[r][c]))
+                                    {
+                                        selectedCells.push([r, c]);
+                                        applySelectionStyles([r, c]);
+                                    }
+                                }
+                            }
+                            console.log(`Range selected: ${selectedCells.length} cells.`);
+                        }
+                         // Open/update picker after selection change
+                         if (selectedCells.length > 0) {
+                             openColorPicker(selectedCells[0][0], selectedCells[0][1], event);
+                         } else if (colorPickerModal.classList.contains('visible')) {
+                             closeColorPicker(); // Close if selection ended up empty
+                         }
+
+                    // 2. Shift Click (Exclusive): Add/Remove Similar
+                    } else if (isShiftClick && isColorPickingMode && !isInterpolationEnabled) {
+                         console.log("Shift Click detected.");
+                         if (!clickedHsl) { console.warn("Cannot Shift+Click: Invalid HSL."); return; }
+
+                         // If selection is empty, this click sets the anchor
+                         if (selectedCells.length === 0) {
+                             selectionAnchor = [clickRowIndex, clickCellIndex];
+                             console.log("Setting anchor with first Shift+Click.");
+                         }
+                         // Use handleSwatchSelection for the add/remove/similarity logic
+                         handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl);
+                         // Open/update picker after selection change
+                         if (selectedCells.length > 0) {
+                             openColorPicker(selectedCells[0][0], selectedCells[0][1], event);
+                         } else if (colorPickerModal.classList.contains('visible')) {
+                             closeColorPicker(); // Close if selection ended up empty
+                         }
+
+
+                    // 3. Simple Click (No Modifiers)
+                    } else if (isSimpleClick) {
+                        if (isColorPickingMode && !isInterpolationEnabled) {
+                             // Simple click in pick mode: Select only this cell, set anchor
+                             console.log("Simple Click in Pick Mode detected.");
+                             clearSelection(); // Clears old selection AND anchor
+                             selectedCells.push([clickRowIndex, clickCellIndex]);
+                             selectionAnchor = [clickRowIndex, clickCellIndex]; // Set new anchor
+                             applySelectionStyles(selectionAnchor);
+                             openColorPicker(clickRowIndex, clickCellIndex, event);
+                        } else {
+                            // Simple click NOT in pick mode (or interpolation on): Copy hex
+                            console.log("Simple Click - Copy behavior.");
+                            const displayedHex = cellContentDiv.textContent;
+                            copyToClipboard(displayedHex, cellContentDiv);
+                            clearSelection(); // Clear selection and anchor on copy
                             if (colorPickerModal.classList.contains('visible')) {
-                                closeColorPicker();
+                               closeColorPicker();
                             }
                         }
-                    } else if (isColorPickingMode && !isInterpolationEnabled && !isTouchDevice) {
-                        // Desktop single click in pick mode (selects only this cell)
-                        handleSwatchSelection(event, clickRowIndex, clickCellIndex, clickedHsl); // Will clear previous selection
-                        openColorPicker(clickRowIndex, clickCellIndex, event); // Open picker for this cell
-
-                    } else {
-                        // Standard copy behavior (Not in pick mode, or interpolation on, or touch device click fallback)
-                        const displayedHex = cellContentDiv.textContent;
-                        copyToClipboard(displayedHex, cellContentDiv);
-
-                        if (isColorPickingMode && isInterpolationEnabled) {
-                           console.log("Color picking disabled while interpolation is active. Copied adjusted color.");
-                        }
-                        clearSelection();
-                        if (colorPickerModal.classList.contains('visible')) {
-                           closeColorPicker();
-                        }
                     }
-                    // --- END ---
+                    // Ignore other modifier combinations (like Ctrl alone) for selection for now
+
+                    // Reset touch handled flag after processing click
+                    touchEventHandled = false;
                 });
                 // --- END REVISED Click Listener ---
 
@@ -1042,13 +1112,13 @@ function renderPalette(gridData) {
     });
 }
 
-// --- NEW: Function to handle swatch selection logic (MODIFIED for Touch/Click Distinction) ---
+// --- NEW: Function to handle swatch selection logic (Focus: Add/Remove for Shift+Click) ---
 function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
-    // Determine if multi-select action is intended based on event type and state
-    // For touch, multi-select is the default in pick mode.
-    // For click, only if Shift key is pressed.
+    // This function is now primarily for the *add/remove* logic of Shift+Click / Touch tap
+    // It should NOT set the anchor here, as that's handled by the click listener logic
+
     const isMultiSelectIntent = (event.type === 'touchend' && isTouchDevice && isColorPickingMode) ||
-                                (event.type === 'click' && !isTouchDevice && event.shiftKey);
+                                (event.type === 'click' && !isTouchDevice && event.shiftKey && !event.ctrlKey); // Check for exclusive shift
 
     const cellId = `${rowIndex}-${colIndex}`;
     const existingIndex = selectedCells.findIndex(coord => coord[0] === rowIndex && coord[1] === colIndex);
@@ -1063,22 +1133,34 @@ function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
             selectedCells.splice(existingIndex, 1);
             targetDiv.classList.remove('selected');
             targetDiv.style.boxShadow = 'none';
+             // If we just deselected the anchor, clear the anchor
+             if (selectionAnchor && selectionAnchor[0] === rowIndex && selectionAnchor[1] === colIndex) {
+                // console.log("Anchor deselected, clearing anchor.");
+                selectionAnchor = null;
+                // If selection is now empty, ensure picker closes if open? (Handled after call)
+            }
+            // If selection is empty, maybe reset anchor? Or keep last anchor?
+            // Let's reset anchor if selection becomes empty
+             if (selectedCells.length === 0) {
+                 selectionAnchor = null;
+                 // console.log("Selection empty after deselect, clearing anchor.");
+             }
         } else {
             // Not selected, try to add
+            // **Anchor setting moved to click listener**
             if (selectedCells.length === 0) {
-                // First selection
-                selectedCells.push([rowIndex, colIndex]);
-                targetDiv.classList.add('selected');
-                targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                // First selection (anchor should have been set by caller)
+                 selectedCells.push([rowIndex, colIndex]);
+                 applySelectionStyles([rowIndex, colIndex]);
             } else {
-                // Check S/L similarity with the FIRST selected cell
-                const firstSelectedCoords = selectedCells[0];
+                // Check S/L similarity with the FIRST selected cell (which might be the anchor or not)
+                 const firstSelectedCoords = selectedCells[0]; // Use first in current selection list
                  if (firstSelectedCoords[0] >= sourceGridData.length || firstSelectedCoords[1] >= sourceGridData[firstSelectedCoords[0]].length) {
                      console.warn("First selected cell out of bounds during multi-select add. Clearing.");
-                     clearSelection();
+                     clearSelection(); // This clears anchor too
                      selectedCells.push([rowIndex, colIndex]); // Select current as new first
-                     targetDiv.classList.add('selected');
-                     targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                     selectionAnchor = [rowIndex, colIndex]; // Set anchor here explicitly after clear
+                     applySelectionStyles([rowIndex, colIndex]);
                      return;
                  }
                 const firstSelectedHex = sourceGridData[firstSelectedCoords[0]][firstSelectedCoords[1]];
@@ -1090,37 +1172,38 @@ function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
 
                     if (sDiff <= multiSelectTolerance || lDiff <= multiSelectTolerance) {
                         selectedCells.push([rowIndex, colIndex]);
-                        targetDiv.classList.add('selected');
-                        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                         applySelectionStyles([rowIndex, colIndex]);
                     } else {
                         // Condition not met - Start new selection with this cell
-                        console.log("New selection started: Dissimilar color tapped/clicked in multi-select intent.");
-                        clearSelection();
+                        console.log("New selection started: Dissimilar color added via Shift+Click/Tap.");
+                        clearSelection(); // Clears anchor
                         selectedCells.push([rowIndex, colIndex]);
-                        targetDiv.classList.add('selected');
-                        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                        selectionAnchor = [rowIndex, colIndex]; // Set anchor explicitly
+                        applySelectionStyles([rowIndex, colIndex]);
                     }
                 } else {
                      console.warn("Could not get HSL for first selected cell during multi-select check.");
-                     clearSelection();
+                     clearSelection(); // Clears anchor
                      selectedCells.push([rowIndex, colIndex]);
-                     targetDiv.classList.add('selected');
-                     targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+                     selectionAnchor = [rowIndex, colIndex]; // Set anchor explicitly
+                     applySelectionStyles([rowIndex, colIndex]);
                 }
             }
         }
-    } else { // Not a multi-select intent (e.g., simple click on desktop without shift)
-        // Standard single select: Clear previous, select current
-        clearSelection();
+    } else { // Not a multi-select intent (e.g., simple click called this somehow - shouldn't happen now)
+        // This case should ideally be handled by the simple click logic in the event listener
+        console.warn("handleSwatchSelection called without multi-select intent.");
+        // Fallback: Standard single select: Clear previous, select current
+        clearSelection(); // Clears anchor
         selectedCells.push([rowIndex, colIndex]);
-        targetDiv.classList.add('selected');
-        targetDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+        selectionAnchor = [rowIndex, colIndex]; // Set anchor
+        applySelectionStyles([rowIndex, colIndex]);
     }
 
-    // console.log("Selected Cells:", selectedCells); // Keep for debugging
+    // console.log("Selected Cells:", selectedCells, "Anchor:", selectionAnchor); // More detailed log
 }
 
-// --- NEW: Function to clear selection state and visuals ---
+// --- NEW: Function to clear selection state and visuals (UPDATED)---
 function clearSelection() {
     selectedCells.forEach(coord => {
         const cellDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${coord[0]}"][data-cell-index="${coord[1]}"]`);
@@ -1130,6 +1213,8 @@ function clearSelection() {
         }
     });
     selectedCells = []; // Reset the array
+    selectionAnchor = null; // Reset selection anchor
+    // console.log("Selection cleared, anchor reset."); // Optional debug
 }
 
 // Update the view based on interpolation state
@@ -2301,16 +2386,16 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     isPickerUpdating = false;
 
     // --- Focus appropriate element ---
-    if (isMultiSelect) {
+        if (isMultiSelect) {
         // Try focusing the first *enabled* slider (L or S)
         if (!pickerLumSlider.disabled) {
-            pickerLumSlider.focus();
+                 pickerLumSlider.focus();
         } else if (!pickerSatSlider.disabled) {
             pickerSatSlider.focus();
         } // else maybe focus Apply button?
-    } else {
+            } else {
         pickerHueSlider.focus(); // Focus Hue for single edit
-    }
+            }
 }
 
 function closeColorPicker() {
@@ -2380,8 +2465,8 @@ pickerApplyButton.addEventListener('click', (event) => {
 
     // Only update view and close if apply was successful
     if (applySuccess) {
-        updatePaletteView();
-        closeColorPicker(); // This now also calls clearSelection()
+    updatePaletteView();
+    closeColorPicker(); // This now also calls clearSelection()
     }
 });
 
@@ -2761,3 +2846,12 @@ function applyMultiSelectChanges() {
     return true; // Indicate success
 }
 // --- END Helper function ---
+
+// --- Helper function to apply visual selection styles ---
+function applySelectionStyles(coords) {
+     const cellDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${coords[0]}"][data-cell-index="${coords[1]}"]`);
+     if (cellDiv) {
+         cellDiv.classList.add('selected');
+         cellDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+     }
+}
