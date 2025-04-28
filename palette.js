@@ -1007,6 +1007,7 @@ exportPngButton.addEventListener('click', () => {
             backgroundColor: tableBgColor, // Use container BG for capture
             useCORS: true,
             logging: false,
+            scale: 2, // Render at 2x resolution
             // Position/offset adjustments might be needed if transform interferes
             // x: paletteContainer.offsetLeft, // Experiment if capture is off
             // y: paletteContainer.offsetTop,

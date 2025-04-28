@@ -115,6 +115,10 @@ body {
     position: relative;
     cursor: grab;
     background-color: var(--bg-color);
+    /* Removed SVG background pattern */
+    /* Added radial-gradient dot pattern */
+    background-image: radial-gradient(#222 1px, transparent 1px); /* Dot color and size */
+    background-size: 15px 15px; /* Spacing of the dots */
 }
 #canvas-viewport.grabbing {
     cursor: grabbing;
