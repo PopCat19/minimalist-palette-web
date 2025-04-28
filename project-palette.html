@@ -13,30 +13,37 @@
         ></script>
         <style>
             :root {
-                --cell-size: 45px; /* Base size for cells */
-                --cell-spacing: 3px;
-                --cell-padding: 5px;
-                --border-radius: 5px;
-                /* Theme Colors */
-                --bg-color: #000000;
-                --surface-color-1: #141414; /* Container, Modal */
-                --surface-color-2: #1f1f1f; /* Cells, Inputs */
-                --button-color: #cccccc;
-                --button-text-color: #141414;
-                --text-color: #ffffff;
-                --text-color-muted: #cccccc;
-                --border-color: #333333;
+                --cell-size-min: 30px; /* Minimum cell size */
+                --cell-size-max: 60px; /* Maximum cell size */
+                /* Responsive cell size: Scales between min/max based on viewport width */
+                /* Adjust the 2.5vw value to control scaling speed */
+                --cell-size: max(var(--cell-size-min), min(var(--cell-size-max), 2.5vw));
+                --cell-spacing: 8px;
+                --cell-padding-y: 16px;  /* Vertical padding */
+                --cell-padding-x: 8px;  /* Horizontal padding */
+                --border-radius: 16px; /* Updated border radius */
+                /* Refined Theme Colors */
+                --bg-color: #0f0f0f; /* Slightly darker bg */
+                --surface-color-1: #1a1a1a; /* Container, Modal */
+                --surface-color-2: #2a2a2a; /* Cells, Inputs */
+                --accent-color: #4a90e2; /* Accent for focus/hover highlights */
+                --button-color: #3f3f3f; /* Darker button */
+                --button-text-color: #e0e0e0; /* Lighter button text */
+                --button-hover-color: #555555;
+                --text-color: #f0f0f0; /* Slightly brighter text */
+                --text-color-muted: #aaaaaa;
+                --border-color: #404040; /* Slightly lighter border */
             }
 
             body {
                 background-color: var(--bg-color);
-                color: var(--text-color); /* Default text color */
+                color: var(--text-color);
                 font-family:
-                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                     Helvetica, Arial, sans-serif, "Apple Color Emoji",
-                    "Segoe UI Emoji", "Segoe UI Symbol";
+                    "Segoe UI Emoji", "Segoe UI Symbol"; /* Modern font stack */
                 margin: 0;
-                padding: 10px;
+                padding: 20px; /* Increased padding */
                 min-height: 100vh;
                 box-sizing: border-box;
                 display: flex;
@@ -44,150 +51,155 @@
                 align-items: center;
             }
 
-            #controls-container {
-                /* Renamed for clarity */
+            /* --- Controls Area --- */
+            #controls-area { /* New wrapper for all controls */
                 width: 100%;
-                max-width: 600px;
-                margin-bottom: 15px;
+                max-width: 800px; /* Allow slightly wider controls */
+                margin-bottom: 25px;
+                background-color: var(--surface-color-1);
+                padding: 15px 20px;
+                border-radius: var(--border-radius);
                 display: flex;
                 flex-direction: column; /* Stack control groups */
-                align-items: center;
-                gap: 10px;
+                gap: 8px; /* Updated gap */
             }
 
-            #main-controls,
-            #interpolation-controls,
-            #saturation-controls {
-                /* Added saturation-controls */
+            .control-group { /* Wrapper for logical groups of controls */
                 display: flex;
-                flex-wrap: wrap; /* Allow wrapping on small screens */
-                justify-content: center;
+                flex-wrap: wrap; /* Allow wrapping */
                 align-items: center;
-                gap: 10px;
+                gap: 8px; /* Updated gap */
+                padding-bottom: 10px;
+                border-bottom: 1px solid var(--border-color); /* Separator */
+            }
+            .control-group:last-child {
+                border-bottom: none; /* No border for the last group */
+                padding-bottom: 0;
+            }
+
+            .control-group h3 { /* Optional headings for groups */
+                margin: 0 0 5px 0;
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--text-color-muted);
+                width: 100%; /* Make heading span full width */
+                flex-basis: 100%;
             }
 
             /* Shared button styles */
             .control-button {
                 background-color: var(--button-color);
                 color: var(--button-text-color);
-                border: none;
-                padding: 10px 15px; /* Slightly smaller padding */
+                border: 1px solid transparent; /* Add border for focus */
+                padding: 9px 16px;
                 border-radius: var(--border-radius);
                 cursor: pointer;
-                font-size: 13px; /* Slightly smaller font */
+                font-size: 13px;
                 font-weight: 500;
-                transition: background-color 0.2s ease;
-                white-space: nowrap; /* Prevent button text wrapping */
+                transition: all 0.2s ease;
+                white-space: nowrap;
             }
             .control-button:hover {
-                background-color: #aaaaaa;
-            } /* Darker hover */
+                background-color: var(--button-hover-color);
+                border-color: var(--accent-color);
+            }
+            .control-button:focus-visible { /* Better focus */
+                 outline: none;
+                 border-color: var(--accent-color);
+            }
             .control-button:disabled {
-                /* Style for disabled state */
-                background-color: #555;
-                color: #999;
+                background-color: #333;
+                color: #777;
                 cursor: not-allowed;
+                border-color: transparent;
             }
 
-            /* Interpolation & Saturation specific styles */
-            #interpolation-controls,
-            #saturation-controls {
-                /* Grouped styles */
-                background-color: var(--surface-color-2);
-                padding: 8px 12px;
-                border-radius: var(--border-radius);
-                font-size: 13px;
-            }
+            /* Specific Control Styling */
             #interpolation-controls label,
             #saturation-controls label {
-                /* Grouped styles */
                 cursor: pointer;
                 user-select: none;
                 margin-right: 5px;
+                font-size: 13px;
+                color: var(--text-color-muted);
             }
             #interpolation-controls input[type="checkbox"] {
                 margin-right: 10px;
                 vertical-align: middle;
-            }
-            #interpolation-steps-group,
-            #saturation-offset-group {
-                /* Grouped styles */
-                display: flex; /* Show saturation group by default */
-                align-items: center;
-                gap: 8px;
-            }
-            #interpolation-steps-group {
-                display: none; /* Hidden by default */
-            }
-            #interpolation-controls
-                input[type="checkbox"]:checked
-                ~ #interpolation-steps-group {
-                display: flex; /* Show when checkbox is checked */
-            }
-            #interpolation-steps-slider,
-            #saturation-offset-slider {
-                /* Grouped styles */
-                width: 100px; /* Adjust width as needed */
-                vertical-align: middle;
-            }
-            #interpolation-steps-number,
-            #saturation-offset-number {
-                /* Grouped styles */
-                width: 45px; /* Adjust width */
-                background-color: var(--surface-color-1);
-                color: var(--text-color);
-                border: 1px solid var(--border-color);
-                border-radius: 3px;
-                padding: 3px 5px;
-                font-size: 12px;
-                text-align: center;
-            }
-            /* Hide spinner buttons on number input */
-            #interpolation-steps-number::-webkit-outer-spin-button,
-            #interpolation-steps-number::-webkit-inner-spin-button,
-            #saturation-offset-number::-webkit-outer-spin-button,
-            #saturation-offset-number::-webkit-inner-spin-button {
-                /* Grouped styles */
-                -webkit-appearance: none;
-                margin: 0;
-            }
-            #interpolation-steps-number,
-            #saturation-offset-number {
-                /* Grouped styles */
-                -moz-appearance: textfield; /* Firefox */
+                accent-color: var(--accent-color); /* Style checkbox */
             }
 
+            /* Slider/Number Input Groups */
+            .slider-group {
+                display: flex;
+                align-items: center;
+                gap: 8px; /* Updated gap */
+            }
+            #interpolation-steps-group {
+                 display: none; /* Hidden by default */
+            }
+            #interpolation-controls input[type="checkbox"]:checked ~ #interpolation-steps-group {
+                 display: flex; /* Show when checkbox is checked */
+            }
+
+            input[type="range"] { /* Style sliders */
+                 width: 120px;
+                 height: 5px;
+                 cursor: pointer;
+                 accent-color: var(--accent-color);
+                 vertical-align: middle;
+            }
+            input[type="number"] { /* Style number inputs */
+                 width: 50px;
+                 background-color: var(--surface-color-2);
+                 color: var(--text-color);
+                 border: 1px solid var(--border-color);
+                 border-radius: 4px;
+                 padding: 4px 6px;
+                 font-size: 12px;
+                 text-align: center;
+                 -moz-appearance: textfield; /* Firefox */
+            }
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+                 -webkit-appearance: none;
+                 margin: 0;
+            }
+             input[type="number"]:focus-visible {
+                 outline: none;
+                 border-color: var(--accent-color);
+             }
+
+            /* --- Palette Area --- */
             #palette-container {
                 width: 100%;
+                max-width: calc(100% - 40px); /* Max width respecting body padding */
                 overflow-x: auto;
-                overflow-y: hidden; /* Keep horizontal scroll, vertical handled by page */
-                padding-bottom: 10px; /* Ensure space below table for capture */
+                overflow-y: hidden;
+                padding-bottom: 10px;
                 border: 1px solid var(--border-color);
                 border-radius: var(--border-radius);
-                background-color: var(
-                    --surface-color-1
-                ); /* Ensure container bg is captured */
-                padding: var(--cell-spacing); /* Match table margin */
+                background-color: var(--surface-color-1);
+                padding: var(--cell-spacing);
             }
 
             table {
                 border-collapse: separate;
                 border-spacing: var(--cell-spacing);
-                width: auto; /* Let table size itself based on content */
+                width: auto;
                 min-width: 100%;
-                table-layout: fixed; /* Keep fixed for consistent column widths */
+                table-layout: fixed;
                 background-color: var(--surface-color-1);
             }
 
             td {
                 width: var(--cell-size);
-                height: var(--cell-size);
-                padding: var(--cell-padding);
+                padding: var(--cell-padding-y) var(--cell-padding-x); /* Use separate padding vars */
                 text-align: center;
                 vertical-align: middle;
                 border-radius: var(--border-radius);
                 font-size: clamp(8px, 1.2vw, 10px);
-                font-weight: 500; /* Base font weight */
+                font-weight: 500;
                 position: relative;
                 overflow: hidden;
                 box-sizing: border-box;
@@ -197,31 +209,31 @@
                     transform 0.1s ease-out,
                     box-shadow 0.2s ease-out,
                     font-weight 0.1s ease-out,
-                    background-color 0.2s ease; /* Added background transition */
+                    background-color 0.2s ease,
+                    border-radius 0.2s ease; /* Added border-radius to transition */
                 word-wrap: break-word;
             }
 
             td:hover {
-                font-weight: bold; /* Bold text on hover */
+                font-weight: 600; /* Slightly bolder */
             }
 
             td.swatch {
                 cursor: pointer;
             }
             td.swatch:hover {
-                transform: scale(1.05);
-                box-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+                border-radius: 50%; /* Transform to circle */
+                z-index: 10; /* Bring to front */
             }
             td.interpolated {
-                /* Style for interpolated cells */
-                /* Optional: subtle visual difference */
-                /* opacity: 0.95; */
+                /* opacity: 0.95; */ /* Keep subtle */
             }
             td.label.interpolated-label {
-                /* Style for placeholder labels */
                 color: var(--text-color-muted);
                 font-style: italic;
                 font-size: smaller;
+                background-color: transparent; /* Make placeholder labels less prominent */
+                border: 1px dashed var(--border-color);
             }
 
             td.copied::after {
@@ -231,26 +243,21 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-color: rgba(0, 0, 0, 0.7);
+                background-color: rgba(0, 0, 0, 0.75); /* Darker overlay */
                 color: var(--text-color);
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                font-size: 9px;
-                font-weight: bold; /* Keep copied text bold */
+                font-size: 10px; /* Slightly larger text */
+                font-weight: bold;
                 border-radius: inherit;
                 animation: fadeOut 1s forwards;
+                z-index: 5; /* Ensure it's above cell content */
             }
             @keyframes fadeOut {
-                0% {
-                    opacity: 1;
-                }
-                80% {
-                    opacity: 1;
-                }
-                100% {
-                    opacity: 0;
-                }
+                0% { opacity: 1; }
+                80% { opacity: 1; }
+                100% { opacity: 0; }
             }
 
             /* --- Modal Styles --- */
@@ -263,236 +270,201 @@
                 width: 100%;
                 height: 100%;
                 overflow: auto;
-                background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
-                padding-top: 60px;
+                background-color: rgba(0, 0, 0, 0.8); /* Darker overlay */
+                padding: 40px 20px; /* Add padding for scroll */
+                backdrop-filter: blur(3px); /* Optional: blur background */
             }
             .modal-content {
                 background-color: var(--surface-color-1);
-                color: var(--text-color); /* Ensure modal text is white */
-                margin: 5% auto;
-                padding: 25px;
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
+                color: var(--text-color);
+                margin: 2% auto; /* Adjust vertical margin */
+                padding: 30px; /* Increased padding */
+                border: none; /* Remove border, use shadow */
+                border-radius: var(--border-radius);
                 width: 85%;
                 max-width: 750px;
                 position: relative;
-                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+            }
+            .modal-header { /* Add a header section */
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .modal-header h2 {
+                 margin: 0;
+                 font-size: 18px;
+                 font-weight: 600;
             }
             .close-button {
-                color: #aaa;
-                position: absolute;
-                top: 10px;
-                right: 20px;
-                font-size: 28px;
+                color: var(--text-color-muted);
+                font-size: 26px;
                 font-weight: bold;
                 line-height: 1;
+                background: none;
+                border: none;
+                padding: 0 5px;
+                cursor: pointer;
+                transition: color 0.2s ease;
             }
             .close-button:hover,
             .close-button:focus {
                 color: var(--text-color);
-                text-decoration: none;
-                cursor: pointer;
+                outline: none;
             }
             #palette-input {
-                /* Style for textarea inside modal */
                 width: 100%;
-                min-height: 250px;
+                min-height: 280px; /* Taller */
                 background-color: var(--surface-color-2);
-                color: var(--text-color-muted);
+                color: var(--text-color); /* Use main text color */
                 border: 1px solid var(--border-color);
-                border-radius: 4px;
-                padding: 10px;
+                border-radius: var(--border-radius);
+                padding: 12px;
                 font-family:
-                    Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+                    "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace; /* Better mono stack */
                 font-size: 13px;
                 box-sizing: border-box;
                 resize: vertical;
-                margin-bottom: 15px;
+                margin-bottom: 20px; /* More space */
                 white-space: pre;
                 overflow-wrap: normal;
                 overflow-x: auto;
             }
-            #update-button {
-                /* Style for button inside modal */
-                background-color: var(--button-color);
-                color: var(--button-text-color);
-                border: none;
-                padding: 10px 20px;
-                border-radius: 4px;
+             #palette-input:focus-visible {
+                  outline: none;
+                  border-color: var(--accent-color);
+                  box-shadow: 0 0 0 1px var(--accent-color);
+             }
+
+            #update-button { /* Style modal button like others */
+                background-color: var(--accent-color); /* Use accent color */
+                color: #ffffff;
+                border: 1px solid transparent;
+                padding: 10px 22px;
+                border-radius: var(--border-radius);
                 cursor: pointer;
                 font-size: 14px;
                 font-weight: 500;
-                transition: background-color 0.2s ease;
-                display: block;
-                margin: 0 auto;
+                transition: all 0.2s ease;
+                display: block; /* Keep as block */
+                width: fit-content; /* Size to content */
+                margin: 0 auto; /* Center */
             }
             #update-button:hover {
-                background-color: #aaaaaa;
-            } /* Darker hover */
+                background-color: #3a80d2; /* Darker accent */
+                border-color: transparent;
+            }
+             #update-button:focus-visible { /* Better focus */
+                 outline: none;
+                 border-color: #ffffff;
+             }
 
             /* --- Responsive Adjustments --- */
             @media (max-width: 768px) {
                 :root {
-                    --cell-size: 38px;
                     --cell-spacing: 2px;
-                    --cell-padding: 4px;
-                    --border-radius: 4px;
+                    --cell-padding-y: 4px;
+                    --cell-padding-x: 6px;
+                    --border-radius: 16px; /* Adjusted responsive radius */
                 }
-                td {
-                    font-size: 8px;
-                }
-                td.copied::after {
-                    font-size: 8px;
-                }
-                .modal-content {
-                    width: 90%;
-                    margin-top: 10%;
-                }
-                #palette-input {
-                    min-height: 200px;
-                    font-size: 12px;
-                }
-                #interpolation-controls,
-                #saturation-controls {
-                    /* Grouped */
-                    font-size: 12px;
-                }
-                #interpolation-steps-slider,
-                #saturation-offset-slider {
-                    /* Grouped */
-                    width: 80px;
-                }
-                #interpolation-steps-number,
-                #saturation-offset-number {
-                    /* Grouped */
-                    width: 40px;
-                    font-size: 11px;
-                }
+                body { padding: 15px; }
+                #controls-area { padding: 12px 15px; gap: 8px; margin-bottom: 20px;} /* Updated gap */
+                .control-group { gap: 8px; padding-bottom: 8px; } /* Updated gap */
+                .control-button { padding: 8px 14px; font-size: 12px; }
+                 input[type="range"] { width: 100px; }
+                 input[type="number"] { width: 45px; font-size: 11px; }
+                td { font-size: 8px; }
+                td.copied::after { font-size: 9px; }
+                .modal-content { width: 92%; padding: 20px; }
+                #palette-input { min-height: 220px; font-size: 12px; }
+                #update-button { padding: 9px 18px; font-size: 13px; }
+                .modal-header h2 { font-size: 16px; }
             }
+
             @media (max-width: 480px) {
                 :root {
-                    --cell-size: 32px;
                     --cell-spacing: 2px;
-                    --cell-padding: 3px;
-                    --border-radius: 3px;
+                    --cell-padding-y: 3px;
+                    --cell-padding-x: 5px;
+                    --border-radius: 12px; /* Adjusted responsive radius */
                 }
-                td {
-                    font-size: 7px;
-                }
-                #controls-container {
-                    gap: 8px;
-                }
-                #main-controls,
-                #interpolation-controls,
-                #saturation-controls {
-                    /* Grouped */
-                    gap: 8px;
-                }
-                .control-button {
-                    padding: 8px 10px;
-                    font-size: 12px;
-                }
-                #interpolation-controls,
-                #saturation-controls {
-                    /* Grouped */
-                    padding: 6px 10px;
-                    font-size: 11px;
-                }
-                #interpolation-steps-group,
-                #saturation-offset-group {
-                    /* Grouped */
-                    flex-direction: column;
-                    align-items: flex-start;
-                    gap: 5px;
-                }
-                #interpolation-steps-slider,
-                #saturation-offset-slider {
-                    /* Grouped */
-                    width: 120px;
-                } /* Wider on small screens when stacked */
-                #interpolation-steps-number,
-                #saturation-offset-number {
-                    /* Grouped */
-                    width: 45px;
-                }
-
-                .modal-content {
-                    width: 95%;
-                    margin-top: 15%;
-                    padding: 15px;
-                }
-                .close-button {
-                    top: 5px;
-                    right: 10px;
-                    font-size: 24px;
-                }
-                #palette-input {
-                    min-height: 180px;
-                }
-                #update-button {
-                    padding: 8px 15px;
-                    font-size: 13px;
-                }
+                 body { padding: 10px; }
+                 #controls-area { padding: 10px; gap: 8px; margin-bottom: 15px;} /* Updated gap */
+                 .control-group { flex-direction: column; align-items: stretch; gap: 8px;} /* Stack group items, updated gap */
+                 .control-group h3 { margin-bottom: 8px; }
+                 .control-button { width: 100%; text-align: center; padding: 10px 12px; } /* Full width buttons */
+                 #interpolation-controls, #saturation-controls { /* Improve alignment when stacked */
+                     display: flex;
+                     flex-direction: column;
+                     align-items: flex-start;
+                     gap: 8px;
+                 }
+                 .slider-group { width: 100%; justify-content: space-between;} /* Space out slider/number */
+                 input[type="range"] { width: calc(100% - 70px); } /* Adjust slider width */
+                 input[type="number"] { width: 50px; }
+                td { font-size: 7px; }
+                td.copied::after { font-size: 8px; }
+                .modal { padding: 20px 10px; }
+                .modal-content { width: 95%; padding: 15px; }
+                .modal-header { padding-bottom: 10px; margin-bottom: 15px; }
+                #palette-input { min-height: 180px; }
+                #update-button { width: 100%; } /* Full width modal button */
             }
         </style>
     </head>
     <body>
-        <div id="controls-container">
-            <div id="main-controls">
-                <button id="edit-palette-button" class="control-button">
-                    Edit Palette Data
-                </button>
-                <button id="export-png-button" class="control-button">
-                    Export as PNG
-                </button>
-            </div>
-            <div id="interpolation-controls">
-                <label for="interpolation-toggle"
-                    >Distribute Shades (Vertical):</label
-                >
-                <input type="checkbox" id="interpolation-toggle" />
-                <div id="interpolation-steps-group">
-                    <label for="interpolation-steps-slider">Steps:</label>
-                    <input
-                        type="range"
-                        id="interpolation-steps-slider"
-                        min="1"
-                        max="10"
-                        value="1"
-                        step="1"
-                    />
-                    <input
-                        type="number"
-                        id="interpolation-steps-number"
-                        min="1"
-                        max="10"
-                        value="1"
-                    />
-                </div>
-            </div>
-            <!-- NEW: Saturation Controls -->
-            <div id="saturation-controls">
-                <label for="saturation-offset-slider">Saturation Offset:</label>
-                <div id="saturation-offset-group">
-                    <input
-                        type="range"
-                        id="saturation-offset-slider"
-                        min="-100"
-                        max="100"
-                        value="0"
-                        step="1"
-                    />
-                    <input
-                        type="number"
-                        id="saturation-offset-number"
-                        min="-100"
-                        max="100"
-                        value="0"
-                    />
-                    <span>%</span>
-                </div>
-            </div>
-            <!-- END NEW -->
+        <div id="controls-area"> <!-- Renamed and restructured -->
+             <div class="control-group"> <!-- Group for Palette Actions -->
+                 <!-- <h3>Palette Actions</h3> Optional Heading -->
+                 <button id="edit-palette-button" class="control-button">
+                     Edit Palette Data
+                 </button>
+                 <button id="export-png-button" class="control-button">
+                     Export as PNG
+                 </button>
+             </div>
+             <div class="control-group"> <!-- Group for Appearance Adjustments -->
+                 <!-- <h3>Adjustments</h3> Optional Heading -->
+                 <div id="interpolation-controls"> <!-- Keep IDs for JS -->
+                     <label for="interpolation-toggle">
+                         Distribute Shades (Vertical):
+                     </label>
+                     <input type="checkbox" id="interpolation-toggle" />
+                     <div id="interpolation-steps-group" class="slider-group">
+                         <label for="interpolation-steps-slider">Steps:</label>
+                         <input
+                             type="range"
+                             id="interpolation-steps-slider"
+                             min="1" max="10" value="1" step="1"
+                         />
+                         <input
+                             type="number"
+                             id="interpolation-steps-number"
+                             min="1" max="10" value="1"
+                         />
+                     </div>
+                 </div>
+             </div>
+             <div class="control-group">
+                  <div id="saturation-controls"> <!-- Keep IDs for JS -->
+                     <label for="saturation-offset-slider">Saturation Offset:</label>
+                     <div id="saturation-offset-group" class="slider-group">
+                         <input
+                             type="range"
+                             id="saturation-offset-slider"
+                             min="-100" max="100" value="0" step="1"
+                         />
+                         <input
+                             type="number"
+                             id="saturation-offset-number"
+                             min="-100" max="100" value="0"
+                         />
+                         <span>%</span>
+                     </div>
+                  </div>
+             </div>
         </div>
 
         <div id="palette-container">
@@ -506,19 +478,20 @@
         <!-- The Modal -->
         <div id="edit-modal" class="modal">
             <div class="modal-content">
-                <span class="close-button" id="close-modal-button"
-                    >&times;</span
-                >
+                 <div class="modal-header"> <!-- Added Modal Header -->
+                     <h2>Edit Palette Data</h2>
+                     <button class="close-button" id="close-modal-button" aria-label="Close modal">&times;</button> <!-- Use button for accessibility -->
+                 </div>
                 <label
                     for="palette-input"
-                    style="display: block; margin-bottom: 8px; font-weight: 500"
+                    style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 14px;"
                 >
-                    Palette Data (Space-Delimited, #Hex for colors):
+                    Palette Data (Space-Delimited rows, #Hex for colors):
                 </label>
                 <textarea
                     id="palette-input"
                     spellcheck="false"
-                    placeholder="Paste palette data here..."
+                    placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
                 ></textarea>
                 <button id="update-button">Update Palette from Text</button>
             </div>
@@ -1045,6 +1018,13 @@
 
                 const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
+                // --- NEW: Check if the color is neutral (very low saturation) ---
+                const saturationThreshold = 0.01; // Adjust as needed
+                if (hsl.s < saturationThreshold) {
+                    return hexColor; // Return original color if it's neutral
+                }
+                // --- END NEW ---
+
                 // Adjust saturation: offset is -100 to 100, convert to -1.0 to 1.0
                 const offset = offsetPercent / 100;
                 hsl.s = Math.max(0, Math.min(1, hsl.s + offset)); // Clamp between 0 and 1
@@ -1154,14 +1134,13 @@
             }
             function getTextColor(hexBgColor) {
                 if (!hexBgColor || typeof hexBgColor !== "string")
-                    return "var(--text-color)";
+                    return "#000000"; // Default to black
                 const rgb = hexToRgb(hexBgColor);
-                if (!rgb) return "var(--text-color)";
-                const lum =
-                    (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
-                return lum > 0.5
-                    ? "var(--button-text-color)"
-                    : "var(--text-color)";
+                if (!rgb) return "#000000"; // Default to black on error
+                // Calculate luminance (per WCAG)
+                const lum = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255;
+                // Return pure white or black for maximum contrast
+                return lum > 0.5 ? "#000000" : "#FFFFFF";
             }
             async function copyToClipboard(text, element) {
                 if (!navigator.clipboard) {
@@ -1246,8 +1225,15 @@
                                 copyToClipboard(adjustedHexText, cell);
                             });
 
-                            if (isInterpolationEnabled) {
-                                cell.classList.add("interpolated");
+                            // Check if the cell is supposed to be marked as interpolated based on its position and state
+                            // This logic might need refinement depending on how interpolated status is tracked for rows/cols
+                            // This logic might need refinement depending on how interpolated status is tracked for rows/cols
+                            if (isInterpolationEnabled && /* Add condition based on rowIndex if needed */ cellData !== '-') {
+                                // Example: Check if the row index corresponds to an interpolated row
+                                // if (currentGridData[rowIndex] && currentGridData[rowIndex].isInterpolated) { ... }
+                                // For now, adding class if interpolation is globally enabled
+                                // cell.classList.add("interpolated");
+                                // Note: Interpolated status is currently mainly visual via placeholder '-'
                             }
                         } else if (typeof cellData === "string") {
                             // It's a label or placeholder
@@ -1256,10 +1242,8 @@
                             if (isInterpolatedLabelPlaceholder) {
                                 cell.classList.add("interpolated-label"); // Use class for styling
                             } else {
-                                // Regular label styling
-                                cell.style.color = getTextColor(
-                                    getComputedStyle(cell).backgroundColor,
-                                );
+                                // Regular label styling - USE getTextColor for contrast
+                                cell.style.color = getTextColor('#2a2a2a'); // Set contrast color vs standard cell bg
                             }
                         } else {
                             // Invalid data
