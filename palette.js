@@ -392,6 +392,8 @@ let isColorPickingMode = false;
 // ... existing variables ...
 let selectedCells = []; // NEW: Array to store [row, col] of selected cells
 const multiSelectTolerance = 2; // NEW: Tolerance for S/L matching
+// --- NEW: Hue Tolerance ---
+const multiSelectHueTolerance = 2; // Degrees (+/-) for enabling Hue batch edit
 // --- NEW: Anchor for range selection ---
 let selectionAnchor = null; // Stores [row, col] of the first cell clicked
 
@@ -2296,106 +2298,118 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
 
     isPickerUpdating = true;
 
-    // --- Determine if Multi-Select Mode ---
+    // Determine if Multi-Select Mode
     const isMultiSelect = selectedCells.length > 1;
     const firstSelectedHsl = hsl; // HSL of the first selected cell
 
-    // --- NEW: Flags to determine if S/L controls should be disabled in multi-select ---
+    // --- Flags to determine if controls should be disabled in multi-select ---
+    let shouldDisableH = false; // NEW Hue flag
     let shouldDisableS = false;
     let shouldDisableL = false;
 
     if (isMultiSelect) {
-        // Iterate through OTHER selected cells to check for S/L variance
+        // Iterate through OTHER selected cells to check for variance
         for (let i = 1; i < selectedCells.length; i++) {
             const [r, c] = selectedCells[i];
-            // Bounds check for safety
             if (r < sourceGridData.length && c < sourceGridData[r].length) {
                 const currentHex = sourceGridData[r][c];
                 const currentHsl = hexToHsl(currentHex);
                 if (currentHsl) {
-                    if (Math.abs(currentHsl.s - firstSelectedHsl.s) > multiSelectTolerance) {
+                    // --- NEW: Check Hue Variance ---
+                    if (!shouldDisableH && getHueDifference(currentHsl.h, firstSelectedHsl.h) > multiSelectHueTolerance) {
+                        shouldDisableH = true;
+                    }
+                    // --- END NEW ---
+
+                    if (!shouldDisableS && Math.abs(currentHsl.s - firstSelectedHsl.s) > multiSelectTolerance) {
                         shouldDisableS = true;
                     }
-                    if (Math.abs(currentHsl.l - firstSelectedHsl.l) > multiSelectTolerance) {
+                    if (!shouldDisableL && Math.abs(currentHsl.l - firstSelectedHsl.l) > multiSelectTolerance) {
                         shouldDisableL = true;
                     }
-                    // Optimization: If both are disabled, no need to check further
-                    if (shouldDisableS && shouldDisableL) break;
+                    // Optimization: If all are disabled, no need to check further
+                    if (shouldDisableH && shouldDisableS && shouldDisableL) break;
                 } else {
                      console.warn(`Could not get HSL for selected cell [${r},${c}] during variance check.`);
                 }
             }
         }
     }
-    // --- END NEW: Check S/L variance ---
+    // --- END Check variance ---
 
     // Set initial values based on the *first* selected cell
     pickerHueSlider.value = firstSelectedHsl.h;
-    pickerHueNumber.value = firstSelectedHsl.h;
+    pickerHueNumber.value = firstSelectedHsl.h; // Keep initial set
     pickerSatSlider.value = firstSelectedHsl.s;
     pickerSatNumber.value = firstSelectedHsl.s; // Keep initial set
     pickerLumSlider.value = firstSelectedHsl.l;
     pickerLumNumber.value = firstSelectedHsl.l; // Keep initial set
     pickerHexInput.value = isMultiSelect ? "Multiple" : originalHex.toUpperCase();
-    updatePickerPreview(originalHex); // Preview always shows the first selected
+    updatePickerPreview(originalHex);
 
-    // --- Enable/Disable Controls based on mode and variance ---
-    pickerHueSlider.disabled = isMultiSelect;
-    pickerHueNumber.disabled = isMultiSelect;
-    pickerHexInput.disabled = isMultiSelect;
+    // --- Enable/Disable Controls based on mode and variance AND UPDATE DISPLAY ---
+    pickerHexInput.disabled = isMultiSelect; // Hex always disabled in multi
 
-    // --- Apply disabling based on variance flags AND UPDATE DISPLAY ---
+    // --- Hue Controls ---
+    pickerHueSlider.disabled = isMultiSelect && shouldDisableH;
+    pickerHueNumber.disabled = isMultiSelect && shouldDisableH;
+     if (pickerHueNumber.disabled) {
+        pickerHueNumber.value = ''; // Clear value if disabled
+        pickerHueNumber.placeholder = 'Varies'; // Show placeholder
+    } else {
+        pickerHueNumber.value = firstSelectedHsl.h; // Ensure value is set if enabled
+        pickerHueNumber.placeholder = ''; // Clear placeholder
+    }
+
+    // --- Saturation Controls ---
     pickerSatSlider.disabled = isMultiSelect && shouldDisableS;
     pickerSatNumber.disabled = isMultiSelect && shouldDisableS;
     if (pickerSatNumber.disabled) {
-        pickerSatNumber.value = ''; // Clear value if disabled due to variance
-        pickerSatNumber.placeholder = 'Varies'; // Show placeholder
+        pickerSatNumber.value = '';
+        pickerSatNumber.placeholder = 'Varies';
     } else {
-        pickerSatNumber.value = firstSelectedHsl.s; // Ensure value is set if enabled
-        pickerSatNumber.placeholder = ''; // Clear placeholder
+        pickerSatNumber.value = firstSelectedHsl.s;
+        pickerSatNumber.placeholder = '';
     }
 
+    // --- Luminance Controls ---
     pickerLumSlider.disabled = isMultiSelect && shouldDisableL;
     pickerLumNumber.disabled = isMultiSelect && shouldDisableL;
      if (pickerLumNumber.disabled) {
-        pickerLumNumber.value = ''; // Clear value if disabled due to variance
-        pickerLumNumber.placeholder = 'Varies'; // Show placeholder
+        pickerLumNumber.value = '';
+        pickerLumNumber.placeholder = 'Varies';
     } else {
-        pickerLumNumber.value = firstSelectedHsl.l; // Ensure value is set if enabled
-        pickerLumNumber.placeholder = ''; // Clear placeholder
+        pickerLumNumber.value = firstSelectedHsl.l;
+        pickerLumNumber.placeholder = '';
     }
 
     // Add/Remove visual class for disabled state
-    pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
-    pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
+    pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', pickerHueSlider.disabled); // Use slider's disabled state
+    pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', pickerHexInput.disabled);
     pickerSatSlider.closest('.picker-control-group').classList.toggle('disabled', pickerSatSlider.disabled);
     pickerLumSlider.closest('.picker-control-group').classList.toggle('disabled', pickerLumSlider.disabled);
-
 
     // --- Update Title ---
     colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
 
-    // Position the modal near the initiating event if provided
-    if (event && event.clientX && event.clientY) {
-       // ... (modal positioning logic remains the same) ...
-    } else {
-       // ... (center modal logic remains the same) ...
-    }
+    // ... (Positioning logic) ...
 
     colorPickerModal.classList.add('visible');
     isPickerUpdating = false;
 
     // --- Focus appropriate element ---
-        if (isMultiSelect) {
-        // Try focusing the first *enabled* slider (L or S)
-        if (!pickerLumSlider.disabled) {
-                 pickerLumSlider.focus();
+    if (isMultiSelect) {
+        // Try focusing the first *enabled* slider (H, L, or S)
+        if (!pickerHueSlider.disabled) {
+            pickerHueSlider.focus();
+        } else if (!pickerLumSlider.disabled) {
+            pickerLumSlider.focus();
         } else if (!pickerSatSlider.disabled) {
             pickerSatSlider.focus();
         } // else maybe focus Apply button?
-            } else {
+    } else {
         pickerHueSlider.focus(); // Focus Hue for single edit
-            }
+    }
 }
 
 function closeColorPicker() {
@@ -2793,34 +2807,45 @@ initializeApp(); // Run initial setup
 
 // --- Helper function for multi-apply logic (to avoid duplication) ---
 function applyMultiSelectChanges() {
+    let newH = null; // NEW: Hue value
     let newS = null;
     let newL = null;
     let appliedChange = false; // Track if any change is possible
 
-    // Only try to parse S if the control is enabled
+    // --- NEW: Parse H if enabled ---
+    if (!pickerHueNumber.disabled) {
+        newH = parseInt(pickerHueNumber.value, 10);
+        if (isNaN(newH) || newH < 0 || newH > 360) { // Validate 0-360
+            alert("Invalid Hue value (must be 0-360).");
+            return false; // Indicate failure
+        }
+        appliedChange = true;
+    }
+    // --- END NEW ---
+
+    // Parse S if enabled
     if (!pickerSatNumber.disabled) {
         newS = parseInt(pickerSatNumber.value, 10);
-        if (isNaN(newS) || newS < 0 || newS > 100) { // Added range check
+        if (isNaN(newS) || newS < 0 || newS > 100) {
             alert("Invalid Saturation value (must be 0-100).");
-            return false; // Indicate failure
+            return false;
         }
         appliedChange = true;
     }
 
-    // Only try to parse L if the control is enabled
+    // Parse L if enabled
     if (!pickerLumNumber.disabled) {
         newL = parseInt(pickerLumNumber.value, 10);
-        if (isNaN(newL) || newL < 0 || newL > 100) { // Added range check
+        if (isNaN(newL) || newL < 0 || newL > 100) {
             alert("Invalid Luminance value (must be 0-100).");
-            return false; // Indicate failure
+            return false;
         }
         appliedChange = true;
     }
 
-    // If neither S nor L was enabled/changed, nothing to apply
     if (!appliedChange) {
-        console.log("Apply clicked, but no editable values (S/L) were changed or enabled.");
-        return true; // Indicate success (nothing to do)
+        console.log("Apply clicked, but no editable values (H/S/L) were changed or enabled.");
+        return true; // Success (nothing to do)
     }
 
     // Apply the changes, preserving original values where necessary
@@ -2831,10 +2856,11 @@ function applyMultiSelectChanges() {
             const originalHsl = hexToHsl(originalHex);
             if (originalHsl) {
                 // Use parsed value if available (not null), otherwise use original
+                const finalH = (newH !== null) ? newH : originalHsl.h; // Apply H if changed
                 const finalS = (newS !== null) ? newS : originalHsl.s;
                 const finalL = (newL !== null) ? newL : originalHsl.l;
 
-                const finalHex = hslToHex(originalHsl.h, finalS, finalL);
+                const finalHex = hslToHex(finalH, finalS, finalL); // Use finalH
                 sourceGridData[rowIndex][colIndex] = finalHex;
             } else {
                 console.warn(`Could not process original color for cell [${rowIndex}, ${colIndex}] during multi-apply.`);
@@ -2842,7 +2868,13 @@ function applyMultiSelectChanges() {
         }
     });
 
-    console.log(`Applied changes to ${selectedCells.length} cells. ${newS !== null ? 'S:'+newS : ''} ${newL !== null ? 'L:'+newL : ''}`.trim());
+    // Update Log Message
+    let logParts = [];
+    if (newH !== null) logParts.push(`H:${newH}`);
+    if (newS !== null) logParts.push(`S:${newS}`);
+    if (newL !== null) logParts.push(`L:${newL}`);
+    console.log(`Applied changes to ${selectedCells.length} cells. ${logParts.join(', ')}`);
+
     return true; // Indicate success
 }
 // --- END Helper function ---
@@ -2854,4 +2886,10 @@ function applySelectionStyles(coords) {
          cellDiv.classList.add('selected');
          cellDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
      }
+}
+
+// --- Helper function to calculate minimum angular difference between two hues ---
+function getHueDifference(h1, h2) {
+    const diff = Math.abs(h1 - h2);
+    return Math.min(diff, 360 - diff);
 }
