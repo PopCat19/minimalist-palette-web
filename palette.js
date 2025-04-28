@@ -368,6 +368,10 @@ const maxScale = 5;
 const scaleStep = 0.1;
 const zoomDebounceDelay = 10; // Optional: debounce zoom updates slightly
 let zoomTimeout;
+// --- NEW: Click vs Drag State ---
+const dragThreshold = 5; // Pixels to differentiate click from drag
+let mouseHasMoved = false;
+let mouseDownPos = { x: 0, y: 0 };
 // --- NEW: Track forced cell size ---
 // let lastForcedCellSizePx = null; // REMOVED - No longer needed
 // --- NEW: Local Storage Key ---
@@ -868,8 +872,15 @@ function renderPalette(gridData) {
                     cellContentDiv.dataset.sourceHex = originalHexColor; // Fallback for generated/interpolated
                 }
 
-                // --- REVISED Click Listener (Handles Multi-Select) ---
+                // --- REVISED Click Listener (Handles Multi-Select & Drag Prevention) ---
                 cellContentDiv.addEventListener("click", (event) => {
+                    // --- NEW: Prevent click action if mouse was dragged ---
+                    if (mouseHasMoved) {
+                        // console.log("Click ignored due to drag."); // Optional debug log
+                        return;
+                    }
+                    // --- END NEW ---
+
                     const clickRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
                     const clickCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
 
@@ -1048,9 +1059,19 @@ function updatePaletteView() {
 
 // --- NEW: Panning Logic ---
 function startPan(event) {
+    // Don't pan if clicking on interactive elements within the viewport, like popout headers/resizers
+    if (event.target.closest('#popout-editor') || event.target.closest('#color-picker-modal')) {
+        return;
+    }
+
     isPanning = true;
-    startX = event.clientX || event.touches[0].clientX;
-    startY = event.clientY || event.touches[0].clientY;
+    const coords = getEventCoords(event); // Use helper for coords
+    startX = coords.x;
+    startY = coords.y;
+    // --- NEW: Store mouse down position and reset move flag ---
+    mouseDownPos = { x: startX, y: startY };
+    mouseHasMoved = false;
+    // --- END NEW ---
     canvasViewport.classList.add('grabbing');
     // Prevent text selection during drag
     event.preventDefault();
@@ -1059,8 +1080,19 @@ function startPan(event) {
 function panMove(event) {
     if (!isPanning) return;
     event.preventDefault();
-    currentX = event.clientX || event.touches[0].clientX;
-    currentY = event.clientY || event.touches[0].clientY;
+    const coords = getEventCoords(event); // Use helper for coords
+    currentX = coords.x;
+    currentY = coords.y;
+
+    // --- NEW: Check if mouse has moved beyond threshold ---
+    if (!mouseHasMoved) {
+        const dxAbs = Math.abs(currentX - mouseDownPos.x);
+        const dyAbs = Math.abs(currentY - mouseDownPos.y);
+        if (dxAbs > dragThreshold || dyAbs > dragThreshold) {
+            mouseHasMoved = true;
+        }
+    }
+    // --- END NEW ---
 
     const dx = currentX - startX;
     const dy = currentY - startY;
