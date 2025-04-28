@@ -13,40 +13,127 @@
         ></script>
         <style>
             :root {
-                --cell-size-min: 30px; /* Minimum cell size */
-                --cell-size-max: 60px; /* Maximum cell size */
-                /* Responsive cell size: Scales between min/max based on viewport width */
-                /* Adjust the 2.5vw value to control scaling speed */
-                --cell-size: max(var(--cell-size-min), min(var(--cell-size-max), 2.5vw));
-                --cell-spacing: 8px;
-                --cell-padding-y: 16px;  /* Vertical padding */
-                --cell-padding-x: 8px;  /* Horizontal padding */
-                --border-radius: 16px; /* Updated border radius */
-                /* Refined Theme Colors */
-                --bg-color: #0f0f0f; /* Slightly darker bg */
+                /* --- Base Layout & Sizing --- */
+                /* --cell-size: clamp(2.5em, 5vw, 4em); */ /* REPLACED with fixed size */
+                --cell-size: 48px; /* Fixed cell dimension */
+                --cell-spacing: 8px;                  /* Space between cells */
+                --cell-internal-padding: 0.3em;       /* Padding inside cell content */
+                --container-padding: var(--cell-spacing); /* Padding around the table */
+                --viewport-width: 100vw;
+                --viewport-height: 100vh;
+
+                /* --- Typography --- */
+                --base-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+                --monospace-font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
+                --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Responsive cell label font size */
+                --cell-content-font-size: smaller;    /* Relative size adjustment for hex code in cell */
+                --config-button-font-size: 13px;
+                --modal-title-font-size: 16px;
+                --modal-label-font-size: 14px;
+                --input-font-size: 13px;
+                --button-font-size: 14px;
+                --copied-feedback-font-size: 10px;
+
+                /* --- Colors --- */
+                /* Refined Theme */
+                --bg-color: #0f0f0f;
                 --surface-color-1: #1a1a1a; /* Container, Modal */
                 --surface-color-2: #2a2a2a; /* Cells, Inputs */
-                --accent-color: #4a90e2; /* Accent for focus/hover highlights */
-                --button-color: #3f3f3f; /* Darker button */
-                --button-text-color: #e0e0e0; /* Lighter button text */
+                --accent-color: #4a90e2;
+                --button-color: #3f3f3f;
+                --button-text-color: #e0e0e0;
                 --button-hover-color: #555555;
-                --text-color: #f0f0f0; /* Slightly brighter text */
+                --text-color: #f0f0f0;
                 --text-color-muted: #aaaaaa;
-                --border-color: #404040; /* Slightly lighter border */
+                --text-color-dark-bg: #000000; /* Text on light backgrounds */
+                --text-color-light-bg: #FFFFFF; /* Text on dark backgrounds */
+                --border-color: #404040;
+                --modal-overlay-color: rgba(0, 0, 0, 0.75); /* For copied feedback */
+                --placeholder-border-color: var(--border-color); /* Dashed border for empty interpolated cells */
+                --placeholder-text-color: var(--text-color-muted);
+
+                /* --- Borders & Radii --- */
+                --border-radius: 16px;       /* General border radius */
+                --border-radius-small: 8px;  /* Smaller radius for inputs/buttons */
+                --border-radius-input: 4px;  /* Even smaller for number inputs */
+                --border-width: 1px;
+                /* --cell-hover-border-radius: 50%; */ /* REMOVED - Replaced with outline */
+
+                /* --- Transitions & Animations --- */
+                --transition-duration: 0.2s;
+                --transition-timing: ease;
+                --copied-fade-duration: 1s;
+
+                /* --- Components --- */
+                /* Modal */
+                --modal-padding: 25px;
+                --modal-max-width: 550px;
+                --modal-max-height: 80vh;
+                --modal-gap: 20px; /* Gap between sections */
+                --modal-section-padding-bottom: 15px;
+                --modal-title-margin-bottom: 15px;
+                --modal-close-button-font-size: 24px;
+                /* Config Button */
+                --config-button-padding: 8px 15px;
+                /* Controls (inside modal) */
+                --control-group-gap: 10px;
+                --slider-width: 150px;
+                --slider-height: 5px;
+                --number-input-width: 50px;
+                --number-input-padding: 4px 6px;
+                --number-input-font-size: 12px; /* Smaller font for number inputs */
+                /* Palette Input */
+                --palette-input-min-height: 200px;
+                --palette-input-padding: 10px;
+                --palette-input-margin-bottom: 15px;
+                /* Update Button */
+                --update-button-padding: 9px 18px;
+                 /* Zoom Controls */
+                 --zoom-label-margin-right: 5px;
+                 --zoom-label-font-size: 13px;
+                 --zoom-number-input-width: 50px; /* Consistent width */
+
+
+                /* --- Shadows & Z-Index --- */
+                --config-button-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                --z-index-modal: 1050;
+                --z-index-config-button: 1100;
+                --z-index-copied-feedback: 5;
+
+                /* --- Responsive Overrides (kept separate for clarity) --- */
+                --responsive-cell-spacing: 2px;
+                --responsive-border-radius: 16px; /* Medium screens */
+                --responsive-border-radius-small: 12px; /* Small screens */
+                --responsive-modal-padding: 20px;
+                --responsive-modal-gap: 15px;
+                --responsive-modal-title-font-size: 15px;
+                --responsive-modal-title-margin-bottom: 12px;
+                --responsive-slider-width: 120px;
+                --responsive-number-input-width: 45px;
+                --responsive-number-input-font-size: 11px;
+                --responsive-palette-input-min-height: 180px;
+                --responsive-palette-input-font-size: 12px;
+                /* Small Screen Specifics */
+                --small-config-button-padding: 6px 12px;
+                --small-config-button-font-size: 12px;
+                --small-modal-padding: 15px;
+                --small-modal-gap: 12px;
+                --small-control-group-gap: 8px;
+                --small-button-padding: 10px 12px;
+                --small-slider-width-calc: calc(100% - 70px);
+                --small-number-input-width: 50px;
+                --small-palette-input-min-height: 150px;
             }
 
             body {
                 background-color: var(--bg-color);
                 color: var(--text-color);
-                font-family:
-                    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                    Helvetica, Arial, sans-serif, "Apple Color Emoji",
-                    "Segoe UI Emoji", "Segoe UI Symbol"; /* Modern font stack */
+                font-family: var(--base-font-family);
                 margin: 0;
                 padding: 0;
                 overflow: hidden;
-                min-height: 100vh;
-                width: 100vw; /* Ensure body takes full width */
+                min-height: var(--viewport-height);
+                width: var(--viewport-width);
                 box-sizing: border-box;
                 display: flex;
                 flex-direction: column;
@@ -55,12 +142,12 @@
 
             /* --- Canvas Viewport (Pannable Area) --- */
             #canvas-viewport {
-                width: 100%;
-                height: 100vh;
-                overflow: hidden; /* Crucial for JS panning */
-                position: relative; /* Context for absolute positioning of palette */
+                width: 100%; /* Use 100% instead of viewport unit to fill parent */
+                height: var(--viewport-height);
+                overflow: hidden;
+                position: relative;
                 cursor: grab;
-                background-color: var(--bg-color); /* Match body */
+                background-color: var(--bg-color);
             }
             #canvas-viewport.grabbing {
                 cursor: grabbing;
@@ -69,85 +156,110 @@
             /* --- Palette Container (Moved by JS) --- */
             #palette-container {
                 position: absolute;
-                top: 50px; /* Initial offset */
-                left: 50px; /* Initial offset */
+                top: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
+                left: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
                 background-color: var(--surface-color-1);
                 border-radius: var(--border-radius);
-                padding: var(--cell-spacing); /* Space around table */
-                border: 1px solid var(--border-color);
-                /* Remove width/max-width, let content size it */
-                /* No overflow handling needed here */
-                /* box-shadow removed */
+                padding: var(--container-padding);
+                border: var(--border-width) solid var(--border-color);
             }
 
             table {
                 border-collapse: separate;
                 border-spacing: var(--cell-spacing);
-                width: auto; /* Let content determine width */
+                width: auto;
                 table-layout: fixed;
                 background-color: var(--surface-color-1);
             }
 
             td {
                 width: var(--cell-size);
-                padding: var(--cell-padding-y) var(--cell-padding-x);
+                height: var(--cell-size);
+                padding: 0;
                 text-align: center;
                 vertical-align: middle;
                 border-radius: var(--border-radius);
-                font-size: clamp(8px, 1.2vw, 10px);
+                font-size: var(--label-font-size);
                 font-weight: 500;
                 position: relative;
-                overflow: hidden;
                 box-sizing: border-box;
-                background-color: var(--surface-color-2);
-                color: var(--text-color-muted);
-                transition:
-                    transform 0.1s ease-out,
-                    box-shadow 0.2s ease-out,
-                    font-weight 0.1s ease-out,
-                    background-color 0.2s ease,
-                    border-radius 0.2s ease;
-                word-wrap: break-word;
-            }
-            td:hover { font-weight: 600; }
-            td.swatch { cursor: pointer; }
-            td.swatch:hover { border-radius: 50%; z-index: 10; }
-            td.interpolated { /* opacity: 0.95; */ }
-            td.label.interpolated-label {
-                color: var(--text-color-muted);
-                font-style: italic;
-                font-size: smaller;
                 background-color: transparent;
-                border: 1px dashed var(--border-color);
+                color: var(--text-color-muted);
+                transition: border-radius var(--transition-duration) var(--transition-timing);
             }
-            td.copied::after {
+
+            /* NEW: Inner cell content div */
+            .cell-content {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: var(--cell-internal-padding);
+                background-color: var(--surface-color-2);
+                border-radius: inherit; /* Inherit from TD */
+                font-weight: inherit;
+                color: inherit;
+                word-wrap: break-word;
+                box-sizing: border-box;
+                transition:
+                    background-color var(--transition-duration) var(--transition-timing),
+                    border-radius var(--transition-duration) var(--transition-timing);
+                font-size: var(--cell-content-font-size);
+            }
+
+            td.legend-label .cell-content {
+                font-weight: bold;
+            }
+
+            td:hover .cell-content {
+                 /* Hover styles can be added here */
+            }
+            td.swatch .cell-content {
+                cursor: pointer;
+            }
+            td.swatch:hover .cell-content {
+                 /* border-radius: var(--cell-hover-border-radius); */ /* REMOVED */
+                 outline: 4px solid var(--accent-color);
+                 outline-offset: 2px; /* Position outline slightly outside */
+            }
+            td.label.interpolated-label .cell-content {
+                 background-color: transparent;
+                 border: var(--border-width) dashed var(--placeholder-border-color);
+                 color: var(--placeholder-text-color);
+                font-style: italic;
+            }
+
+            /* Apply copied feedback to inner div */
+            .cell-content.copied::after {
                 content: "Copied!";
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-                background-color: rgba(0, 0, 0, 0.75); color: var(--text-color);
+                background-color: var(--modal-overlay-color);
+                color: var(--text-color-light-bg); /* Ensure contrast */
                 display: flex; justify-content: center; align-items: center;
-                font-size: 10px; font-weight: bold; border-radius: inherit;
-                animation: fadeOut 1s forwards; z-index: 5;
+                font-size: var(--copied-feedback-font-size);
+                font-weight: bold; border-radius: inherit;
+                animation: fadeOut var(--copied-fade-duration) forwards;
+                z-index: var(--z-index-copied-feedback);
             }
-            @keyframes fadeOut { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
 
             /* --- Config Toggle Button --- */
             #config-toggle-button {
                 position: fixed;
-                top: 15px;
-                right: 15px;
-                z-index: 1100;
+                top: 15px; /* Keep positional offsets */
+                right: 15px; /* Keep positional offsets */
+                z-index: var(--z-index-config-button);
                 background-color: var(--surface-color-1);
                 color: var(--text-color-muted);
-                border: 1px solid var(--border-color);
-                border-radius: 50%; /* Circle */
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
-                line-height: 38px; /* Center icon vertically */
+                border: var(--border-width) solid var(--border-color);
+                border-radius: var(--border-radius);
+                padding: var(--config-button-padding);
+                font-size: var(--config-button-font-size);
+                font-weight: 500;
                 text-align: center;
                 cursor: pointer;
-                transition: all 0.2s ease;
-                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                transition: all var(--transition-duration) var(--transition-timing);
+                box-shadow: var(--config-button-shadow);
             }
             #config-toggle-button:hover {
                 color: var(--text-color);
@@ -163,172 +275,270 @@
                 transform: translate(-50%, -50%) scale(0.95);
                 opacity: 0;
                 visibility: hidden;
-                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0.2s;
-                z-index: 1050;
+                transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration);
+                z-index: var(--z-index-modal);
                 background-color: var(--surface-color-1);
-                border: 1px solid var(--border-color);
+                border: var(--border-width) solid var(--border-color);
                 border-radius: var(--border-radius);
-                padding: 25px;
-                width: 90%;
-                max-width: 550px;
-                max-height: 80vh;
+                padding: var(--modal-padding);
+                width: 90%; /* Percentage width for responsiveness */
+                max-width: var(--modal-max-width);
+                max-height: var(--modal-max-height);
                 overflow-y: auto;
                 display: flex;
                 flex-direction: column;
-                gap: 20px; /* Gap between sections in modal */
+                gap: var(--modal-gap);
             }
             #config-modal.visible {
                 transform: translate(-50%, -50%) scale(1);
-                opacity: 1;
+                    opacity: 1;
                 visibility: visible;
-                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s linear 0s;
+                transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
             }
 
-            /* Close button for modal */
             .modal-close-button {
                 position: absolute;
-                top: 10px;
-                right: 10px;
+                top: 10px; /* Keep positional offsets */
+                right: 10px; /* Keep positional offsets */
                 background: none;
                 border: none;
-                font-size: 24px;
+                font-size: var(--modal-close-button-font-size);
                 line-height: 1;
                 color: var(--text-color-muted);
                 cursor: pointer;
             }
             .modal-close-button:hover { color: var(--text-color); }
 
-            /* Sections within modal */
             .config-section {
-                padding-bottom: 15px;
-                border-bottom: 1px solid var(--border-color);
+                padding-bottom: var(--modal-section-padding-bottom);
+                border-bottom: var(--border-width) solid var(--border-color);
             }
             .config-section:last-child { border-bottom: none; padding-bottom: 0; }
 
             .config-section h3 {
-                margin: 0 0 15px 0;
-                font-size: 16px;
+                margin: 0 0 var(--modal-title-margin-bottom) 0;
+                font-size: var(--modal-title-font-size);
                 font-weight: 600;
                 color: var(--text-color);
             }
 
-            /* Controls moved into modal */
-            .control-group { /* Re-style for modal context */
+            .control-group {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
-                gap: 10px; /* Adjust gap for modal */
-                padding-bottom: 0; /* Remove padding */
-                border-bottom: none; /* Remove border */
+                gap: var(--control-group-gap);
+                padding-bottom: 0;
+                border-bottom: none;
             }
 
-            .control-button { /* Base styles remain */
-                /* Adjust padding/size if needed for modal */
+            .control-button {
+                /* Base styles, specific overrides below */
+                cursor: pointer;
+                border-radius: var(--border-radius-small);
+                border: var(--border-width) solid var(--border-color); /* Default border */
+                background-color: var(--button-color);
+                color: var(--button-text-color);
+                padding: var(--update-button-padding); /* Use a common button padding */
+                font-size: var(--button-font-size);
+                font-weight: 500;
+                transition: all var(--transition-duration) var(--transition-timing);
             }
+             .control-button:hover {
+                 background-color: var(--button-hover-color);
+                 border-color: var(--accent-color); /* Highlight border on hover */
+             }
+             .control-button:focus-visible {
+                 outline: none;
+                 border-color: var(--accent-color); /* Highlight border on focus */
+             }
 
             #interpolation-controls,
-            #saturation-controls {
-                 width: 100%; /* Take full width in modal */
+            #saturation-controls,
+            #zoom-controls { /* Apply common layout */
+                width: 100%;
                  display: flex;
                  flex-wrap: wrap;
                  align-items: center;
-                 gap: 10px;
+                 gap: var(--control-group-gap);
             }
             #interpolation-controls label,
-            #saturation-controls label { /* Styles remain */ }
-            input[type="checkbox"] { /* Styles remain */ }
-            .slider-group { /* Styles remain */ }
-            input[type="range"] { /* Styles remain, maybe adjust width */ width: 150px; }
-            input[type="number"] { /* Styles remain */ }
+            #saturation-controls label,
+            #zoom-controls label { /* Common label styles */
+                cursor: pointer;
+                user-select: none;
+                margin-right: var(--zoom-label-margin-right);
+                font-size: var(--zoom-label-font-size); /* Use consistent label size */
+                color: var(--text-color-muted);
+            }
+            input[type="checkbox"] {
+                 cursor: pointer;
+                 accent-color: var(--accent-color);
+            }
+            .slider-group {
+                 display: flex;
+                 align-items: center;
+                 gap: var(--control-group-gap); /* Use consistent gap */
+            }
+            input[type="range"] {
+                 width: var(--slider-width);
+                 height: var(--slider-height);
+                cursor: pointer;
+                 accent-color: var(--accent-color);
+                 vertical-align: middle;
+            }
+            input[type="number"] {
+                 width: var(--number-input-width);
+                 background-color: var(--surface-color-2);
+                 color: var(--text-color);
+                 border: var(--border-width) solid var(--border-color);
+                 border-radius: var(--border-radius-input);
+                 padding: var(--number-input-padding);
+                 font-size: var(--number-input-font-size);
+                 text-align: center;
+                 -moz-appearance: textfield;
+            }
+            input[type="number"]::-webkit-outer-spin-button,
+            input[type="number"]::-webkit-inner-spin-button {
+                 -webkit-appearance: none;
+                 margin: 0;
+            }
+             input[type="number"]:focus-visible {
+                 outline: none;
+                 border-color: var(--accent-color);
+             }
 
-            /* Palette Editor section in modal */
             #palette-editor-section {
-                display: none; /* Hidden by default */
+                display: none;
             }
             #config-modal.editor-visible #palette-editor-section {
                 display: block;
             }
+            /* Label specific styling */
+             #palette-editor-section > label[for="palette-input"] {
+                 display: block;
+                 margin-bottom: 10px; /* Specific margin */
+                 font-weight: 500;
+                 font-size: var(--modal-label-font-size);
+             }
 
             #palette-input {
                 width: 100%;
-                min-height: 200px; /* Adjust height for modal */
+                min-height: var(--palette-input-min-height);
                 background-color: var(--surface-color-2);
                 color: var(--text-color);
-                border: 1px solid var(--border-color);
-                border-radius: 8px; /* Smaller radius for input */
-                padding: 10px;
-                font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
-                font-size: 13px;
+                border: var(--border-width) solid var(--border-color);
+                border-radius: var(--border-radius-small);
+                padding: var(--palette-input-padding);
+                font-family: var(--monospace-font-family);
+                font-size: var(--input-font-size);
                 box-sizing: border-box;
                 resize: vertical;
-                margin-bottom: 15px;
+                margin-bottom: var(--palette-input-margin-bottom);
                 white-space: pre; overflow-wrap: normal; overflow-x: auto;
             }
             #palette-input:focus-visible { outline: none; border-color: var(--accent-color); }
 
-            #update-button {
+            #update-button { /* Specific styles for the main update button */
                 background-color: var(--accent-color);
-                color: #ffffff; border: none;
-                padding: 9px 18px;
-                border-radius: 8px;
-                cursor: pointer; font-size: 14px; font-weight: 500;
-                transition: all 0.2s ease;
+                color: var(--text-color-light-bg); /* Ensure contrast */
+                border: none;
+                padding: var(--update-button-padding);
+                border-radius: var(--border-radius-small);
+                cursor: pointer;
+                font-size: var(--button-font-size);
+                font-weight: 500;
+                transition: all var(--transition-duration) var(--transition-timing);
                 display: block; width: fit-content; margin: 0 auto;
             }
-            #update-button:hover { background-color: #3a80d2; }
-            #update-button:focus-visible { outline: none; border-color: #ffffff; }
+            #update-button:hover { background-color: #3a80d2; } /* Keep specific hover */
+            #update-button:focus-visible { outline: none; border-color: var(--text-color-light-bg); }
+
+
+             #zoom-slider {
+                  width: var(--slider-width); /* Reuse standard slider width */
+             }
+             #zoom-number {
+                  width: var(--zoom-number-input-width); /* Specific width if needed */
+             }
 
             /* --- Responsive Adjustments --- */
             @media (max-width: 768px) {
                 :root {
-                    --cell-spacing: 2px;
-                    --cell-padding-y: 4px;
-                    --cell-padding-x: 6px;
-                    --border-radius: 16px;
+                    --cell-spacing: var(--responsive-cell-spacing);
+                    --border-radius: var(--responsive-border-radius);
                 }
-                #config-modal { width: 95%; padding: 20px; gap: 15px; }
-                .config-section h3 { font-size: 15px; margin-bottom: 12px; }
-                 input[type="range"] { width: 120px; }
-                 input[type="number"] { width: 45px; font-size: 11px; }
-                td { font-size: 8px; }
-                td.copied::after { font-size: 9px; }
-                #palette-input { min-height: 180px; font-size: 12px; }
+                #config-modal {
+                    width: 95%; /* Slightly wider on medium screens */
+                    padding: var(--responsive-modal-padding);
+                    gap: var(--responsive-modal-gap);
+                }
+                .config-section h3 {
+                    font-size: var(--responsive-modal-title-font-size);
+                    margin-bottom: var(--responsive-modal-title-margin-bottom);
+                }
+                 input[type="range"] { width: var(--responsive-slider-width); }
+                 #zoom-slider { width: var(--responsive-slider-width); } /* Apply responsive width */
+                 input[type="number"] {
+                    width: var(--responsive-number-input-width);
+                    font-size: var(--responsive-number-input-font-size);
+                 }
+                 #zoom-number {
+                     width: var(--responsive-number-input-width); /* Apply responsive width */
+                     font-size: var(--responsive-number-input-font-size); /* Apply responsive font size */
+                }
+                #palette-input {
+                    min-height: var(--responsive-palette-input-min-height);
+                    font-size: var(--responsive-palette-input-font-size);
+                }
             }
 
             @media (max-width: 480px) {
                 :root {
-                    --cell-spacing: 2px;
-                    --cell-padding-y: 3px;
-                    --cell-padding-x: 5px;
-                    --border-radius: 12px;
+                    /* Keep cell-spacing from medium */
+                    --border-radius: var(--responsive-border-radius-small); /* Use smaller radius */
                 }
-                #config-toggle-button { width: 36px; height: 36px; font-size: 18px; line-height: 34px; }
+                #config-toggle-button {
+                    padding: var(--small-config-button-padding);
+                    font-size: var(--small-config-button-font-size);
+                }
                 #config-modal {
-                     padding: 15px;
-                     gap: 12px;
+                     /* width: 95% is fine */
+                     padding: var(--small-modal-padding);
+                     gap: var(--small-modal-gap);
                 }
-                 .control-group { /* Stack controls vertically */
+                 .control-group {
                      flex-direction: column;
-                     align-items: stretch;
-                     gap: 8px;
+                     align-items: stretch; /* Make items fill width */
+                     gap: var(--small-control-group-gap);
                  }
-                 .control-button { width: 100%; text-align: center; padding: 10px 12px; } /* Full width buttons */
-                 #interpolation-controls, #saturation-controls {
-                     flex-direction: column; align-items: flex-start; gap: 8px;
+                 .control-button { /* Full width button */
+                    width: 100%;
+                    text-align: center;
+                    padding: var(--small-button-padding);
+                }
+                #interpolation-controls,
+                 #saturation-controls,
+                 #zoom-controls { /* Stack controls vertically */
+                    flex-direction: column;
+                     align-items: flex-start; /* Align labels left */
+                     gap: var(--small-control-group-gap);
                  }
-                 .slider-group { width: 100%; justify-content: space-between;}
-                 input[type="range"] { width: calc(100% - 70px); }
-                 input[type="number"] { width: 50px; }
-                td { font-size: 7px; }
-                td.copied::after { font-size: 8px; }
-                #palette-input { min-height: 150px; }
+                 .slider-group {
+                    width: 100%;
+                    justify-content: space-between; /* Space out slider and number */
+                 }
+                 input[type="range"] { width: var(--small-slider-width-calc); }
+                 #zoom-slider { width: var(--small-slider-width-calc); }
+                 input[type="number"] { width: var(--small-number-input-width); }
+                 #zoom-number { width: var(--small-number-input-width); }
+                #palette-input { min-height: var(--small-palette-input-min-height); }
                 #update-button { width: 100%; } /* Full width modal button */
             }
         </style>
     </head>
     <body>
         <!-- Config Toggle Button -->
-        <button id="config-toggle-button" aria-label="Open Configuration">⚙️</button>
+        <button id="config-toggle-button" aria-label="Open Configuration">Config</button>
 
         <!-- Pannable Viewport -->
         <div id="canvas-viewport">
@@ -349,13 +559,13 @@
             <div class="config-section">
                 <h3>Palette Actions</h3>
                 <div class="control-group">
-                     <button id="edit-palette-button" class="control-button">
-                         Edit Palette Data
-                     </button>
-                     <button id="export-png-button" class="control-button">
-                         Export as PNG
-                     </button>
-                 </div>
+                <button id="edit-palette-button" class="control-button">
+                    Edit Palette Data
+                </button>
+                <button id="export-png-button" class="control-button">
+                    Export as PNG
+                </button>
+            </div>
             </div>
 
              <div class="config-section" id="palette-editor-section">
@@ -380,38 +590,48 @@
                      <label for="interpolation-toggle">
                          Distribute Shades (Vertical):
                      </label>
-                     <input type="checkbox" id="interpolation-toggle" />
+                <input type="checkbox" id="interpolation-toggle" />
                      <div id="interpolation-steps-group" class="slider-group">
-                         <label for="interpolation-steps-slider">Steps:</label>
-                         <input
-                             type="range"
-                             id="interpolation-steps-slider"
+                    <label for="interpolation-steps-slider">Steps:</label>
+                    <input
+                        type="range"
+                        id="interpolation-steps-slider"
                              min="1" max="10" value="1" step="1"
-                         />
-                         <input
-                             type="number"
-                             id="interpolation-steps-number"
+                    />
+                    <input
+                        type="number"
+                        id="interpolation-steps-number"
                              min="1" max="10" value="1"
-                         />
-                     </div>
-                 </div>
+                    />
+                </div>
+            </div>
                   <div id="saturation-controls" class="control-group">
-                     <label for="saturation-offset-slider">Saturation Offset:</label>
+                <label for="saturation-offset-slider">Saturation Offset:</label>
                      <div id="saturation-offset-group" class="slider-group">
-                         <input
-                             type="range"
-                             id="saturation-offset-slider"
+                    <input
+                        type="range"
+                        id="saturation-offset-slider"
                              min="-100" max="100" value="0" step="1"
-                         />
-                         <input
-                             type="number"
-                             id="saturation-offset-number"
+                    />
+                    <input
+                        type="number"
+                        id="saturation-offset-number"
                              min="-100" max="100" value="0"
-                         />
-                         <span>%</span>
-                     </div>
-                  </div>
-             </div>
+                    />
+                    <span>%</span>
+                </div>
+            </div>
+        </div>
+             <!-- NEW: Zoom Section -->
+             <div class="config-section">
+                 <h3>View</h3>
+                 <div id="zoom-controls" class="control-group">
+                     <label for="zoom-slider">Zoom:</label>
+                     <input type="range" id="zoom-slider" min="10" max="500" value="100" step="1">
+                     <input type="number" id="zoom-number" min="10" max="500" value="100">
+                     <span>%</span>
+        </div>
+            </div>
         </div>
 
         <script>
@@ -778,6 +998,15 @@
             let startX, startY, currentX, currentY;
             let paletteOffsetX = 50; // Initial offset matches CSS
             let paletteOffsetY = 50;
+            // --- NEW: Zoom State ---
+            let scale = 1;
+            const minScale = 0.1;
+            const maxScale = 5;
+            const scaleStep = 0.1;
+            const zoomDebounceDelay = 10; // Optional: debounce zoom updates slightly
+            let zoomTimeout;
+            // --- NEW: Track forced cell size ---
+            // let lastForcedCellSizePx = null; // REMOVED - No longer needed
 
             // --- DOM Elements ---
             // Palette display elements
@@ -803,6 +1032,10 @@
             const stepsNumber = document.getElementById('interpolation-steps-number');
             const saturationOffsetSlider = document.getElementById('saturation-offset-slider');
             const saturationOffsetNumber = document.getElementById('saturation-offset-number');
+
+            // --- NEW: Zoom Controls Elements ---
+            const zoomSlider = document.getElementById('zoom-slider');
+            const zoomNumber = document.getElementById('zoom-number');
 
             // --- Helper Functions ---
             function isValidHex(str) {
@@ -1069,7 +1302,7 @@
                         showCopiedFeedback(element);
                     } catch (err) {
                         console.error("Fallback copy failed: ", err);
-                        alert("Failed to copy.");
+                        alert("Failed to copy. Your browser might not support this feature or require specific permissions.");
                     }
                     return;
                 }
@@ -1102,60 +1335,50 @@
                     const row = tableBody.insertRow();
 
                     rowData.forEach((cellData, cellIndex) => {
-                        const cell = row.insertCell();
+                        const td = row.insertCell(); // Create the outer TD
+
+                        // --- CREATE INNER DIV --- 
+                        const cellContentDiv = document.createElement('div');
+                        cellContentDiv.classList.add('cell-content');
+                        td.appendChild(cellContentDiv);
+                        // --- END INNER DIV --- 
+
                         const isInterpolatedLabelPlaceholder = cellData === "-";
 
                         if (isValidHex(cellData)) {
                             // It's a color swatch
-                            const originalHexColor = cellData; // Store original hex
+                            const originalHexColor = cellData;
+                            const adjustedHexColor = adjustSaturation(originalHexColor, saturationOffset);
+                            const adjustedHexText = adjustedHexColor.substring(1).toUpperCase();
 
-                            // --- Apply Saturation Adjustment ---
-                            const adjustedHexColor = adjustSaturation(
-                                originalHexColor,
-                                saturationOffset,
-                            );
-                            // --- End Saturation Adjustment ---
+                            // --- Apply styles and content to INNER DIV ---
+                            cellContentDiv.style.backgroundColor = adjustedHexColor;
+                            cellContentDiv.textContent = adjustedHexText;
+                            cellContentDiv.style.color = getTextColor(adjustedHexColor);
+                            td.classList.add("swatch"); // Add swatch class to TD for hover targeting
+                            cellContentDiv.dataset.originalHex = originalHexColor.substring(1).toUpperCase();
+                            cellContentDiv.dataset.adjustedHex = adjustedHexText;
 
-                            // --- Calculate text content based on ADJUSTED color ---
-                            const adjustedHexText = adjustedHexColor
-                                .substring(1)
-                                .toUpperCase();
-
-                            cell.style.backgroundColor = adjustedHexColor; // Use adjusted color for background
-                            cell.textContent = adjustedHexText; // << UPDATED: Display adjusted hex text
-                            cell.style.color = getTextColor(adjustedHexColor); // Calculate text color based on adjusted background
-                            cell.classList.add("swatch");
-                            // Optional: Store original hex in data attribute if needed for other purposes
-                            cell.dataset.originalHex = originalHexColor
-                                .substring(1)
-                                .toUpperCase();
-                            cell.dataset.adjustedHex = adjustedHexText; // Store adjusted hex too
-
-                            cell.addEventListener("click", () => {
-                                // << UPDATED: Copy the ADJUSTED hex text
-                                copyToClipboard(adjustedHexText, cell);
+                            cellContentDiv.addEventListener("click", () => {
+                                copyToClipboard(adjustedHexText, cellContentDiv); // Target inner div for copy feedback
                             });
+                            // --- END INNER DIV STYLING ---
 
-                            // Check if the cell is supposed to be marked as interpolated based on its position and state
-                            // This logic might need refinement depending on how interpolated status is tracked for rows/cols
-                            // This logic might need refinement depending on how interpolated status is tracked for rows/cols
-                            if (isInterpolationEnabled && /* Add condition based on rowIndex if needed */ cellData !== '-') {
-                                // Example: Check if the row index corresponds to an interpolated row
-                                // if (currentGridData[rowIndex] && currentGridData[rowIndex].isInterpolated) { ... }
-                                // For now, adding class if interpolation is globally enabled
-                                // cell.classList.add("interpolated");
-                                // Note: Interpolated status is currently mainly visual via placeholder '-'
-                            }
                         } else if (typeof cellData === "string") {
                             // It's a label or placeholder
-                            cell.textContent = cellData;
-                            cell.classList.add("label");
+                            // --- Apply styles and content to INNER DIV ---
+                            cellContentDiv.textContent = cellData;
+                            td.classList.add("label"); // Add label class to TD
                             if (isInterpolatedLabelPlaceholder) {
-                                cell.classList.add("interpolated-label"); // Use class for styling
+                                td.classList.add("interpolated-label"); // Add placeholder class to TD for CSS targeting
                             } else {
-                                // Regular label styling - USE getTextColor for contrast
-                                cell.style.color = getTextColor('#2a2a2a'); // Set contrast color vs standard cell bg
+                                cellContentDiv.style.color = getTextColor('#2a2a2a'); // Set contrast vs default inner background
+                                // --- NEW: Add class for bolding legends ---
+                                if (cellIndex === 0 || cellIndex === rowData.length - 1 || rowIndex === 0 || rowIndex === gridData.length - 1) {
+                                    td.classList.add("legend-label");
+                                }
                             }
+                            // --- END INNER DIV STYLING ---
                         } else {
                             // Invalid data
                             console.warn(
@@ -1163,9 +1386,11 @@
                                 typeof cellData,
                                 cellData,
                             );
-                            cell.textContent = "?";
-                            cell.style.backgroundColor = "#555";
-                            cell.style.color = "var(--text-color)";
+                            // --- Apply styles and content to INNER DIV ---
+                            cellContentDiv.textContent = "?";
+                            cellContentDiv.style.backgroundColor = "#555";
+                            cellContentDiv.style.color = "var(--text-color)";
+                            // --- END INNER DIV STYLING ---
                         }
                     });
                 });
@@ -1209,7 +1434,8 @@
                 paletteOffsetX += dx;
                 paletteOffsetY += dy;
 
-                paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px)`;
+                // Apply transform using the dedicated function
+                updateTransform();
 
                 // Update start for next move delta
                 startX = currentX;
@@ -1221,6 +1447,40 @@
                      isPanning = false;
                      canvasViewport.classList.remove('grabbing');
                 }
+            }
+
+            // --- REVISED: Zoom Logic (triggered by controls) ---
+            function applyZoom(newScalePercent) {
+                const newScale = Math.max(minScale, Math.min(maxScale, newScalePercent / 100));
+
+                // If scale didn't change, do nothing
+                if (newScale === scale) return;
+
+                // Get mouse position relative to the viewport
+                const rect = canvasViewport.getBoundingClientRect();
+
+                // Use viewport center as the zoom focal point
+                const focalX = rect.width / 2;
+                const focalY = rect.height / 2;
+
+                // Calculate the point on the palette container under the mouse before zoom
+                const pointX = (focalX - paletteOffsetX) / scale;
+                const pointY = (focalY - paletteOffsetY) / scale;
+
+                // Update scale
+                scale = newScale;
+
+                // Calculate the new offset to keep the point under the mouse stationary
+                paletteOffsetX = focalX - pointX * scale;
+                paletteOffsetY = focalY - pointY * scale;
+
+                // Apply new transform
+                updateTransform();
+            }
+
+            // --- NEW: Apply Transform Function ---
+            function updateTransform() {
+                paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px) scale(${scale})`;
             }
 
             // --- Event Listeners ---
@@ -1307,11 +1567,11 @@
                     .then(canvas => {
                         const pngUrl = canvas.toDataURL('image/png');
                         const downloadLink = document.createElement('a');
-                        downloadLink.href = pngUrl;
+                            downloadLink.href = pngUrl;
                         downloadLink.download = 'palette.png';
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            document.body.removeChild(downloadLink);
                     })
                     .catch(err => {
                         console.error('Error exporting PNG:', err);
@@ -1319,9 +1579,9 @@
                     })
                     .finally(() => {
                         // Re-enable button
-                        exportPngButton.disabled = false;
+                            exportPngButton.disabled = false;
                         exportPngButton.textContent = 'Export as PNG';
-                    });
+                        });
                 }, 150); // Delay
             });
 
@@ -1365,6 +1625,35 @@
                 renderPalette(currentGridData); // Just re-render
             });
 
+            // --- NEW: Zoom Control Listeners ---
+            zoomSlider.addEventListener('input', (event) => {
+                const zoomValue = parseInt(event.target.value, 10);
+                zoomNumber.value = zoomValue; // Sync number input
+                // Optional debounce
+                clearTimeout(zoomTimeout);
+                zoomTimeout = setTimeout(() => applyZoom(zoomValue), zoomDebounceDelay);
+                // applyZoom(zoomValue); // Apply immediately without debounce
+            });
+
+            zoomNumber.addEventListener('input', (event) => {
+                let value = parseInt(event.target.value, 10);
+                const min = parseInt(zoomNumber.min, 10);
+                const max = parseInt(zoomNumber.max, 10);
+                if (isNaN(value)) {
+                    value = 100; // Default to 100% if invalid
+                } else if (value < min) {
+                    value = min;
+                } else if (value > max) {
+                    value = max;
+                }
+                zoomNumber.value = value; // Update input field
+                zoomSlider.value = value; // Sync slider
+                // Optional debounce
+                clearTimeout(zoomTimeout);
+                zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
+                // applyZoom(value); // Apply immediately without debounce
+            });
+
             // --- Initial Load ---
             function initializeApp() {
                 // Set initial control values (if needed, should match defaults)
@@ -1372,9 +1661,11 @@
                 stepsNumber.value = interpolationSteps;
                 saturationOffsetSlider.value = saturationOffset;
                 saturationOffsetNumber.value = saturationOffset;
+                zoomSlider.value = scale * 100; // Set initial zoom controls
+                zoomNumber.value = scale * 100;
 
-                // Set initial palette position
-                paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px)`;
+                // Set initial palette position and scale
+                updateTransform();
 
                 // Render the initial palette
                 renderPalette(currentGridData);
