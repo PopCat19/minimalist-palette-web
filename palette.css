@@ -1,24 +1,32 @@
+html {
+    font-size: 10px; /* Base font size for 1rem = 10px scaling */
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
 :root {
-    /* --- Base Layout & Sizing --- */
-    /* --cell-size: clamp(2.5em, 5vw, 4em); */ /* REPLACED with fixed size */
-    --cell-min-size: 32px; /* Minimum cell dimension */
-    --cell-spacing: 8px;                  /* Space between cells */
-    --cell-internal-padding: 0.3em;       /* Padding inside cell content */
-    --container-padding: var(--cell-spacing); /* Padding around the table */
+    /* --- Base Layout & Sizing (using rem) --- */
+    --cell-min-size: 3.2rem; /* 32px */
+    --cell-spacing: 0.8rem; /* 8px */
+    --cell-internal-padding: 0.3em; /* Keep em for padding relative to cell font-size */
+    --container-padding: var(--cell-spacing);
     --viewport-width: 100vw;
     --viewport-height: 100vh;
 
-    /* --- Typography --- */
+    /* --- Typography (using rem where appropriate, em for relative scaling) --- */
     --base-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     --monospace-font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
-    --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Responsive cell label font size */
-    --cell-content-font-size: smaller;    /* Relative size adjustment for hex code in cell */
-    --config-button-font-size: 13px;
-    --modal-title-font-size: 16px;
-    --modal-label-font-size: 14px;
-    --input-font-size: 13px;
-    --button-font-size: 14px;
-    --copied-feedback-font-size: 10px;
+    --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Keep em/vw for responsive cell labels */
+    --cell-content-font-size: 0.9rem; /* smaller -> approx 9px base */
+    --config-button-font-size: 1.3rem; /* 13px */
+    --modal-title-font-size: 1.6rem; /* 16px */
+    --modal-label-font-size: 1.4rem; /* 14px */
+    --input-font-size: 1.3rem; /* 13px */
+    --button-font-size: 1.4rem; /* 14px */
+    --copied-feedback-font-size: 1rem; /* 10px */
 
     /* --- Colors --- */
     /* Refined Theme */
@@ -38,46 +46,47 @@
     --placeholder-border-color: var(--border-color); /* Dashed border for empty interpolated cells */
     --placeholder-text-color: var(--text-color-muted);
 
-    /* --- Borders & Radii --- */
-    --border-radius: 24px;       /* General border radius (16px + 8px) */
-    --border-radius-small: 16px;  /* Smaller radius for inputs/buttons (8px + 8px) */
-    --border-radius-input: 4px;  /* Even smaller for number inputs */
-    --border-width: 1px;
-    /* --cell-hover-border-radius: 50%; */ /* REMOVED - Replaced with outline */
+    /* --- Borders & Radii (using rem) --- */
+    --border-radius: 2.4rem; /* 24px */
+    --border-radius-small: 1.6rem; /* 16px */
+    --border-radius-input: 0.4rem; /* 4px */
+    --border-width: 0.1rem; /* 1px - use 0.1rem or keep as 1px? 1px might be better for consistency */
+    /* Let's keep border-width as 1px for crispness */
+    --border-width-val: 1px;
 
     /* --- Transitions & Animations --- */
     --transition-duration: 0.2s;
     --transition-timing: ease;
     --copied-fade-duration: 1s;
 
-    /* --- Components --- */
+    /* --- Components (using rem) --- */
     /* Modal */
-    --modal-padding: 25px;
-    --modal-max-width: 550px;
-    --modal-max-height: 80vh;
-    --modal-gap: 20px; /* Gap between sections */
-    --modal-section-padding-bottom: 15px;
-    --modal-title-margin-bottom: 15px;
-    --modal-close-button-font-size: 24px;
+    --modal-padding: 2.5rem; /* 25px */
+    --modal-max-width: 55rem; /* 550px */
+    /* --modal-max-height: 80vh; */ /* Keep vh for viewport height */
+    --modal-gap: 2rem; /* 20px */
+    --modal-section-padding-bottom: 1.5rem; /* 15px */
+    --modal-title-margin-bottom: 1.5rem; /* 15px */
+    --modal-close-button-font-size: 2.4rem; /* 24px */
     /* Config Button */
-    --config-button-padding: 8px 15px;
+    --config-button-padding: 0.8rem 1.5rem; /* 8px 15px */
     /* Controls (inside modal) */
-    --control-group-gap: 10px;
-    --slider-width: 150px;
-    --slider-height: 5px;
-    --number-input-width: 50px;
-    --number-input-padding: 4px 6px;
-    --number-input-font-size: 12px; /* Smaller font for number inputs */
-    /* Palette Input */
-    --palette-input-min-height: 200px;
-    --palette-input-padding: 10px;
-    --palette-input-margin-bottom: 15px;
+    --control-group-gap: 1rem; /* 10px */
+    --slider-width: 15rem; /* 150px */
+    --slider-height: 0.5rem; /* 5px */
+    --number-input-width: 5rem; /* 50px */
+    --number-input-padding: 0.4rem 0.6rem; /* 4px 6px */
+    --number-input-font-size: 1.2rem; /* 12px */
+    /* Palette Input (Popout & Modal - use rem for consistency) */
+    --palette-input-min-height: 20rem; /* 200px */
+    --palette-input-padding: 1rem; /* 10px */
+    --palette-input-margin-bottom: 1.5rem; /* 15px */
     /* Update Button */
-    --update-button-padding: 9px 18px;
+    --update-button-padding: 0.9rem 1.8rem; /* 9px 18px */
      /* Zoom Controls */
-     --zoom-label-margin-right: 5px;
-     --zoom-label-font-size: 13px;
-     --zoom-number-input-width: 50px; /* Consistent width */
+     --zoom-label-margin-right: 0.5rem; /* 5px */
+     --zoom-label-font-size: 1.3rem; /* 13px */
+     --zoom-number-input-width: 5rem; /* 50px */
 
 
     /* --- Shadows & Z-Index --- */
@@ -101,10 +110,11 @@ body {
     overflow: hidden;
     min-height: var(--viewport-height);
     width: var(--viewport-width);
-    box-sizing: border-box;
+    /* box-sizing removed, handled by html/* rules */
     display: flex;
     flex-direction: column;
     align-items: center;
+    font-size: 1.6rem; /* Default body font size (16px at 100% scale) */
 }
 
 /* --- Canvas Viewport (Pannable Area) --- */
@@ -240,33 +250,34 @@ body {
 /* --- Config Modal --- */
 #config-modal {
     position: fixed;
-    bottom: 75px; /* Increased from 60px to add gap above bottom controls */
+    /* NEW: Define top/bottom constraints */
+    /* top: 2rem; */ /* Remove top constraint */
+    bottom: 7.5rem; /* Keep gap above bottom controls */
     left: 50%;
-    transform: translateX(-50%) scale(0.95); /* Center horizontally, initial scale */
-    transform-origin: bottom center; /* Scale from bottom */
+    transform: translateX(-50%) scale(0.95);
+    /* transform-origin: center center; */ /* Adjust origin */
+    transform-origin: bottom center; /* Revert to bottom origin */
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration), bottom var(--transition-duration) var(--transition-timing); /* Added bottom transition */
+    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration);
     z-index: var(--z-index-modal);
-    /* background-color: var(--surface-color-1); */
-    background-color: rgba(26, 26, 26, 0.75); /* Decreased opacity for more blur visibility */
-    border: var(--border-width) solid var(--border-color);
+    background-color: rgba(26, 26, 26, 0.75);
+    border: var(--border-width-val) solid var(--border-color);
     border-radius: var(--border-radius);
     padding: var(--modal-padding);
-    width: 90%; /* Percentage width for responsiveness */
+    width: 90%;
     max-width: var(--modal-max-width);
-    max-height: var(--modal-max-height);
-    overflow-y: auto;
+    max-height: 80vh; /* Keep max-height */
+    overflow-y: auto; /* Ensure this is present */
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Replaced var(--modal-gap) */
-    /* Add backdrop blur */
-    -webkit-backdrop-filter: blur(15px); /* Increased blur radius */
-    backdrop-filter: blur(15px); /* Increased blur radius */
+    gap: var(--modal-gap);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
 }
 #config-modal.visible {
-    transform: translateX(-50%) scale(1); /* Center horizontally, final scale */
-        opacity: 1;
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
     visibility: visible;
     transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
 }
@@ -558,13 +569,13 @@ input[type="number"]::-webkit-inner-spin-button {
     position: absolute;
     top: 100px; /* Initial position (can be centered by JS later) */
     left: 100px;
-    z-index: 1060; /* Above palette, below bottom controls/modal */
+    z-index: 1080; /* NEW: Above config modal and bottom controls */
     background-color: rgba(30, 30, 30, 0.8); /* Slightly different semi-transparent BG */
     border: var(--border-width) solid var(--border-color);
     border-radius: 12px; /* Smaller radius */
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    width: 400px; /* Fixed width */
-    max-width: 80vw;
+    width: 400px; /* Fixed width - initial width */
+    /* max-width: 80vw; */ /* REMOVE: Max width constraint */
     /* NEW: Min dimensions */
     min-width: 250px;
     min-height: 200px;
@@ -576,27 +587,35 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .popout-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Keep space-between for title vs buttons */
     align-items: center;
-    padding: 6px 10px;
+    /* padding: 6px 10px; */
+    padding: 0.6rem 1rem; /* Use rem */
     background-color: rgba(40, 40, 40, 0.85); /* Darker header */
     cursor: move; /* Indicate draggable */
     border-bottom: 1px solid var(--border-color);
+    gap: 0.8rem; /* Add gap between title/buttons/close */
 }
 
 .popout-title {
     font-weight: 500;
-    font-size: 14px;
+    /* font-size: 14px; */
+    font-size: 1.4rem; /* Use rem */
+    white-space: nowrap; /* Prevent title wrapping */
+    margin-right: auto; /* Push buttons to the right */
 }
 
 #popout-close-button {
     background: none;
     border: none;
-    font-size: 20px;
+    /* font-size: 20px; */
+    font-size: 2rem; /* Use rem */
     line-height: 1;
     color: var(--text-color-muted);
     cursor: pointer;
-    padding: 0 4px;
+    /* padding: 0 4px; */
+    padding: 0 0.4rem; /* Use rem */
+    flex-shrink: 0; /* Prevent shrinking */
 }
 #popout-close-button:hover {
     color: var(--text-color);
@@ -604,8 +623,9 @@ input[type="number"]::-webkit-inner-spin-button {
 
 #popout-palette-input {
     width: 100%; /* Corrected: Use 100% with border-box */
-    min-height: 300px; /* Good default height */
-    max-height: 60vh; /* Prevent excessive height */
+    /* min-height: 300px; */
+    min-height: var(--palette-input-min-height); /* Use variable */
+    /* max-height: 60vh; */ /* REMOVE: Prevent excessive height */
     background-color: var(--surface-color-2);
     color: var(--text-color);
     border: none; /* Remove border, container has one */
@@ -615,7 +635,7 @@ input[type="number"]::-webkit-inner-spin-button {
     font-family: var(--monospace-font-family);
     font-size: var(--input-font-size);
     box-sizing: border-box;
-    resize: vertical; /* Allow only vertical resize */
+    /* resize: vertical; */ /* REMOVE: Allow only vertical resize - We handle resize via handle */
     white-space: pre; overflow-wrap: normal; overflow-x: auto;
     flex-grow: 1; /* Allow textarea to fill available space */
 }
@@ -624,11 +644,13 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #popout-update-button {
-    display: block;
-    width: auto; /* Let the button size itself, center with margin */
-    margin: 10px auto 10px auto;
+    /* display: block; */ /* No longer needed */
+    /* width: auto; */ /* No longer needed */
+    /* margin: 10px auto 10px auto; */ /* No longer needed */
     /* Uses .control-button styles for appearance */
-    padding: 8px 15px; /* Adjust padding if needed */
+    /* padding: 8px 15px; */
+    padding: 0.6rem 1.2rem; /* Slightly smaller padding for header */
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* --- NEW: Pop-out Resize Handle Styles --- */

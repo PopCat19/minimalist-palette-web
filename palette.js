@@ -396,9 +396,13 @@ const stepsNumber = document.getElementById('interpolation-steps-number');
 const saturationOffsetSlider = document.getElementById('saturation-offset-slider');
 const saturationOffsetNumber = document.getElementById('saturation-offset-number');
 
-// --- NEW: Zoom Controls Elements ---
-const zoomSlider = document.getElementById('zoom-slider');
+// --- NEW: Zoom Controls Elements --- REMOVED zoomSlider
+const zoomSlider = document.getElementById('zoom-slider'); // Restore reference
 const zoomNumber = document.getElementById('zoom-number');
+
+// --- NEW: UI Scale Controls Elements --- REMOVED uiScaleSlider
+// const uiScaleSlider = document.getElementById('ui-scale-slider');
+const uiScaleNumber = document.getElementById('ui-scale-number');
 
 // --- NEW: Generate X Row Elements ---
 const generateXValueInput = document.getElementById('generate-x-value');
@@ -572,6 +576,31 @@ function interpolateRgb(rgb1, rgb2, t) {
     const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * t);
     const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * t);
     return { r, g, b };
+}
+
+// NEW Helper to get coordinates from mouse or touch events
+function getEventCoords(event) {
+    if (event.touches && event.touches.length > 0) {
+        return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    } else {
+        return { x: event.clientX, y: event.clientY };
+    }
+}
+
+// --- NEW: UI Scale Function --- (UPDATED)
+function applyUiScale(scalePercent) {
+    const scaleValue = Math.max(50, Math.min(200, scalePercent)) / 100; // Clamp 50-200%, convert to 0.5-2.0
+    document.documentElement.style.fontSize = `${10 * scaleValue}px`;
+    console.log(`UI Scale set to ${scalePercent}% (root font size: ${10 * scaleValue}px)`);
+
+    // Update number input ONLY if called externally (less likely now)
+    if (uiScaleNumber.value !== String(scalePercent)) {
+        uiScaleNumber.value = scalePercent;
+    }
+    // REMOVED Slider sync
+    // if (uiScaleSlider.value !== String(scalePercent)) {
+    //     uiScaleSlider.value = scalePercent;
+    // }
 }
 
 // --- Core Logic ---
@@ -1004,6 +1033,11 @@ editPaletteButton.addEventListener('click', () => {
     popoutPaletteInput.select(); // Select text for easy replacement
 });
 
+// --- NEW: Popout Close Button Listener ---
+popoutCloseButton.addEventListener('click', () => {
+    popoutEditor.style.display = 'none'; // Hide the popout
+});
+
 // Update Button (now only for the modal editor, which is unused but kept for now)
 // updateButton.addEventListener('click', () => { ... });
 
@@ -1057,7 +1091,7 @@ exportPngButton.addEventListener('click', () => {
     }, 150); // Delay
 });
 
-// Interpolation/Saturation Listeners (No changes needed, IDs are the same)
+// Interpolation/Saturation Listeners
 interpolationToggle.addEventListener('change', (event) => {
     isInterpolationEnabled = event.target.checked;
     updatePaletteView();
@@ -1097,33 +1131,98 @@ saturationOffsetNumber.addEventListener('input', (event) => {
     renderPalette(currentGridData); // Just re-render
 });
 
-// --- NEW: Zoom Control Listeners ---
+// --- Zoom Control Listeners --- (UPDATED)
+// Restore zoomSlider listener
 zoomSlider.addEventListener('input', (event) => {
     const zoomValue = parseInt(event.target.value, 10);
     zoomNumber.value = zoomValue; // Sync number input
-    // Optional debounce
     clearTimeout(zoomTimeout);
     zoomTimeout = setTimeout(() => applyZoom(zoomValue), zoomDebounceDelay);
-    // applyZoom(zoomValue); // Apply immediately without debounce
 });
 
 zoomNumber.addEventListener('input', (event) => {
     let value = parseInt(event.target.value, 10);
     const min = parseInt(zoomNumber.min, 10);
     const max = parseInt(zoomNumber.max, 10);
-    if (isNaN(value)) {
-        value = 100; // Default to 100% if invalid
-    } else if (value < min) {
-        value = min;
-    } else if (value > max) {
-        value = max;
+    // -- TEMPORARILY REMOVE CLAMPING/DEFAULTING ON INPUT --
+    // if (isNaN(value)) {
+    //     value = 100; // Default to 100% if invalid
+    // } else if (value < min) {
+    //     value = min;
+    // } else if (value > max) {
+    //     value = max;
+    // }
+    // zoomNumber.value = value; // Don't immediately update input field
+
+    // -- Sync slider ONLY if value is valid --
+    if (!isNaN(value)) {
+        zoomSlider.value = Math.max(min, Math.min(max, value)); // Clamp slider value
     }
-    zoomNumber.value = value; // Update input field
-    zoomSlider.value = value; // Sync slider
-    // Optional debounce
+    // -- Apply zoom (with debounce) using potentially un-clamped value --
+    // ApplyZoom will handle clamping internally before using the scale
     clearTimeout(zoomTimeout);
-    zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
-    // applyZoom(value); // Apply immediately without debounce
+    if (!isNaN(value)) { // Only set timeout if value is a number
+        zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
+    }
+});
+
+// Add 'change' listener to zoomNumber for final validation/clamping
+zoomNumber.addEventListener('change', (event) => {
+    let value = parseInt(event.target.value, 10);
+    const min = parseInt(zoomNumber.min, 10);
+    const max = parseInt(zoomNumber.max, 10);
+
+    if (isNaN(value)) {
+        value = 100; // Default to 100 if invalid
+    } else {
+        value = Math.max(min, Math.min(max, value)); // Clamp within min/max
+    }
+    // Update the input field visually to the clamped value
+    zoomNumber.value = value;
+    zoomSlider.value = value; // Sync slider to clamped value
+
+    // Apply the final clamped value immediately (or keep debounce if preferred)
+    clearTimeout(zoomTimeout); // Clear any pending timeouts from 'input'
+    applyZoom(value);
+});
+
+// --- NEW: UI Scale Control Listeners --- (UPDATED)
+// REMOVED uiScaleSlider listener
+// ...
+
+uiScaleNumber.addEventListener('input', (event) => {
+    let value = parseInt(event.target.value, 10);
+    // -- TEMPORARILY REMOVE CLAMPING/DEFAULTING ON INPUT --
+    // const min = parseInt(uiScaleNumber.min, 10);
+    // const max = parseInt(uiScaleNumber.max, 10);
+    // if (isNaN(value)) {
+    //     value = 100; // Default to 100 if invalid
+    // } else {
+    //     value = Math.max(min, Math.min(max, value)); // Clamp within min/max
+    // }
+    // uiScaleNumber.value = value; // Don't immediately update input field
+    
+    // Apply scale (applyUiScale handles clamping internally)
+    if (!isNaN(value)) { // Only apply if it's a number
+        applyUiScale(value);
+    }
+});
+
+// Add 'change' listener to uiScaleNumber for final validation/clamping
+uiScaleNumber.addEventListener('change', (event) => {
+    let value = parseInt(event.target.value, 10);
+    const min = parseInt(uiScaleNumber.min, 10);
+    const max = parseInt(uiScaleNumber.max, 10);
+
+    if (isNaN(value)) {
+        value = 100; // Default to 100 if invalid
+    } else {
+        value = Math.max(min, Math.min(max, value)); // Clamp within min/max
+    }
+    // Update the input field visually to the clamped value
+    uiScaleNumber.value = value;
+    // Apply the final clamped value
+    applyUiScale(value);
 });
 
 // --- REVISED: Generate X Row Event Listener (Manual References) ---
@@ -1260,26 +1359,81 @@ let popoutStartX, popoutStartY, popoutInitialX, popoutInitialY;
 let isResizingPopout = false;
 let resizeStartX, resizeStartY, resizeInitialWidth, resizeInitialHeight;
 
-// --- Popout Drag Functions ---
+// --- NEW: Snapping Constants ---
+const SNAP_THRESHOLD = 20; // Pixels within which snapping occurs
+const SNAP_GAP = 16;       // Pixels gap from the edge when snapped
+
+// --- Popout Drag Functions (UPDATED for Touch & Snap) ---
 function startPopoutDrag(event) {
+    // Prevent drag if resizing is active (or vice-versa, though less likely)
+    if (isResizingPopout) return;
+
     isDraggingPopout = true;
     popoutInitialX = popoutEditor.offsetLeft;
     popoutInitialY = popoutEditor.offsetTop;
-    popoutStartX = event.clientX;
-    popoutStartY = event.clientY;
-    // Add listeners to the whole document to catch mouse movement anywhere
+    const coords = getEventCoords(event);
+    popoutStartX = coords.x;
+    popoutStartY = coords.y;
+
+    // Add listeners to the whole document
     document.addEventListener('mousemove', dragPopout);
     document.addEventListener('mouseup', stopPopoutDrag);
-    popoutHeader.style.cursor = 'grabbing'; // Change cursor
-    event.preventDefault(); // Prevent text selection
+    document.addEventListener('touchmove', dragPopout, { passive: false }); // Prevent scroll on touch move
+    document.addEventListener('touchend', stopPopoutDrag);
+
+    popoutHeader.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none'; // Prevent text selection during drag
+    if (event.type === 'touchstart') {
+        event.preventDefault(); // Prevent default touch actions like scrolling
+    }
 }
 
 function dragPopout(event) {
     if (!isDraggingPopout) return;
-    const dx = event.clientX - popoutStartX;
-    const dy = event.clientY - popoutStartY;
-    popoutEditor.style.left = `${popoutInitialX + dx}px`;
-    popoutEditor.style.top = `${popoutInitialY + dy}px`;
+    const coords = getEventCoords(event);
+    const dx = coords.x - popoutStartX;
+    const dy = coords.y - popoutStartY;
+
+    let potentialLeft = popoutInitialX + dx;
+    let potentialTop = popoutInitialY + dy;
+
+    // Get editor dimensions and viewport dimensions
+    const editorWidth = popoutEditor.offsetWidth;
+    const editorHeight = popoutEditor.offsetHeight;
+    const viewportWidth = canvasViewport.clientWidth;
+    const viewportHeight = canvasViewport.clientHeight;
+
+    // Calculate potential edge positions
+    let potentialRight = potentialLeft + editorWidth;
+    let potentialBottom = potentialTop + editorHeight;
+
+    // --- Snapping Logic ---
+    // Snap Left Edge
+    if (Math.abs(potentialLeft) < SNAP_THRESHOLD) {
+        potentialLeft = SNAP_GAP;
+    }
+    // Snap Right Edge
+    else if (Math.abs(potentialRight - viewportWidth) < SNAP_THRESHOLD) {
+        potentialLeft = viewportWidth - editorWidth - SNAP_GAP;
+    }
+
+    // Snap Top Edge
+    if (Math.abs(potentialTop) < SNAP_THRESHOLD) {
+        potentialTop = SNAP_GAP;
+    }
+    // Snap Bottom Edge
+    else if (Math.abs(potentialBottom - viewportHeight) < SNAP_THRESHOLD) {
+        potentialTop = viewportHeight - editorHeight - SNAP_GAP;
+    }
+    // --- End Snapping --- 
+
+    popoutEditor.style.left = `${potentialLeft}px`;
+    popoutEditor.style.top = `${potentialTop}px`;
+
+    // Necessary for touchmove to prevent scrolling
+    if (event.type === 'touchmove') {
+        event.preventDefault();
+    }
 }
 
 function stopPopoutDrag() {
@@ -1287,14 +1441,107 @@ function stopPopoutDrag() {
         isDraggingPopout = false;
         document.removeEventListener('mousemove', dragPopout);
         document.removeEventListener('mouseup', stopPopoutDrag);
-        popoutHeader.style.cursor = 'move'; // Restore cursor
+        document.removeEventListener('touchmove', dragPopout);
+        document.removeEventListener('touchend', stopPopoutDrag);
+        popoutHeader.style.cursor = 'move';
+        document.body.style.userSelect = ''; // Restore text selection
     }
 }
 
-// --- NEW: Popout Close Button Listener ---
-popoutCloseButton.addEventListener('click', () => {
-    popoutEditor.style.display = 'none'; // Hide the popout
-});
+// --- Popout Resize Functions (UPDATED for Touch & Snap) ---
+function startPopoutResize(event) {
+    // Prevent resize if dragging is active
+    if (isDraggingPopout) return;
+
+    isResizingPopout = true;
+    const coords = getEventCoords(event);
+    resizeStartX = coords.x;
+    resizeStartY = coords.y;
+    resizeInitialWidth = popoutEditor.offsetWidth;
+    resizeInitialHeight = popoutEditor.offsetHeight;
+
+    // Add listeners to the whole document
+    document.addEventListener('mousemove', resizePopout);
+    document.addEventListener('mouseup', stopPopoutResize);
+    document.addEventListener('touchmove', resizePopout, { passive: false }); // Prevent scroll on touch move
+    document.addEventListener('touchend', stopPopoutResize);
+
+    document.body.style.cursor = 'nwse-resize'; // Apply resize cursor globally
+    document.body.style.userSelect = 'none'; // Prevent text selection
+    if (event.type === 'touchstart') {
+        event.preventDefault(); // Prevent default touch actions
+    }
+}
+
+function resizePopout(event) {
+    if (!isResizingPopout) return;
+    const coords = getEventCoords(event);
+    const dx = coords.x - resizeStartX;
+    const dy = coords.y - resizeStartY;
+
+    // Get min dimensions from CSS and current position
+    const minWidth = parseInt(getComputedStyle(popoutEditor).minWidth, 10) || 150;
+    const minHeight = parseInt(getComputedStyle(popoutEditor).minHeight, 10) || 100;
+    const currentLeft = popoutEditor.offsetLeft;
+    const currentTop = popoutEditor.offsetTop;
+    const viewportWidth = canvasViewport.clientWidth;
+    const viewportHeight = canvasViewport.clientHeight;
+
+    // Calculate potential new dimensions
+    let newWidth = resizeInitialWidth + dx;
+    let newHeight = resizeInitialHeight + dy;
+
+    // Enforce minimum dimensions first
+    newWidth = Math.max(minWidth, newWidth);
+    newHeight = Math.max(minHeight, newHeight);
+
+    // Calculate potential edge positions based on resizing
+    let potentialRight = currentLeft + newWidth;
+    let potentialBottom = currentTop + newHeight;
+
+    // --- Snapping Logic for Resize ---
+    // Snap Right Edge
+    if (Math.abs(potentialRight - viewportWidth) < SNAP_THRESHOLD) {
+        newWidth = viewportWidth - currentLeft - SNAP_GAP;
+        // Re-check min width after snapping
+        newWidth = Math.max(minWidth, newWidth);
+    }
+    // Snap Bottom Edge
+    if (Math.abs(potentialBottom - viewportHeight) < SNAP_THRESHOLD) {
+        newHeight = viewportHeight - currentTop - SNAP_GAP;
+        // Re-check min height after snapping
+        newHeight = Math.max(minHeight, newHeight);
+    }
+    // --- End Snapping ---
+
+    popoutEditor.style.width = `${newWidth}px`;
+    popoutEditor.style.height = `${newHeight}px`;
+
+    // Necessary for touchmove to prevent scrolling
+    if (event.type === 'touchmove') {
+        event.preventDefault();
+    }
+}
+
+function stopPopoutResize() {
+    if (isResizingPopout) {
+        isResizingPopout = false;
+        document.removeEventListener('mousemove', resizePopout);
+        document.removeEventListener('mouseup', stopPopoutResize);
+        document.removeEventListener('touchmove', resizePopout);
+        document.removeEventListener('touchend', stopPopoutResize);
+        document.body.style.cursor = ''; // Restore default cursor
+        document.body.style.userSelect = ''; // Restore text selection
+    }
+}
+
+// --- Popout Drag Listeners (UPDATED for Touch & Snap) ---
+popoutHeader.addEventListener('mousedown', startPopoutDrag);
+popoutHeader.addEventListener('touchstart', startPopoutDrag, { passive: false }); // Add touch listener
+
+// --- Popout Resize Listener (UPDATED for Touch & Snap) ---
+popoutResizeHandle.addEventListener('mousedown', startPopoutResize);
+popoutResizeHandle.addEventListener('touchstart', startPopoutResize, { passive: false }); // Add touch listener
 
 // --- NEW: Popout Update Button Listener ---
 popoutUpdateButton.addEventListener('click', () => {
@@ -1318,68 +1565,24 @@ popoutUpdateButton.addEventListener('click', () => {
     }
 });
 
-// --- NEW: Popout Drag Listeners ---
-popoutHeader.addEventListener('mousedown', startPopoutDrag);
-
-// --- NEW: Popout Resize Functions ---
-function startPopoutResize(event) {
-    isResizingPopout = true;
-    resizeStartX = event.clientX;
-    resizeStartY = event.clientY;
-    resizeInitialWidth = popoutEditor.offsetWidth;
-    resizeInitialHeight = popoutEditor.offsetHeight;
-    // Prevent cursor changing during resize if possible (may depend on browser/OS)
-    document.body.style.cursor = 'nwse-resize';
-    // Add listeners to the whole document
-    document.addEventListener('mousemove', resizePopout);
-    document.addEventListener('mouseup', stopPopoutResize);
-    event.preventDefault(); // Prevent text selection etc.
-}
-
-function resizePopout(event) {
-    if (!isResizingPopout) return;
-    const dx = event.clientX - resizeStartX;
-    const dy = event.clientY - resizeStartY;
-
-    // Get min dimensions from CSS (or set defaults)
-    const minWidth = parseInt(getComputedStyle(popoutEditor).minWidth, 10) || 150;
-    const minHeight = parseInt(getComputedStyle(popoutEditor).minHeight, 10) || 100;
-
-    let newWidth = resizeInitialWidth + dx;
-    let newHeight = resizeInitialHeight + dy;
-
-    // Enforce minimum dimensions
-    newWidth = Math.max(minWidth, newWidth);
-    newHeight = Math.max(minHeight, newHeight);
-
-    popoutEditor.style.width = `${newWidth}px`;
-    popoutEditor.style.height = `${newHeight}px`;
-}
-
-function stopPopoutResize() {
-    if (isResizingPopout) {
-        isResizingPopout = false;
-        document.removeEventListener('mousemove', resizePopout);
-        document.removeEventListener('mouseup', stopPopoutResize);
-        document.body.style.cursor = ''; // Restore default cursor
-    }
-}
-
-// --- NEW: Popout Resize Listener ---
-popoutResizeHandle.addEventListener('mousedown', startPopoutResize);
-
-// --- Initial Load ---
+// --- Initial Load --- (UPDATED)
 function initializeApp() {
-    // Set initial control values (if needed, should match defaults)
+    // Set initial control values
     stepsSlider.value = interpolationSteps;
     stepsNumber.value = interpolationSteps;
     saturationOffsetSlider.value = saturationOffset;
     saturationOffsetNumber.value = saturationOffset;
-    zoomSlider.value = scale * 100; // Set initial zoom controls
+    // REMOVED zoomSlider init
+    zoomSlider.value = scale * 100; // Restore zoom slider init
     zoomNumber.value = scale * 100;
+    // REMOVED uiScaleSlider init
+    uiScaleNumber.value = 100;
 
     // Set initial palette position and scale
     updateTransform();
+
+    // Set initial UI scale
+    applyUiScale(100);
 
     // Render the initial palette
     renderPalette(currentGridData);

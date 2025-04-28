@@ -22,7 +22,7 @@
 
             <!-- Zoom Controls (Moved here) -->
             <div id="zoom-controls" class="control-group">
-                <label for="zoom-slider">Zoom:</label>
+                <label for="zoom-number">Zoom:</label>
                 <input type="range" id="zoom-slider" min="40" max="200" value="100" step="4">
                 <input type="number" id="zoom-number" min="40" max="200" value="100" step="4">
             </div>
@@ -42,10 +42,10 @@
         <div id="popout-editor">
             <div class="popout-header">
                 <span class="popout-title">Palette Data</span>
+                <button id="popout-update-button" class="control-button">Update Palette</button>
                 <button id="popout-close-button" aria-label="Close Pop-out Editor">&times;</button>
             </div>
             <textarea id="popout-palette-input" spellcheck="false"></textarea>
-            <button id="popout-update-button" class="control-button">Update Palette</button>
             <!-- NEW: Resize Handle -->
             <div id="popout-resize-handle"></div>
         </div>
@@ -151,6 +151,19 @@
                         <button id="generate-x-button" class="control-button">Generate</button>
                     </div>
                  </div>
+
+                 <!-- NEW: UI Scale Section -->
+                 <div class="adjustment-group">
+                     <h4 class="adjustment-subheader">Interface Scale</h4>
+                     <div class="control-group">
+                         <label for="ui-scale-number">UI Scale:</label>
+                         <div class="slider-group">
+                             <input type="number" id="ui-scale-number" min="50" max="200" value="100"> %
+                         </div>
+                     </div>
+                 </div>
+                 <!-- END NEW Section -->
+
             </div>
         </div>
 
