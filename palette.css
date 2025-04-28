@@ -248,7 +248,8 @@ body {
     visibility: hidden;
     transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration), bottom var(--transition-duration) var(--transition-timing); /* Added bottom transition */
     z-index: var(--z-index-modal);
-    background-color: var(--surface-color-1);
+    /* background-color: var(--surface-color-1); */
+    background-color: rgba(26, 26, 26, 0.75); /* Decreased opacity for more blur visibility */
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius);
     padding: var(--modal-padding);
@@ -259,6 +260,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px; /* Replaced var(--modal-gap) */
+    /* Add backdrop blur */
+    -webkit-backdrop-filter: blur(15px); /* Increased blur radius */
+    backdrop-filter: blur(15px); /* Increased blur radius */
 }
 #config-modal.visible {
     transform: translateX(-50%) scale(1); /* Center horizontally, final scale */
@@ -443,11 +447,15 @@ input[type="number"]::-webkit-inner-spin-button {
     display: flex;
     align-items: center;
     gap: 15px; /* Space between button and zoom */
-    background-color: var(--surface-color-1);
+    /* background-color: var(--surface-color-1); */
+    background-color: rgba(26, 26, 26, 0.75); /* Decreased opacity for more blur visibility */
     padding: 8px 12px;
     border-radius: var(--border-radius);
     border: var(--border-width) solid var(--border-color);
     box-shadow: var(--config-button-shadow);
+    /* Add backdrop blur */
+    -webkit-backdrop-filter: blur(15px); /* Increased blur radius */
+    backdrop-filter: blur(15px); /* Increased blur radius */
 }
 
 /* Adjust Zoom Controls for new location */
@@ -455,6 +463,41 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-bottom: 0; /* Remove margin from when it was in modal */
     flex-wrap: nowrap; /* Prevent wrapping of label/slider/input */
     /* Keep other styles like flex, gap, etc. inherited from .control-group */
+}
+
+/* --- Specific adjustments for Generate Row controls --- */
+#generate-x-controls {
+    justify-content: flex-start; /* Align items to the start */
+    gap: 5px; /* Tighter gap for more controls */
+    flex-wrap: wrap; /* Allow wrapping if needed, though less likely now */
+}
+
+#generate-x-controls label {
+    margin-right: 0; /* Remove default margin from shared label styles */
+    white-space: nowrap;
+}
+/* Adjust spacing for the connecting labels */
+#generate-x-controls .from-label,
+#generate-x-controls .and-label {
+    margin-left: 5px; 
+}
+
+#generate-x-controls input[type="number"] {
+    width: 55px; /* Slightly smaller width */
+    flex-grow: 0; /* Prevent growing */
+    padding: 3px 4px; /* Adjust padding */
+}
+
+#generate-x-controls span {
+    margin-left: -2px; /* Pull 'x' closer to number input */
+    margin-right: 5px; /* Space before next element */
+    color: var(--text-color-muted);
+}
+
+#generate-x-controls button {
+    padding: 6px 12px; /* Make button smaller */
+    flex-grow: 0; /* Prevent growing */
+    margin-left: 5px; /* Add space before button */
 }
 
 /* --- Responsive Adjustments Removed --- */

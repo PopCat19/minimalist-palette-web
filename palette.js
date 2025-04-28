@@ -399,6 +399,12 @@ const saturationOffsetNumber = document.getElementById('saturation-offset-number
 const zoomSlider = document.getElementById('zoom-slider');
 const zoomNumber = document.getElementById('zoom-number');
 
+// --- NEW: Generate X Row Elements ---
+const generateXValueInput = document.getElementById('generate-x-value');
+const generateRef1ValueInput = document.getElementById('generate-ref1-value'); // New Ref 1 Input
+const generateRef2ValueInput = document.getElementById('generate-ref2-value'); // New Ref 2 Input
+const generateXButton = document.getElementById('generate-x-button');
+
 // --- Helper Functions ---
 function isValidHex(str) {
     return (
@@ -540,6 +546,24 @@ function adjustSaturation(hexColor, offsetPercent) {
     return rgbToHex(newRgb.r, newRgb.g, newRgb.b);
 }
 // --- END NEW HSL ---
+
+// NEW: Function to parse 'x' value from labels like '100x'
+function parseXValue(label) {
+    if (typeof label !== 'string' || !label.endsWith('x')) {
+        return null;
+    }
+    const numPart = label.substring(0, label.length - 1);
+    const value = parseInt(numPart, 10);
+    return isNaN(value) ? null : value;
+}
+
+// NEW: Interpolate RGB (moved out from hex interpolation for reuse)
+function interpolateRgb(rgb1, rgb2, t) {
+    const r = Math.round(rgb1.r + (rgb2.r - rgb1.r) * t);
+    const g = Math.round(rgb1.g + (rgb2.g - rgb1.g) * t);
+    const b = Math.round(rgb1.b + (rgb2.b - rgb1.b) * t);
+    return { r, g, b };
+}
 
 // --- Core Logic ---
 
@@ -1100,6 +1124,132 @@ zoomNumber.addEventListener('input', (event) => {
     clearTimeout(zoomTimeout);
     zoomTimeout = setTimeout(() => applyZoom(value), zoomDebounceDelay);
     // applyZoom(value); // Apply immediately without debounce
+});
+
+// --- REVISED: Generate X Row Event Listener (Manual References) ---
+generateXButton.addEventListener('click', () => {
+    const targetX = parseInt(generateXValueInput.value, 10);
+    const ref1X = parseInt(generateRef1ValueInput.value, 10);
+    const ref2X = parseInt(generateRef2ValueInput.value, 10);
+
+    console.log(`--- Generate Row Clicked --- Target: ${targetX}x, Ref1: ${ref1X}x, Ref2: ${ref2X}x`);
+
+    if (isNaN(targetX) || isNaN(ref1X) || isNaN(ref2X)) {
+        alert('Please enter valid numbers for Target X, Ref 1 X, and Ref 2 X.');
+        return;
+    }
+    if (ref1X === ref2X) {
+         alert('Reference 1 X and Reference 2 X cannot be the same.');
+         return;
+    }
+
+    // Find the exact rows for ref1 and ref2
+    let rowRef1 = null;
+    let rowRef2 = null;
+    let existingRowIndex = -1;
+
+    sourceGridData.forEach((row, index) => {
+        const currentX = parseXValue(row[0]);
+        if (currentX === null) return;
+
+        if (currentX === targetX) {
+            existingRowIndex = index;
+        }
+        if (currentX === ref1X) {
+            rowRef1 = row;
+        }
+        if (currentX === ref2X) {
+            rowRef2 = row;
+        }
+    });
+
+    if (existingRowIndex !== -1) {
+        alert(`Row ${targetX}x already exists.`);
+        return;
+    }
+    if (!rowRef1) {
+        alert(`Could not find reference row ${ref1X}x.`);
+        return;
+    }
+    if (!rowRef2) {
+        alert(`Could not find reference row ${ref2X}x.`);
+        return;
+    }
+
+    // Calculate interpolation/extrapolation factor t relative to ref1 and ref2
+    // t = (targetX - ref1X) / (ref2X - ref1X);
+    // Let's adjust the formula slightly to be consistent with previous interpolateRgb call (where t is between 0 and 1 for interpolation)
+    // We define t based on the distance from ref1 towards ref2.
+    const t = (targetX - ref1X) / (ref2X - ref1X);
+    console.log(`Calculation factor t: ${t}`); // Can be < 0 or > 1 for extrapolation
+
+    if (isNaN(t)) {
+        console.error('Invalid factor (NaN). ref1X and ref2X might be identical.');
+        alert('Internal error calculating factor (reference values might be identical).');
+        return;
+    }
+
+    const newRow = [`${targetX}x`];
+    const numCols = rowRef1.length; // Assume ref1 and ref2 have same length
+    console.log(`Generating new row with ${numCols} columns...`);
+
+    // Interpolate/Extrapolate columns
+    for (let j = 1; j < numCols - 1; j++) {
+        const colorRef1Str = rowRef1[j];
+        const colorRef2Str = rowRef2[j];
+        const rgbRef1 = isValidHex(colorRef1Str) ? hexToRgb(colorRef1Str) : null;
+        const rgbRef2 = isValidHex(colorRef2Str) ? hexToRgb(colorRef2Str) : null;
+
+        if (rgbRef1 && rgbRef2) {
+            // Use the standard linear interpolation formula: R = R1 + (R2 - R1) * t
+            const newR = Math.round(rgbRef1.r + (rgbRef2.r - rgbRef1.r) * t);
+            const newG = Math.round(rgbRef1.g + (rgbRef2.g - rgbRef1.g) * t);
+            const newB = Math.round(rgbRef1.b + (rgbRef2.b - rgbRef1.b) * t);
+
+            // Clamp results to valid 0-255 range
+            const clamp = (val) => Math.max(0, Math.min(255, val));
+
+            newRow.push(rgbToHex(clamp(newR), clamp(newG), clamp(newB)));
+        } else {
+            // If colors can't be processed (e.g., one is a label), add placeholder
+            newRow.push('-');
+        }
+    }
+
+    newRow.push(`${targetX}x`);
+
+    // Find insertion index (maintaining sort order, descending X)
+    let insertIndex = sourceGridData.findIndex(row => {
+        const currentX = parseXValue(row[0]);
+        return currentX !== null && currentX < targetX;
+    });
+    if (insertIndex === -1) {
+        // Find the last row with any X value (could be 0x)
+        let lastXIndex = -1;
+        for(let i = sourceGridData.length - 1; i >= 0; i--) {
+            if (parseXValue(sourceGridData[i][0]) !== null) {
+                lastXIndex = i;
+                break;
+            }
+        }
+        // Insert after the last row with an X, or at the very end if none found (!)
+        insertIndex = (lastXIndex !== -1) ? lastXIndex + 1 : sourceGridData.length;
+    }
+
+    console.log(`Inserting new row at source index ${insertIndex}`);
+    sourceGridData.splice(insertIndex, 0, newRow);
+
+    // Update state and render
+    console.log('Updating state and re-rendering...');
+    isInterpolationEnabled = false; // Disable other interpolation
+    interpolationToggle.checked = false;
+    currentGridData = sourceGridData.map(row => [...row]);
+    renderPalette(currentGridData);
+    generateXValueInput.value = ''; // Clear only target input
+    // Keep ref inputs populated for potentially generating sequences
+
+    alert(`Generated row ${targetX}x using references ${ref1X}x and ${ref2X}x.`);
+    console.log(`--- Generate Row Successful ---`);
 });
 
 // --- Initial Load ---
