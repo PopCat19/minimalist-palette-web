@@ -2066,25 +2066,64 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
 
     // --- Determine if Multi-Select Mode ---
     const isMultiSelect = selectedCells.length > 1;
+    const firstSelectedHsl = hsl; // HSL of the first selected cell
+
+    // --- NEW: Flags to determine if S/L controls should be disabled in multi-select ---
+    let shouldDisableS = false;
+    let shouldDisableL = false;
+
+    if (isMultiSelect) {
+        // Iterate through OTHER selected cells to check for S/L variance
+        for (let i = 1; i < selectedCells.length; i++) {
+            const [r, c] = selectedCells[i];
+            // Bounds check for safety
+            if (r < sourceGridData.length && c < sourceGridData[r].length) {
+                const currentHex = sourceGridData[r][c];
+                const currentHsl = hexToHsl(currentHex);
+                if (currentHsl) {
+                    if (Math.abs(currentHsl.s - firstSelectedHsl.s) > multiSelectTolerance) {
+                        shouldDisableS = true;
+                    }
+                    if (Math.abs(currentHsl.l - firstSelectedHsl.l) > multiSelectTolerance) {
+                        shouldDisableL = true;
+                    }
+                    // Optimization: If both are disabled, no need to check further
+                    if (shouldDisableS && shouldDisableL) break;
+                } else {
+                     console.warn(`Could not get HSL for selected cell [${r},${c}] during variance check.`);
+                }
+            }
+        }
+    }
+    // --- END NEW: Check S/L variance ---
 
     // Set initial values based on the *first* selected cell
-    pickerHueSlider.value = hsl.h;
-    pickerHueNumber.value = hsl.h;
-    pickerSatSlider.value = hsl.s;
-    pickerSatNumber.value = hsl.s;
-    pickerLumSlider.value = hsl.l;
-    pickerLumNumber.value = hsl.l;
+    pickerHueSlider.value = firstSelectedHsl.h;
+    pickerHueNumber.value = firstSelectedHsl.h;
+    pickerSatSlider.value = firstSelectedHsl.s;
+    pickerSatNumber.value = firstSelectedHsl.s;
+    pickerLumSlider.value = firstSelectedHsl.l;
+    pickerLumNumber.value = firstSelectedHsl.l;
     pickerHexInput.value = isMultiSelect ? "Multiple" : originalHex.toUpperCase();
     updatePickerPreview(originalHex); // Preview always shows the first selected
 
-    // --- Enable/Disable Controls based on mode ---
+    // --- Enable/Disable Controls based on mode and variance ---
     pickerHueSlider.disabled = isMultiSelect;
     pickerHueNumber.disabled = isMultiSelect;
-    pickerHexInput.disabled = isMultiSelect; // Disable HEX input in multi-mode
+    pickerHexInput.disabled = isMultiSelect;
+    // --- Apply disabling based on variance flags ---
+    pickerSatSlider.disabled = isMultiSelect && shouldDisableS;
+    pickerSatNumber.disabled = isMultiSelect && shouldDisableS;
+    pickerLumSlider.disabled = isMultiSelect && shouldDisableL;
+    pickerLumNumber.disabled = isMultiSelect && shouldDisableL;
 
     // Add/Remove visual class for disabled state
     pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
     pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
+    // --- Toggle disabled class for S/L based on variance flags ---
+    pickerSatSlider.closest('.picker-control-group').classList.toggle('disabled', pickerSatSlider.disabled);
+    pickerLumSlider.closest('.picker-control-group').classList.toggle('disabled', pickerLumSlider.disabled);
+
 
     // --- Update Title ---
     colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
@@ -2138,9 +2177,15 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
 
     // Optionally focus the first element
     requestAnimationFrame(() => {
-        // Focus Saturation slider in multi-select, Hue otherwise
+        // Focus Saturation slider in multi-select, Hue otherwise (or first available if disabled)
         if (isMultiSelect) {
-            pickerSatSlider.focus();
+            if (!pickerSatSlider.disabled) {
+                 pickerSatSlider.focus();
+            } else if (!pickerLumSlider.disabled) {
+                 pickerLumSlider.focus();
+            } else {
+                 pickerApplyButton.focus(); // Fallback focus
+            }
         } else {
             pickerHueSlider.focus();
         }
@@ -2155,8 +2200,18 @@ function closeColorPicker() {
     pickerHueSlider.disabled = false;
     pickerHueNumber.disabled = false;
     pickerHexInput.disabled = false;
+    // --- Re-enable S/L controls ---
+    pickerSatSlider.disabled = false;
+    pickerSatNumber.disabled = false;
+    pickerLumSlider.disabled = false;
+    pickerLumNumber.disabled = false;
+
+    // Remove disabled classes
     pickerHueSlider.closest('.picker-control-group').classList.remove('disabled');
     pickerHexInput.closest('.picker-control-group').classList.remove('disabled');
+    // --- Remove disabled class for S/L ---
+    pickerSatSlider.closest('.picker-control-group').classList.remove('disabled');
+    pickerLumSlider.closest('.picker-control-group').classList.remove('disabled');
 
 }
 
@@ -2244,7 +2299,8 @@ colorPickerCloseButton.addEventListener('click', closeColorPicker);
 
 [pickerSatSlider, pickerSatNumber].forEach(el => {
     el.addEventListener('input', () => {
-        if (isPickerUpdating) return;
+        // --- Check disabled state ---
+        if (isPickerUpdating || pickerSatSlider.disabled) return;
         const s = parseInt(el.value, 10);
         if (!isNaN(s)) {
             pickerSatSlider.value = s;
@@ -2256,7 +2312,8 @@ colorPickerCloseButton.addEventListener('click', closeColorPicker);
 
 [pickerLumSlider, pickerLumNumber].forEach(el => {
     el.addEventListener('input', () => {
-        if (isPickerUpdating) return;
+         // --- Check disabled state ---
+        if (isPickerUpdating || pickerLumSlider.disabled) return;
         const l = parseInt(el.value, 10);
         if (!isNaN(l)) {
             pickerLumSlider.value = l;
