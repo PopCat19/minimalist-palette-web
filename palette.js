@@ -386,6 +386,7 @@ const paletteEditorSection = document.getElementById('palette-editor-section');
 const paletteInput = document.getElementById('palette-input');
 const updateButton = document.getElementById('update-button');
 const exportPngButton = document.getElementById('export-png-button');
+const exportScaleInput = document.getElementById('export-scale-input'); // NEW: Export Scale Input
 
 // Adjustment controls (now inside modal)
 const interpolationToggle = document.getElementById('interpolation-toggle');
@@ -404,6 +405,14 @@ const generateXValueInput = document.getElementById('generate-x-value');
 const generateRef1ValueInput = document.getElementById('generate-ref1-value'); // New Ref 1 Input
 const generateRef2ValueInput = document.getElementById('generate-ref2-value'); // New Ref 2 Input
 const generateXButton = document.getElementById('generate-x-button');
+
+// --- NEW: Popout Editor Elements ---
+const popoutEditor = document.getElementById('popout-editor');
+const popoutHeader = popoutEditor.querySelector('.popout-header');
+const popoutCloseButton = document.getElementById('popout-close-button');
+const popoutPaletteInput = document.getElementById('popout-palette-input');
+const popoutUpdateButton = document.getElementById('popout-update-button');
+const popoutResizeHandle = document.getElementById('popout-resize-handle'); // NEW: Resize Handle
 
 // --- Helper Functions ---
 function isValidHex(str) {
@@ -981,46 +990,36 @@ configModal.addEventListener('click', (event) => {
 
 // Show/Hide Palette Editor within Modal
 editPaletteButton.addEventListener('click', () => {
-    paletteInput.value = convertToSimpleFormat(sourceGridData); // Load current source data
-    configModal.classList.add('editor-visible'); // Show the editor section
-    // Focus the textarea when editor becomes visible
-    requestAnimationFrame(() => {
-        paletteInput.focus();
-    });
+    // configModal.classList.add('editor-visible'); // OLD: Show modal section
+    popoutPaletteInput.value = convertToSimpleFormat(sourceGridData); // Load current source data
+    popoutEditor.style.display = 'flex'; // Show the popout (use flex due to CSS)
+
+    // Center the popout initially (optional)
+    const viewportWidth = canvasViewport.clientWidth;
+    const viewportHeight = canvasViewport.clientHeight;
+    popoutEditor.style.left = `${(viewportWidth - popoutEditor.offsetWidth) / 2}px`;
+    popoutEditor.style.top = `${(viewportHeight - popoutEditor.offsetHeight) / 3}px`; // Position slightly higher than pure center
+
+    popoutPaletteInput.focus(); // Focus the textarea
+    popoutPaletteInput.select(); // Select text for easy replacement
 });
 
-// Update Button (now inside config modal)
-updateButton.addEventListener('click', () => {
-    const textData = paletteInput.value;
-    try {
-        const newDataParsed = parseSimpleFormat(textData);
-        if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
-            throw new Error("Parsed data is not a valid grid.");
-        }
-        sourceGridData = newDataParsed;
-        isInterpolationEnabled = false; // Reset interpolation
-        interpolationToggle.checked = false;
-        currentGridData = sourceGridData.map(row => [...row]);
-        renderPalette(currentGridData); // Re-render main palette
-        // configModal.classList.remove('editor-visible'); // Close is handled now
-        // configModal.classList.remove('visible'); // Close is handled now
-        closeConfigModal(); // Use the close function
-        alert('Palette source updated. Shade distribution disabled.');
-    } catch (error) {
-        console.error("Error parsing or processing text input:", error);
-        alert(`Failed to update palette:\n${error.message}\n\nPlease check the format.`);
-        // Don't close modal on error
-    }
-});
+// Update Button (now only for the modal editor, which is unused but kept for now)
+// updateButton.addEventListener('click', () => { ... });
 
 // Export PNG Event Listener (Target remains paletteTable)
 exportPngButton.addEventListener('click', () => {
+    // Read scale from input, default to 2 if invalid
+    let exportScale = parseFloat(exportScaleInput.value) || 2;
+    exportScale = Math.max(1, Math.min(10, exportScale)); // Clamp between 1 and 10
+    exportScaleInput.value = exportScale; // Update input field in case it was invalid/clamped
+
+    console.log(`Exporting PNG with scale: ${exportScale}x`); // Log the scale being used
+
     // Disable button temporarily
     exportPngButton.disabled = true;
     exportPngButton.textContent = 'Exporting...';
-
-     // Ensure the modal is closed or doesn't interfere (optional, usually fine)
-     // configModal.classList.remove('visible');
+    exportScaleInput.disabled = true; // Disable scale input too
 
     // Slight delay to allow UI to settle if needed
     setTimeout(() => {
@@ -1031,7 +1030,7 @@ exportPngButton.addEventListener('click', () => {
             backgroundColor: tableBgColor, // Use container BG for capture
             useCORS: true,
             logging: false,
-            scale: 2, // Render at 2x resolution
+            scale: exportScale, // Use scale from input
             // Position/offset adjustments might be needed if transform interferes
             // x: paletteContainer.offsetLeft, // Experiment if capture is off
             // y: paletteContainer.offsetTop,
@@ -1050,9 +1049,10 @@ exportPngButton.addEventListener('click', () => {
             alert('Error exporting palette as PNG. See console for details.');
         })
         .finally(() => {
-            // Re-enable button
+            // Re-enable button and input
                 exportPngButton.disabled = false;
             exportPngButton.textContent = 'Export as PNG';
+            exportScaleInput.disabled = false;
             });
     }, 150); // Delay
 });
@@ -1251,6 +1251,122 @@ generateXButton.addEventListener('click', () => {
     alert(`Generated row ${targetX}x using references ${ref1X}x and ${ref2X}x.`);
     console.log(`--- Generate Row Successful ---`);
 });
+
+// --- NEW: Popout Dragging State ---
+let isDraggingPopout = false;
+let popoutStartX, popoutStartY, popoutInitialX, popoutInitialY;
+
+// --- NEW: Popout Resizing State ---
+let isResizingPopout = false;
+let resizeStartX, resizeStartY, resizeInitialWidth, resizeInitialHeight;
+
+// --- Popout Drag Functions ---
+function startPopoutDrag(event) {
+    isDraggingPopout = true;
+    popoutInitialX = popoutEditor.offsetLeft;
+    popoutInitialY = popoutEditor.offsetTop;
+    popoutStartX = event.clientX;
+    popoutStartY = event.clientY;
+    // Add listeners to the whole document to catch mouse movement anywhere
+    document.addEventListener('mousemove', dragPopout);
+    document.addEventListener('mouseup', stopPopoutDrag);
+    popoutHeader.style.cursor = 'grabbing'; // Change cursor
+    event.preventDefault(); // Prevent text selection
+}
+
+function dragPopout(event) {
+    if (!isDraggingPopout) return;
+    const dx = event.clientX - popoutStartX;
+    const dy = event.clientY - popoutStartY;
+    popoutEditor.style.left = `${popoutInitialX + dx}px`;
+    popoutEditor.style.top = `${popoutInitialY + dy}px`;
+}
+
+function stopPopoutDrag() {
+    if (isDraggingPopout) {
+        isDraggingPopout = false;
+        document.removeEventListener('mousemove', dragPopout);
+        document.removeEventListener('mouseup', stopPopoutDrag);
+        popoutHeader.style.cursor = 'move'; // Restore cursor
+    }
+}
+
+// --- NEW: Popout Close Button Listener ---
+popoutCloseButton.addEventListener('click', () => {
+    popoutEditor.style.display = 'none'; // Hide the popout
+});
+
+// --- NEW: Popout Update Button Listener ---
+popoutUpdateButton.addEventListener('click', () => {
+    const textData = popoutPaletteInput.value;
+    try {
+        const newDataParsed = parseSimpleFormat(textData);
+        if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
+            throw new Error("Parsed data is not a valid grid.");
+        }
+        sourceGridData = newDataParsed;
+        isInterpolationEnabled = false; // Reset interpolation
+        interpolationToggle.checked = false;
+        currentGridData = sourceGridData.map(row => [...row]);
+        renderPalette(currentGridData); // Re-render main palette
+        popoutEditor.style.display = 'none'; // Hide popout on success
+        alert('Palette source updated. Shade distribution disabled.');
+    } catch (error) {
+        console.error("Error parsing or processing text input:", error);
+        alert(`Failed to update palette:\n${error.message}\n\nPlease check the format.`);
+        // Don't hide popout on error
+    }
+});
+
+// --- NEW: Popout Drag Listeners ---
+popoutHeader.addEventListener('mousedown', startPopoutDrag);
+
+// --- NEW: Popout Resize Functions ---
+function startPopoutResize(event) {
+    isResizingPopout = true;
+    resizeStartX = event.clientX;
+    resizeStartY = event.clientY;
+    resizeInitialWidth = popoutEditor.offsetWidth;
+    resizeInitialHeight = popoutEditor.offsetHeight;
+    // Prevent cursor changing during resize if possible (may depend on browser/OS)
+    document.body.style.cursor = 'nwse-resize';
+    // Add listeners to the whole document
+    document.addEventListener('mousemove', resizePopout);
+    document.addEventListener('mouseup', stopPopoutResize);
+    event.preventDefault(); // Prevent text selection etc.
+}
+
+function resizePopout(event) {
+    if (!isResizingPopout) return;
+    const dx = event.clientX - resizeStartX;
+    const dy = event.clientY - resizeStartY;
+
+    // Get min dimensions from CSS (or set defaults)
+    const minWidth = parseInt(getComputedStyle(popoutEditor).minWidth, 10) || 150;
+    const minHeight = parseInt(getComputedStyle(popoutEditor).minHeight, 10) || 100;
+
+    let newWidth = resizeInitialWidth + dx;
+    let newHeight = resizeInitialHeight + dy;
+
+    // Enforce minimum dimensions
+    newWidth = Math.max(minWidth, newWidth);
+    newHeight = Math.max(minHeight, newHeight);
+
+    popoutEditor.style.width = `${newWidth}px`;
+    popoutEditor.style.height = `${newHeight}px`;
+}
+
+function stopPopoutResize() {
+    if (isResizingPopout) {
+        isResizingPopout = false;
+        document.removeEventListener('mousemove', resizePopout);
+        document.removeEventListener('mouseup', stopPopoutResize);
+        document.body.style.cursor = ''; // Restore default cursor
+    }
+}
+
+// --- NEW: Popout Resize Listener ---
+popoutResizeHandle.addEventListener('mousedown', startPopoutResize);
 
 // --- Initial Load ---
 function initializeApp() {

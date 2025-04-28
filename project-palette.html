@@ -38,6 +38,18 @@
             </div>
         </div>
 
+        <!-- NEW: Pop-out Palette Editor -->
+        <div id="popout-editor">
+            <div class="popout-header">
+                <span class="popout-title">Palette Data</span>
+                <button id="popout-close-button" aria-label="Close Pop-out Editor">&times;</button>
+            </div>
+            <textarea id="popout-palette-input" spellcheck="false"></textarea>
+            <button id="popout-update-button" class="control-button">Update Palette</button>
+            <!-- NEW: Resize Handle -->
+            <div id="popout-resize-handle"></div>
+        </div>
+
         <!-- Configuration Modal -->
         <div id="config-modal">
             <button class="modal-close-button" aria-label="Close Configuration">&times;</button>
@@ -45,13 +57,19 @@
             <div class="config-section">
                 <h3>Palette Actions</h3>
                 <div class="control-group">
-                <button id="edit-palette-button" class="control-button">
-                    Edit Palette Data
-                </button>
-                <button id="export-png-button" class="control-button">
-                    Export as PNG
-                </button>
-            </div>
+                    <button id="edit-palette-button" class="control-button">
+                        Edit Palette Data
+                    </button>
+                    <!-- Wrapper for Export Controls -->
+                    <div class="export-controls-group">
+                        <label for="export-scale-input" class="export-scale-label">Scale:</label>
+                        <input type="number" id="export-scale-input" min="1" max="10" step="0.5" value="2">
+                        <span>x</span>
+                        <button id="export-png-button" class="control-button">
+                            Export as PNG
+                        </button>
+                    </div>
+                </div>
             </div>
 
              <div class="config-section" id="palette-editor-section">
@@ -72,55 +90,68 @@
 
             <div class="config-section">
                 <h3>Adjustments</h3>
-                 <div id="interpolation-controls" class="control-group">
-                     <label for="interpolation-toggle">
-                         Distribute Shades (Vertical):
-                     </label>
-                <input type="checkbox" id="interpolation-toggle" />
-                     <div id="interpolation-steps-group" class="slider-group">
-                    <label for="interpolation-steps-slider">Steps:</label>
-                    <input
-                        type="range"
-                        id="interpolation-steps-slider"
-                             min="1" max="10" value="1" step="1"
-                    />
-                    <input
-                        type="number"
-                        id="interpolation-steps-number"
-                             min="1" max="10" value="1"
-                    />
-                </div>
+                 <!-- Wrapper for Interpolation Controls -->
+                 <div id="interpolation-controls-wrapper" class="adjustment-group">
+                     <div id="interpolation-controls" class="control-group">
+                        <label for="interpolation-toggle">
+                            Distribute Shades (Vertical):
+                        </label>
+                        <input type="checkbox" id="interpolation-toggle" />
+                        <div id="interpolation-steps-group" class="slider-group">
+                            <label for="interpolation-steps-slider">Steps:</label>
+                            <input
+                                type="range"
+                                id="interpolation-steps-slider"
+                                     min="1" max="10" value="1" step="1"
+                            />
+                            <input
+                                type="number"
+                                id="interpolation-steps-number"
+                                     min="1" max="10" value="1"
+                            />
+                        </div>
+                    </div>
+                 </div>
+
+                 <!-- Wrapper for Saturation Controls -->
+                 <div id="saturation-controls-wrapper" class="adjustment-group">
+                      <div id="saturation-controls" class="control-group">
+                        <label for="saturation-offset-slider">Saturation Offset:</label>
+                        <div id="saturation-offset-group" class="slider-group">
+                            <input
+                                type="range"
+                                id="saturation-offset-slider"
+                                     min="-100" max="100" value="0" step="1"
+                            />
+                            <input
+                                type="number"
+                                id="saturation-offset-number"
+                                     min="-100" max="100" value="0"
+                            />
+                            <span>%</span>
+                        </div>
+                    </div>
+                 </div>
+
+                <!-- Wrapper for Generate Row Controls -->
+                 <div id="generate-x-controls-wrapper" class="adjustment-group">
+                    <!-- NEW: Subheader for Generate Row -->
+                    <h4 class="adjustment-subheader">Generate Specific Row</h4>
+                    <!-- Controls group (label removed) -->
+                    <div id="generate-x-controls" class="control-group generate-row-layout">
+                        <!-- Removed <label for="generate-x-value">Generate Row:</label> -->
+                        <input type="number" id="generate-x-value" min="0" max="100" step="1" placeholder="Target">
+                        <span>x</span>
+                        <label for="generate-ref1-value" class="from-label">from</label>
+                        <input type="number" id="generate-ref1-value" min="0" max="100" step="1" placeholder="Ref 1">
+                        <span>x</span>
+                        <label for="generate-ref2-value" class="and-label">and</label>
+                        <input type="number" id="generate-ref2-value" min="0" max="100" step="1" placeholder="Ref 2">
+                        <span>x</span>
+                        <button id="generate-x-button" class="control-button">Generate</button>
+                    </div>
+                 </div>
             </div>
-                  <div id="saturation-controls" class="control-group">
-                <label for="saturation-offset-slider">Saturation Offset:</label>
-                     <div id="saturation-offset-group" class="slider-group">
-                    <input
-                        type="range"
-                        id="saturation-offset-slider"
-                             min="-100" max="100" value="0" step="1"
-                    />
-                    <input
-                        type="number"
-                        id="saturation-offset-number"
-                             min="-100" max="100" value="0"
-                    />
-                    <span>%</span>
-                </div>
-            </div>
-            <!-- REVISED: Generate Specific Lightness Row -->
-            <div id="generate-x-controls" class="control-group generate-row-layout">
-                <label for="generate-x-value">Generate Row:</label>
-                <input type="number" id="generate-x-value" min="0" max="100" step="1" placeholder="Target">
-                <span>x</span>
-                <label for="generate-ref1-value" class="from-label">from</label>
-                <input type="number" id="generate-ref1-value" min="0" max="100" step="1" placeholder="Ref 1">
-                <span>x</span>
-                <label for="generate-ref2-value" class="and-label">and</label>
-                <input type="number" id="generate-ref2-value" min="0" max="100" step="1" placeholder="Ref 2">
-                <span>x</span>
-                <button id="generate-x-button" class="control-button">Generate</button>
-            </div>
-        </div>
         </div>
 
         <!-- Link External JS (defer ensures HTML is parsed first) -->

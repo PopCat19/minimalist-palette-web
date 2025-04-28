@@ -297,12 +297,61 @@ body {
     color: var(--text-color);
 }
 
+/* NEW: Styling for Adjustment Group Wrappers */
+.adjustment-group {
+    margin-bottom: 15px; /* Space between adjustment sections */
+}
+.adjustment-group:last-child {
+    margin-bottom: 0;
+}
+
+/* NEW: Styling for subheaders within adjustment groups */
+.adjustment-subheader {
+    font-size: 13px; /* Slightly smaller than section h3 */
+    font-weight: 500;
+    color: var(--text-color-muted);
+    margin: 0 0 8px 0; /* Spacing below subheader */
+    padding-top: 5px; /* Add a little space above if needed */
+    border-top: 1px solid var(--border-color); /* Separator line above */
+}
+/* Remove top border/padding for the very first adjustment group's subheader */
+.adjustment-group:first-of-type .adjustment-subheader {
+    border-top: none;
+    padding-top: 0;
+}
+
 .control-group {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Distribute space */
-    gap: 10px; /* Replaced var(--control-group-gap) */
-    margin-bottom: 10px; /* Add some space below each group */
+    /* Restore space-between for general control groups */
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 0; /* Remove bottom margin, handled by adjustment-group */
+    flex-wrap: wrap; /* Allow internal wrapping if needed */
+}
+
+/* Styling for the Export controls wrapper */
+.export-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Tighter gap for scale input/button */
+}
+
+.export-scale-label {
+    font-size: var(--zoom-label-font-size); /* Reuse zoom label size */
+    color: var(--text-color-muted);
+}
+
+#export-scale-input {
+    width: 45px; /* Smaller width */
+    padding: 3px 4px; /* Adjust padding */
+    /* Inherits number input styles */
+}
+
+.export-controls-group span {
+    margin-left: -2px; /* Pull 'x' closer to number input */
+    margin-right: 5px; /* Space before button */
+    color: var(--text-color-muted);
 }
 
 .control-button {
@@ -403,7 +452,7 @@ input[type="number"]::-webkit-inner-spin-button {
     background-color: var(--surface-color-2);
     color: var(--text-color);
     border: var(--border-width) solid var(--border-color);
-    border-radius: var(--border-radius-small);
+    border-radius: 14px; /* Reduced radius */
     padding: var(--palette-input-padding);
     font-family: var(--monospace-font-family);
     font-size: var(--input-font-size);
@@ -467,15 +516,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* --- Specific adjustments for Generate Row controls --- */
 #generate-x-controls {
-    justify-content: flex-start; /* Align items to the start */
+    justify-content: flex-start; /* OVERRIDE: Keep elements grouped at start */
     gap: 5px; /* Tighter gap for more controls */
-    flex-wrap: wrap; /* Allow wrapping if needed, though less likely now */
+    /* flex-wrap: wrap; */ /* Inherited from .control-group */
 }
 
-#generate-x-controls label {
-    margin-right: 0; /* Remove default margin from shared label styles */
-    white-space: nowrap;
-}
 /* Adjust spacing for the connecting labels */
 #generate-x-controls .from-label,
 #generate-x-controls .and-label {
@@ -495,12 +540,108 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #generate-x-controls button {
-    padding: 6px 12px; /* Make button smaller */
-    flex-grow: 0; /* Prevent growing */
-    margin-left: 5px; /* Add space before button */
+    /* padding: 6px 12px; */ /* Use default button padding */
+    flex-grow: 0; /* Prevent growing (width: 100% handles it) */
+    /* margin-left: 5px; */ /* Remove left margin */
+    width: 100%; /* Make button full width */
+    margin-top: 8px; /* Add space above when it wraps (or always) */
 }
 
 /* --- Responsive Adjustments Removed --- */
 /* @media (max-width: 768px) { ... } */
 
-/* @media (max-width: 480px) { ... } */ 
+/* @media (max-width: 480px) { ... }  */
+
+/* --- Pop-out Editor Styles --- */
+#popout-editor {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 100px; /* Initial position (can be centered by JS later) */
+    left: 100px;
+    z-index: 1060; /* Above palette, below bottom controls/modal */
+    background-color: rgba(30, 30, 30, 0.8); /* Slightly different semi-transparent BG */
+    border: var(--border-width) solid var(--border-color);
+    border-radius: 12px; /* Smaller radius */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: 400px; /* Fixed width */
+    max-width: 80vw;
+    /* NEW: Min dimensions */
+    min-width: 250px;
+    min-height: 200px;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    overflow: hidden; /* Prevents content spilling during resize */
+    flex-direction: column;
+}
+
+.popout-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background-color: rgba(40, 40, 40, 0.85); /* Darker header */
+    cursor: move; /* Indicate draggable */
+    border-bottom: 1px solid var(--border-color);
+}
+
+.popout-title {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+#popout-close-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--text-color-muted);
+    cursor: pointer;
+    padding: 0 4px;
+}
+#popout-close-button:hover {
+    color: var(--text-color);
+}
+
+#popout-palette-input {
+    width: 100%; /* Corrected: Use 100% with border-box */
+    min-height: 300px; /* Good default height */
+    max-height: 60vh; /* Prevent excessive height */
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: none; /* Remove border, container has one */
+    border-radius: 0; /* No radius needed inside */
+    padding: 10px;
+    margin: 0; /* Remove default margin */
+    font-family: var(--monospace-font-family);
+    font-size: var(--input-font-size);
+    box-sizing: border-box;
+    resize: vertical; /* Allow only vertical resize */
+    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+    flex-grow: 1; /* Allow textarea to fill available space */
+}
+#popout-palette-input:focus-visible {
+    outline: none;
+}
+
+#popout-update-button {
+    display: block;
+    width: auto; /* Let the button size itself, center with margin */
+    margin: 10px auto 10px auto;
+    /* Uses .control-button styles for appearance */
+    padding: 8px 15px; /* Adjust padding if needed */
+}
+
+/* --- NEW: Pop-out Resize Handle Styles --- */
+#popout-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nwse-resize; /* Diagonal resize cursor */
+    /* Optional: Add a visual indicator */
+    /* background-color: rgba(255, 255, 255, 0.2); */
+    /* border-top: 1px solid var(--border-color); */
+    border-left: 1px solid var(--border-color);
+    border-bottom-right-radius: 12px; /* Match container radius */
+}
