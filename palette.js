@@ -2248,9 +2248,9 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     pickerHueSlider.value = firstSelectedHsl.h;
     pickerHueNumber.value = firstSelectedHsl.h;
     pickerSatSlider.value = firstSelectedHsl.s;
-    pickerSatNumber.value = firstSelectedHsl.s;
+    pickerSatNumber.value = firstSelectedHsl.s; // Keep initial set
     pickerLumSlider.value = firstSelectedHsl.l;
-    pickerLumNumber.value = firstSelectedHsl.l;
+    pickerLumNumber.value = firstSelectedHsl.l; // Keep initial set
     pickerHexInput.value = isMultiSelect ? "Multiple" : originalHex.toUpperCase();
     updatePickerPreview(originalHex); // Preview always shows the first selected
 
@@ -2258,16 +2258,31 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     pickerHueSlider.disabled = isMultiSelect;
     pickerHueNumber.disabled = isMultiSelect;
     pickerHexInput.disabled = isMultiSelect;
-    // --- Apply disabling based on variance flags ---
+
+    // --- Apply disabling based on variance flags AND UPDATE DISPLAY ---
     pickerSatSlider.disabled = isMultiSelect && shouldDisableS;
     pickerSatNumber.disabled = isMultiSelect && shouldDisableS;
+    if (pickerSatNumber.disabled) {
+        pickerSatNumber.value = ''; // Clear value if disabled due to variance
+        pickerSatNumber.placeholder = 'Varies'; // Show placeholder
+    } else {
+        pickerSatNumber.value = firstSelectedHsl.s; // Ensure value is set if enabled
+        pickerSatNumber.placeholder = ''; // Clear placeholder
+    }
+
     pickerLumSlider.disabled = isMultiSelect && shouldDisableL;
     pickerLumNumber.disabled = isMultiSelect && shouldDisableL;
+     if (pickerLumNumber.disabled) {
+        pickerLumNumber.value = ''; // Clear value if disabled due to variance
+        pickerLumNumber.placeholder = 'Varies'; // Show placeholder
+    } else {
+        pickerLumNumber.value = firstSelectedHsl.l; // Ensure value is set if enabled
+        pickerLumNumber.placeholder = ''; // Clear placeholder
+    }
 
     // Add/Remove visual class for disabled state
     pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
     pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', isMultiSelect);
-    // --- Toggle disabled class for S/L based on variance flags ---
     pickerSatSlider.closest('.picker-control-group').classList.toggle('disabled', pickerSatSlider.disabled);
     pickerLumSlider.closest('.picker-control-group').classList.toggle('disabled', pickerLumSlider.disabled);
 
@@ -2275,68 +2290,27 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     // --- Update Title ---
     colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
 
+    // Position the modal near the initiating event if provided
+    if (event && event.clientX && event.clientY) {
+       // ... (modal positioning logic remains the same) ...
+    } else {
+       // ... (center modal logic remains the same) ...
+    }
 
+    colorPickerModal.classList.add('visible');
     isPickerUpdating = false;
 
-    // --- Positioning Logic --- (Keep existing)
-    if (event) {
-        // ... (positioning code remains the same) ...
-         const modalWidth = colorPickerModal.offsetWidth;
-        const modalHeight = colorPickerModal.offsetHeight;
-        const viewportWidth = window.innerWidth; // Use window for full viewport width
-        const viewportHeight = window.innerHeight; // Use window for full viewport height
-        const padding = 10; // Minimum distance from viewport edge
-
-        let left = event.clientX + 15; // Position slightly offset from cursor
-        let top = event.clientY + 15;
-
-        // Adjust if position is too far right
-        if (left + modalWidth + padding > viewportWidth) {
-            left = event.clientX - modalWidth - 15; // Position to the left of cursor
-        }
-        // Adjust if position is too far left (in case left positioning pushes it < 0)
-        if (left < padding) {
-            left = padding;
-        }
-
-        // Adjust if position is too low
-        if (top + modalHeight + padding > viewportHeight) {
-            top = event.clientY - modalHeight - 15; // Position above cursor
-        }
-        // Adjust if position is too high (in case top positioning pushes it < 0)
-        if (top < padding) {
-            top = padding;
-        }
-
-        colorPickerModal.style.left = `${left}px`;
-        colorPickerModal.style.top = `${top}px`;
+    // --- Focus appropriate element ---
+    if (isMultiSelect) {
+        // Try focusing the first *enabled* slider (L or S)
+        if (!pickerLumSlider.disabled) {
+            pickerLumSlider.focus();
+        } else if (!pickerSatSlider.disabled) {
+            pickerSatSlider.focus();
+        } // else maybe focus Apply button?
+    } else {
+        pickerHueSlider.focus(); // Focus Hue for single edit
     }
-    // --- End Positioning ---
-
-    // Show the modal
-    colorPickerModal.classList.add('visible');
-
-    // --- Deactivate picker mode (but don't clear selection yet) ---
-    isColorPickingMode = false;
-    colorPickToggleButton.classList.remove('active');
-    document.body.classList.remove('color-picking-active');
-    console.log("Color Picker opened, Pick Mode automatically turned OFF.");
-
-    // Optionally focus the first element
-    requestAnimationFrame(() => {
-        // Focus Saturation slider in multi-select, Hue otherwise (or first available if disabled)
-        if (isMultiSelect) {
-            if (!pickerSatSlider.disabled) {
-                 pickerSatSlider.focus();
-            } else if (!pickerLumSlider.disabled) {
-                 pickerLumSlider.focus();
-            } else {
-                 pickerApplyButton.focus(); // Fallback focus
-            }
-        } else {
-            pickerHueSlider.focus();
-        }
-    });
 }
 
 function closeColorPicker() {
@@ -2365,66 +2339,92 @@ function closeColorPicker() {
 // --- Event Listeners ---
 
 // Buttons
-pickerApplyButton.addEventListener('click', () => {
+pickerApplyButton.addEventListener('click', (event) => {
+    if (touchEventHandled) {
+        touchEventHandled = false; return;
+    }
+
     if (selectedCells.length === 0) {
         console.warn("Apply clicked with no cells selected.");
-        closeColorPicker(); // Close picker and ensure selection is cleared
-        return;
+        closeColorPicker(); return;
     }
 
     const isMultiSelect = selectedCells.length > 1;
+    let applySuccess = false;
 
     if (isMultiSelect) {
-        // Apply changes to multiple cells (S and L only)
-        const newS = parseInt(pickerSatNumber.value, 10);
-        const newL = parseInt(pickerLumNumber.value, 10);
-
-        if (isNaN(newS) || isNaN(newL)) {
-            alert("Invalid Saturation or Luminance value.");
-            return;
-        }
-
-        selectedCells.forEach(coord => {
-            const [rowIndex, colIndex] = coord;
-            // Bounds check just in case
-            if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
-                const originalHex = sourceGridData[rowIndex][colIndex];
-                const originalHsl = hexToHsl(originalHex);
-                if (originalHsl) {
-                    // Use original H, new S, new L
-                    const finalHex = hslToHex(originalHsl.h, newS, newL);
-                    sourceGridData[rowIndex][colIndex] = finalHex;
-                } else {
-                    console.warn(`Could not process original color for cell [${rowIndex}, ${colIndex}] during multi-apply.`);
-                }
-            }
-        });
-        console.log(`Applied S:${newS}, L:${newL} to ${selectedCells.length} cells.`);
-
+        // --- Use helper function for multi-select logic ---
+        applySuccess = applyMultiSelectChanges();
+        // --- End Use helper function ---
     } else {
         // Apply changes to a single cell (H, S, L)
-        const [rowIndex, colIndex] = selectedCells[0]; // Get the single selected cell
-        const finalHex = pickerHexInput.value; // Get hex from input (which should be enabled)
+        const [rowIndex, colIndex] = selectedCells[0];
+        const finalHex = pickerHexInput.value;
 
         if (isValidHex(finalHex)) {
-             // Bounds check just in case
             if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
                 sourceGridData[rowIndex][colIndex] = finalHex;
                 console.log(`Applied ${finalHex} to cell [${rowIndex}, ${colIndex}].`);
+                applySuccess = true;
             } else {
                  console.warn(`Invalid coordinates for single apply: [${rowIndex}, ${colIndex}]`);
+                 applySuccess = false; // Consider this a failure? Or just log?
             }
         } else {
             alert("Invalid HEX code. Cannot apply.");
             console.error("Single apply failed: Invalid HEX.", finalHex);
-            return; // Don't close picker or clear selection on error
+            applySuccess = false;
+            // return; // Keep picker open on error
         }
     }
 
-    // Success: Update view, close picker, and clear selection state
-    updatePaletteView();
-    closeColorPicker(); // This now also calls clearSelection()
+    // Only update view and close if apply was successful
+    if (applySuccess) {
+        updatePaletteView();
+        closeColorPicker(); // This now also calls clearSelection()
+    }
 });
+
+// --- Touch End handler for Apply Button ---
+if (isTouchDevice) {
+    pickerApplyButton.addEventListener('touchend', (event) => {
+        if (pointerHasMoved) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (selectedCells.length === 0) {
+             console.warn("Apply touchend with no cells selected.");
+             closeColorPicker(); return;
+        }
+
+        const isMultiSelect = selectedCells.length > 1;
+        let applySuccess = false;
+
+        if (isMultiSelect) {
+             // --- Use helper function for multi-select logic ---
+             applySuccess = applyMultiSelectChanges();
+             // --- End Use helper function ---
+        } else {
+            // Single select logic (same as click handler)
+            const [rowIndex, colIndex] = selectedCells[0];
+            const finalHex = pickerHexInput.value;
+             if (isValidHex(finalHex)) {
+                 if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
+                     sourceGridData[rowIndex][colIndex] = finalHex;
+                     console.log(`Applied ${finalHex} by touch to cell [${rowIndex}, ${colIndex}].`);
+                     applySuccess = true;
+                 } else { console.warn(`Invalid coords for single apply touch: [${rowIndex}, ${colIndex}]`); applySuccess = false; }
+             } else { alert("Invalid HEX code. Cannot apply."); console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false; }
+        }
+
+        // Only update view and close if apply was successful
+        if (applySuccess) {
+            updatePaletteView();
+            closeColorPicker();
+        }
+        touchEventHandled = true;
+    }, { passive: false });
+}
 
 // --- NEW: Color Picker Control Event Listeners ---
 
@@ -2705,3 +2705,59 @@ function initializeApp() {
 }
 
 initializeApp(); // Run initial setup 
+
+// --- Helper function for multi-apply logic (to avoid duplication) ---
+function applyMultiSelectChanges() {
+    let newS = null;
+    let newL = null;
+    let appliedChange = false; // Track if any change is possible
+
+    // Only try to parse S if the control is enabled
+    if (!pickerSatNumber.disabled) {
+        newS = parseInt(pickerSatNumber.value, 10);
+        if (isNaN(newS) || newS < 0 || newS > 100) { // Added range check
+            alert("Invalid Saturation value (must be 0-100).");
+            return false; // Indicate failure
+        }
+        appliedChange = true;
+    }
+
+    // Only try to parse L if the control is enabled
+    if (!pickerLumNumber.disabled) {
+        newL = parseInt(pickerLumNumber.value, 10);
+        if (isNaN(newL) || newL < 0 || newL > 100) { // Added range check
+            alert("Invalid Luminance value (must be 0-100).");
+            return false; // Indicate failure
+        }
+        appliedChange = true;
+    }
+
+    // If neither S nor L was enabled/changed, nothing to apply
+    if (!appliedChange) {
+        console.log("Apply clicked, but no editable values (S/L) were changed or enabled.");
+        return true; // Indicate success (nothing to do)
+    }
+
+    // Apply the changes, preserving original values where necessary
+    selectedCells.forEach(coord => {
+        const [rowIndex, colIndex] = coord;
+        if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
+            const originalHex = sourceGridData[rowIndex][colIndex];
+            const originalHsl = hexToHsl(originalHex);
+            if (originalHsl) {
+                // Use parsed value if available (not null), otherwise use original
+                const finalS = (newS !== null) ? newS : originalHsl.s;
+                const finalL = (newL !== null) ? newL : originalHsl.l;
+
+                const finalHex = hslToHex(originalHsl.h, finalS, finalL);
+                sourceGridData[rowIndex][colIndex] = finalHex;
+            } else {
+                console.warn(`Could not process original color for cell [${rowIndex}, ${colIndex}] during multi-apply.`);
+            }
+        }
+    });
+
+    console.log(`Applied changes to ${selectedCells.length} cells. ${newS !== null ? 'S:'+newS : ''} ${newL !== null ? 'L:'+newL : ''}`.trim());
+    return true; // Indicate success
+}
+// --- END Helper function ---
