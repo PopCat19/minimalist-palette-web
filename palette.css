@@ -1,0 +1,438 @@
+:root {
+    /* --- Base Layout & Sizing --- */
+    /* --cell-size: clamp(2.5em, 5vw, 4em); */ /* REPLACED with fixed size */
+    --cell-min-size: 32px; /* Minimum cell dimension */
+    --cell-spacing: 8px;                  /* Space between cells */
+    --cell-internal-padding: 0.3em;       /* Padding inside cell content */
+    --container-padding: var(--cell-spacing); /* Padding around the table */
+    --viewport-width: 100vw;
+    --viewport-height: 100vh;
+
+    /* --- Typography --- */
+    --base-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --monospace-font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
+    --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Responsive cell label font size */
+    --cell-content-font-size: smaller;    /* Relative size adjustment for hex code in cell */
+    --config-button-font-size: 13px;
+    --modal-title-font-size: 16px;
+    --modal-label-font-size: 14px;
+    --input-font-size: 13px;
+    --button-font-size: 14px;
+    --copied-feedback-font-size: 10px;
+
+    /* --- Colors --- */
+    /* Refined Theme */
+    --bg-color: #0f0f0f;
+    --surface-color-1: #1a1a1a; /* Container, Modal */
+    --surface-color-2: #2a2a2a; /* Cells, Inputs */
+    --accent-color: #4a90e2;
+    --button-color: #3f3f3f;
+    --button-text-color: #e0e0e0;
+    --button-hover-color: #555555;
+    --text-color: #f0f0f0;
+    --text-color-muted: #aaaaaa;
+    --text-color-dark-bg: #000000; /* Text on light backgrounds */
+    --text-color-light-bg: #FFFFFF; /* Text on dark backgrounds */
+    --border-color: #404040;
+    --modal-overlay-color: rgba(0, 0, 0, 0.75); /* For copied feedback */
+    --placeholder-border-color: var(--border-color); /* Dashed border for empty interpolated cells */
+    --placeholder-text-color: var(--text-color-muted);
+
+    /* --- Borders & Radii --- */
+    --border-radius: 24px;       /* General border radius (16px + 8px) */
+    --border-radius-small: 16px;  /* Smaller radius for inputs/buttons (8px + 8px) */
+    --border-radius-input: 4px;  /* Even smaller for number inputs */
+    --border-width: 1px;
+    /* --cell-hover-border-radius: 50%; */ /* REMOVED - Replaced with outline */
+
+    /* --- Transitions & Animations --- */
+    --transition-duration: 0.2s;
+    --transition-timing: ease;
+    --copied-fade-duration: 1s;
+
+    /* --- Components --- */
+    /* Modal */
+    --modal-padding: 25px;
+    --modal-max-width: 550px;
+    --modal-max-height: 80vh;
+    --modal-gap: 20px; /* Gap between sections */
+    --modal-section-padding-bottom: 15px;
+    --modal-title-margin-bottom: 15px;
+    --modal-close-button-font-size: 24px;
+    /* Config Button */
+    --config-button-padding: 8px 15px;
+    /* Controls (inside modal) */
+    --control-group-gap: 10px;
+    --slider-width: 150px;
+    --slider-height: 5px;
+    --number-input-width: 50px;
+    --number-input-padding: 4px 6px;
+    --number-input-font-size: 12px; /* Smaller font for number inputs */
+    /* Palette Input */
+    --palette-input-min-height: 200px;
+    --palette-input-padding: 10px;
+    --palette-input-margin-bottom: 15px;
+    /* Update Button */
+    --update-button-padding: 9px 18px;
+     /* Zoom Controls */
+     --zoom-label-margin-right: 5px;
+     --zoom-label-font-size: 13px;
+     --zoom-number-input-width: 50px; /* Consistent width */
+
+
+    /* --- Shadows & Z-Index --- */
+    --config-button-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    --z-index-modal: 1050;
+    --z-index-config-button: 1100;
+    --z-index-copied-feedback: 5;
+
+    /* --- Responsive Overrides Removed --- */
+    /* --responsive-cell-spacing: 2px; ... */
+    /* ... other responsive variables ... */
+    /* --small-palette-input-min-height: 150px; */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--base-font-family);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    min-height: var(--viewport-height);
+    width: var(--viewport-width);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- Canvas Viewport (Pannable Area) --- */
+#canvas-viewport {
+    width: 100%; /* Use 100% instead of viewport unit to fill parent */
+    height: var(--viewport-height);
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    background-color: var(--bg-color);
+}
+#canvas-viewport.grabbing {
+    cursor: grabbing;
+}
+
+/* --- Palette Container (Moved by JS) --- */
+#palette-container {
+    position: absolute;
+    top: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
+    left: 50px; /* Initial offset - Keep hardcoded or move to JS if dynamic */
+    background-color: var(--surface-color-1);
+    border-radius: var(--border-radius);
+    padding: 0; /* Set padding to 0 */
+    border: var(--border-width) solid var(--border-color);
+    /* Add overflow hidden potentially if outlines clip */
+    /* overflow: hidden; */
+}
+
+/* NEW: Grid Container Styles */
+#palette-grid {
+    display: grid;
+    /* Assuming 27 columns based on JS data structure */
+    grid-template-columns: repeat(27, minmax(var(--cell-min-size), 1fr)); /* Allow cells to grow */
+    gap: 8px; /* Replaced var(--cell-spacing) */
+    padding: 8px; /* Replaced var(--cell-spacing) */
+    width: max-content; /* Ensure grid shrinks/grows with content */
+    box-sizing: border-box;
+}
+
+/* MODIFIED: Styles for the cell div (now a direct grid item) */
+.cell-content {
+    aspect-ratio: 1 / 1; /* Make cell square */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--cell-internal-padding);
+    background-color: var(--surface-color-2);
+    border-radius: var(--border-radius-small); /* Use a defined radius */
+    color: var(--text-color); /* Explicit default color */
+    word-wrap: break-word; /* Keep word wrap */
+    overflow: hidden; /* Prevent content spillover */
+    text-overflow: ellipsis; /* Add ellipsis for overflow */
+    white-space: nowrap; /* Prevent wrapping that might break layout */
+    box-sizing: border-box;
+    transition:
+        background-color var(--transition-duration) var(--transition-timing),
+        border-radius var(--transition-duration) var(--transition-timing),
+        outline var(--transition-duration) var(--transition-timing); /* Add outline transition */
+    font-size: var(--cell-content-font-size);
+    position: relative; /* Needed for ::after pseudo-element */
+}
+
+.cell-content.legend-label {
+    font-weight: bold;
+    color: var(--text-color); /* Ensure legend labels are clearly visible */
+}
+
+.cell-content.swatch {
+    cursor: pointer;
+}
+
+.cell-content.swatch:hover {
+     /* Hover effect now handled by JS adding box-shadow */
+     border-radius: var(--border-radius-small); /* Keep radius */
+     z-index: 1; /* Keep z-index */
+}
+
+.cell-content.label.interpolated-label {
+     background-color: transparent;
+     border: var(--border-width) dashed var(--placeholder-border-color);
+     color: var(--placeholder-text-color);
+     font-style: italic;
+}
+
+/* Keep copied feedback as it targets .cell-content */
+.cell-content.copied::after {
+    content: "Copied!";
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: var(--modal-overlay-color);
+    color: var(--text-color-light-bg); /* Ensure contrast */
+    display: flex; justify-content: center; align-items: center;
+    font-size: var(--copied-feedback-font-size);
+    font-weight: bold;
+    border-radius: var(--border-radius-small);
+    animation: fadeOut var(--copied-fade-duration) forwards;
+    z-index: var(--z-index-copied-feedback);
+}
+
+/* --- Config Toggle Button --- */
+#config-toggle-button {
+    position: fixed;
+    bottom: 15px; /* Position at bottom */
+    left: 50%;    /* Center horizontally */
+    transform: translateX(-50%); /* Adjust centering */
+    z-index: var(--z-index-config-button);
+    background-color: var(--surface-color-1);
+    color: var(--text-color-muted);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--config-button-padding);
+    font-size: var(--config-button-font-size);
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-timing);
+    box-shadow: var(--config-button-shadow);
+}
+#config-toggle-button:hover {
+    color: var(--text-color);
+    background-color: var(--surface-color-2);
+    border-color: var(--accent-color);
+}
+
+/* NEW: Active state for config button */
+#config-toggle-button.active {
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg); /* Contrast with accent color */
+    border-color: var(--accent-color);
+    box-shadow: none; /* Optional: Remove shadow when active */
+}
+
+/* --- Config Modal --- */
+#config-modal {
+    position: fixed;
+    bottom: 60px; /* Position above config button + gap */
+    left: 50%;
+    transform: translateX(-50%) scale(0.95); /* Center horizontally, initial scale */
+    transform-origin: bottom center; /* Scale from bottom */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration), bottom var(--transition-duration) var(--transition-timing); /* Added bottom transition */
+    z-index: var(--z-index-modal);
+    background-color: var(--surface-color-1);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--modal-padding);
+    width: 90%; /* Percentage width for responsiveness */
+    max-width: var(--modal-max-width);
+    max-height: var(--modal-max-height);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Replaced var(--modal-gap) */
+}
+#config-modal.visible {
+    transform: translateX(-50%) scale(1); /* Center horizontally, final scale */
+        opacity: 1;
+    visibility: visible;
+    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 10px; /* Keep positional offsets */
+    right: 10px; /* Keep positional offsets */
+    background: none;
+    border: none;
+    font-size: var(--modal-close-button-font-size);
+    line-height: 1;
+    color: var(--text-color-muted);
+    cursor: pointer;
+}
+.modal-close-button:hover { color: var(--text-color); }
+
+.config-section {
+    padding-bottom: var(--modal-section-padding-bottom);
+    border-bottom: var(--border-width) solid var(--border-color);
+}
+.config-section:last-child { border-bottom: none; padding-bottom: 0; }
+
+.config-section h3 {
+    margin: 0 0 var(--modal-title-margin-bottom) 0;
+    font-size: var(--modal-title-font-size);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Distribute space */
+    gap: 10px; /* Replaced var(--control-group-gap) */
+    margin-bottom: 10px; /* Add some space below each group */
+}
+
+.control-button {
+    /* Base styles, specific overrides below */
+    cursor: pointer;
+    border-radius: var(--border-radius-small);
+    border: var(--border-width) solid var(--border-color); /* Default border */
+    background-color: var(--button-color);
+    color: var(--button-text-color);
+    padding: var(--update-button-padding); /* Use a common button padding */
+    font-size: var(--button-font-size);
+    font-weight: 500;
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+ .control-button:hover {
+     background-color: var(--button-hover-color);
+     border-color: var(--accent-color); /* Highlight border on hover */
+ }
+ .control-button:focus-visible {
+     outline: none;
+     border-color: var(--accent-color); /* Highlight border on focus */
+ }
+
+#interpolation-controls,
+#saturation-controls,
+#zoom-controls { /* Combine styles for similar layout */
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    justify-content: flex-start; /* Align items to the start */
+    gap: 10px; /* Replaced var(--control-group-gap) */
+    margin-bottom: 15px; /* Space below the controls section */
+}
+#interpolation-controls label,
+#saturation-controls label,
+#zoom-controls label { /* Common label styles */
+    cursor: pointer;
+    user-select: none;
+    margin-right: var(--zoom-label-margin-right);
+    font-size: var(--zoom-label-font-size); /* Use consistent label size */
+    color: var(--text-color-muted);
+}
+input[type="checkbox"] {
+     cursor: pointer;
+     accent-color: var(--accent-color);
+}
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Replaced var(--control-group-gap) */ /* Use consistent gap */
+    flex-grow: 1; /* Allow slider group to take available space */
+    min-width: 180px; /* Prevent extreme shrinking */
+}
+input[type="range"] {
+     width: var(--slider-width);
+     height: var(--slider-height);
+    cursor: pointer;
+     accent-color: var(--accent-color);
+     vertical-align: middle;
+}
+input[type="number"] {
+     width: var(--number-input-width);
+     background-color: var(--surface-color-2);
+     color: var(--text-color);
+     border: var(--border-width) solid var(--border-color);
+     border-radius: var(--border-radius-input);
+     padding: var(--number-input-padding);
+     font-size: var(--number-input-font-size);
+     text-align: center;
+     -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+     -webkit-appearance: none;
+     margin: 0;
+}
+ input[type="number"]:focus-visible {
+     outline: none;
+     border-color: var(--accent-color);
+ }
+
+#palette-editor-section {
+    display: none;
+}
+#config-modal.editor-visible #palette-editor-section {
+    display: block;
+}
+/* Label specific styling */
+ #palette-editor-section > label[for="palette-input"] {
+     display: block;
+     margin-bottom: 10px; /* Specific margin */
+     font-weight: 500;
+     font-size: var(--modal-label-font-size);
+ }
+
+#palette-input {
+    width: 100%;
+    min-height: var(--palette-input-min-height);
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    padding: var(--palette-input-padding);
+    font-family: var(--monospace-font-family);
+    font-size: var(--input-font-size);
+    box-sizing: border-box;
+    resize: vertical;
+    margin-bottom: var(--palette-input-margin-bottom);
+    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+}
+#palette-input:focus-visible { outline: none; border-color: var(--accent-color); }
+
+#update-button { /* Specific styles for the main update button */
+    background-color: var(--accent-color);
+    color: var(--text-color-light-bg); /* Ensure contrast */
+    border: none;
+    padding: var(--update-button-padding);
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    font-size: var(--button-font-size);
+    font-weight: 500;
+    transition: all var(--transition-duration) var(--transition-timing);
+    display: block; width: fit-content; margin: 0 auto;
+}
+#update-button:hover { background-color: #3a80d2; } /* Keep specific hover */
+#update-button:focus-visible { outline: none; border-color: var(--text-color-light-bg); }
+
+
+ #zoom-slider {
+      width: var(--slider-width); /* Reuse standard slider width */
+ }
+ #zoom-number {
+      width: var(--zoom-number-input-width); /* Specific width if needed */
+ }
+
+/* --- Responsive Adjustments Removed --- */
+/* @media (max-width: 768px) { ... } */
+
+/* @media (max-width: 480px) { ... } */ 
