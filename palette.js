@@ -897,7 +897,7 @@ function renderPalette(gridData) {
                         if (!isColorPickingMode || isInterpolationEnabled) {
                              touchEventHandled = false; // Let click handler proceed for copy/selection
                             return; // Or handle single tap copy explicitly here? For now, let it fall through
-                        }
+                    }
 
                         // --- Handle Touch Selection (Tap-Tap Range) ---
                         const touchRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
@@ -907,8 +907,8 @@ function renderPalette(gridData) {
                         if (touchRowIndex >= sourceGridData.length || touchCellIndex >= sourceGridData[touchRowIndex].length || !isValidHex(sourceGridData[touchRowIndex][touchCellIndex])) {
                             console.warn("TouchEnd on invalid cell or outside source data bounds.");
                             clearSelection(); // Clear any pending range selection
-                            return;
-                        }
+        return;
+    }
 
                         if (isAwaitingRangeEndTap) {
                             // --- This is the second tap ---
@@ -964,7 +964,7 @@ function renderPalette(gridData) {
                                 console.log(`Range selected (touch): ${selectedCells.length} cells.`);
 
                                 // Open/update picker after selection change
-                                if (selectedCells.length > 0) {
+                        if (selectedCells.length > 0) {
                                     openColorPicker(selectedCells[0][0], selectedCells[0][1], event);
                                 } else if (colorPickerModal.classList.contains('visible')) {
                                     closeColorPicker(); // Close if selection ended up empty
@@ -1719,112 +1719,112 @@ generateXButton.addEventListener('click', () => {
     console.log(`--- Generate Row Clicked --- Target: ${targetX}x, Ref1: ${ref1X}x, Ref2: ${ref2X}x`);
 
     try {
-        if (isNaN(targetX) || isNaN(ref1X) || isNaN(ref2X)) {
+    if (isNaN(targetX) || isNaN(ref1X) || isNaN(ref2X)) {
             // alert('Please enter valid numbers for Target X, Ref 1 X, and Ref 2 X.'); // Replaced alert
              throw new Error('Please enter valid numbers.');
-        }
-        if (ref1X === ref2X) {
+    }
+    if (ref1X === ref2X) {
             // alert('Reference 1 X and Reference 2 X cannot be the same.'); // Replaced alert
             throw new Error('Reference X values cannot be the same.');
+    }
+
+    // Find the exact rows for ref1 and ref2
+    let rowRef1 = null;
+    let rowRef2 = null;
+    let existingRowIndex = -1;
+
+    sourceGridData.forEach((row, index) => {
+        const currentX = parseXValue(row[0]);
+        if (currentX === null) return;
+
+        if (currentX === targetX) {
+            existingRowIndex = index;
         }
+        if (currentX === ref1X) {
+            rowRef1 = row;
+        }
+        if (currentX === ref2X) {
+            rowRef2 = row;
+        }
+    });
 
-        // Find the exact rows for ref1 and ref2
-        let rowRef1 = null;
-        let rowRef2 = null;
-        let existingRowIndex = -1;
-
-        sourceGridData.forEach((row, index) => {
-            const currentX = parseXValue(row[0]);
-            if (currentX === null) return;
-
-            if (currentX === targetX) {
-                existingRowIndex = index;
-            }
-            if (currentX === ref1X) {
-                rowRef1 = row;
-            }
-            if (currentX === ref2X) {
-                rowRef2 = row;
-            }
-        });
-
-        if (existingRowIndex !== -1) {
+    if (existingRowIndex !== -1) {
             // alert(`Row ${targetX}x already exists.`); // Replaced alert
             throw new Error(`Row ${targetX}x already exists.`);
-        }
-        if (!rowRef1) {
+    }
+    if (!rowRef1) {
             // alert(`Could not find reference row ${ref1X}x.`); // Replaced alert
             throw new Error(`Could not find reference row ${ref1X}x.`);
-        }
-        if (!rowRef2) {
+    }
+    if (!rowRef2) {
             // alert(`Could not find reference row ${ref2X}x.`); // Replaced alert
             throw new Error(`Could not find reference row ${ref2X}x.`);
-        }
+    }
 
-        // Calculate interpolation/extrapolation factor t relative to ref1 and ref2
-        const t = (targetX - ref1X) / (ref2X - ref1X);
+    // Calculate interpolation/extrapolation factor t relative to ref1 and ref2
+    const t = (targetX - ref1X) / (ref2X - ref1X);
         console.log(`Calculation factor t: ${t}`);
 
-        if (isNaN(t)) {
-            console.error('Invalid factor (NaN). ref1X and ref2X might be identical.');
+    if (isNaN(t)) {
+        console.error('Invalid factor (NaN). ref1X and ref2X might be identical.');
             // alert('Internal error calculating factor (reference values might be identical).'); // Replaced alert
              throw new Error('Internal error calculating factor.');
-        }
+    }
 
-        const newRow = [`${targetX}x`];
+    const newRow = [`${targetX}x`];
         const numCols = rowRef1.length;
-        console.log(`Generating new row with ${numCols} columns...`);
+    console.log(`Generating new row with ${numCols} columns...`);
 
-        // Interpolate/Extrapolate columns
-        for (let j = 1; j < numCols - 1; j++) {
-            const colorRef1Str = rowRef1[j];
-            const colorRef2Str = rowRef2[j];
-            const rgbRef1 = isValidHex(colorRef1Str) ? hexToRgb(colorRef1Str) : null;
-            const rgbRef2 = isValidHex(colorRef2Str) ? hexToRgb(colorRef2Str) : null;
+    // Interpolate/Extrapolate columns
+    for (let j = 1; j < numCols - 1; j++) {
+        const colorRef1Str = rowRef1[j];
+        const colorRef2Str = rowRef2[j];
+        const rgbRef1 = isValidHex(colorRef1Str) ? hexToRgb(colorRef1Str) : null;
+        const rgbRef2 = isValidHex(colorRef2Str) ? hexToRgb(colorRef2Str) : null;
 
-            if (rgbRef1 && rgbRef2) {
-                const newR = Math.round(rgbRef1.r + (rgbRef2.r - rgbRef1.r) * t);
-                const newG = Math.round(rgbRef1.g + (rgbRef2.g - rgbRef1.g) * t);
-                const newB = Math.round(rgbRef1.b + (rgbRef2.b - rgbRef1.b) * t);
+        if (rgbRef1 && rgbRef2) {
+            const newR = Math.round(rgbRef1.r + (rgbRef2.r - rgbRef1.r) * t);
+            const newG = Math.round(rgbRef1.g + (rgbRef2.g - rgbRef1.g) * t);
+            const newB = Math.round(rgbRef1.b + (rgbRef2.b - rgbRef1.b) * t);
 
-                const clamp = (val) => Math.max(0, Math.min(255, val));
-                newRow.push(rgbToHex(clamp(newR), clamp(newG), clamp(newB)));
-            } else {
-                newRow.push('-');
-            }
+            const clamp = (val) => Math.max(0, Math.min(255, val));
+            newRow.push(rgbToHex(clamp(newR), clamp(newG), clamp(newB)));
+        } else {
+            newRow.push('-');
         }
+    }
 
-        newRow.push(`${targetX}x`);
+    newRow.push(`${targetX}x`);
 
         // Find insertion index
-        let insertIndex = sourceGridData.findIndex(row => {
-            const currentX = parseXValue(row[0]);
-            return currentX !== null && currentX < targetX;
-        });
-        if (insertIndex === -1) {
-            let lastXIndex = -1;
-            for(let i = sourceGridData.length - 1; i >= 0; i--) {
-                if (parseXValue(sourceGridData[i][0]) !== null) {
-                    lastXIndex = i;
-                    break;
-                }
+    let insertIndex = sourceGridData.findIndex(row => {
+        const currentX = parseXValue(row[0]);
+        return currentX !== null && currentX < targetX;
+    });
+    if (insertIndex === -1) {
+        let lastXIndex = -1;
+        for(let i = sourceGridData.length - 1; i >= 0; i--) {
+            if (parseXValue(sourceGridData[i][0]) !== null) {
+                lastXIndex = i;
+                break;
             }
-            insertIndex = (lastXIndex !== -1) ? lastXIndex + 1 : sourceGridData.length;
         }
+        insertIndex = (lastXIndex !== -1) ? lastXIndex + 1 : sourceGridData.length;
+    }
 
-        console.log(`Inserting new row at source index ${insertIndex}`);
-        sourceGridData.splice(insertIndex, 0, newRow);
+    console.log(`Inserting new row at source index ${insertIndex}`);
+    sourceGridData.splice(insertIndex, 0, newRow);
 
-        // Update state and render
-        console.log('Updating state and re-rendering...');
+    // Update state and render
+    console.log('Updating state and re-rendering...');
         isInterpolationEnabled = false;
-        interpolationToggle.checked = false;
-        currentGridData = sourceGridData.map(row => [...row]);
-        renderPalette(currentGridData);
+    interpolationToggle.checked = false;
+    currentGridData = sourceGridData.map(row => [...row]);
+    renderPalette(currentGridData);
         generateXValueInput.value = '';
 
         // alert(`Generated row ${targetX}x using references ${ref1X}x and ${ref2X}x.`); // Replaced alert
-        console.log(`--- Generate Row Successful ---`);
+    console.log(`--- Generate Row Successful ---`);
         generateSuccess = true; // Mark success
 
     } catch (error) {
@@ -2370,7 +2370,7 @@ function handlePaletteImport(file) {
                  importPaletteButton.textContent = originalButtonText;
                  importPaletteButton.classList.remove('error');
              }, 2000);
-         }
+        }
     };
 
     reader.onerror = (event) => {
@@ -2584,7 +2584,57 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     // --- Update Title ---
     colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
 
-    // ... (Positioning logic) ...
+    // --- Position the modal near the event location (mouse or touch) ---
+    if (event) {
+        const coords = getEventCoords(event);
+        const viewportWidth = canvasViewport.clientWidth;
+        const viewportHeight = canvasViewport.clientHeight;
+        const modalWidth = colorPickerModal.offsetWidth;
+        const modalHeight = colorPickerModal.offsetHeight;
+        const cursorOffset = 20; // Pixels offset from cursor
+
+        let targetX = coords.x + cursorOffset;
+        let targetY = coords.y + cursorOffset;
+
+        // Prevent spawning off the right edge
+        if (targetX + modalWidth > viewportWidth) {
+            targetX = coords.x - modalWidth - cursorOffset; // Try left of cursor
+             // If still off-screen (e.g., modal wider than viewport), align to right edge
+             if (targetX < 0) targetX = Math.max(0, viewportWidth - modalWidth - SNAP_GAP); // Use SNAP_GAP as a small margin
+        }
+         // If it's still off-screen after trying left (e.g., near right edge and modal wide), align to right
+         if (targetX + modalWidth > viewportWidth) {
+              targetX = Math.max(0, viewportWidth - modalWidth - SNAP_GAP);
+         }
+
+
+        // Prevent spawning off the bottom edge
+        if (targetY + modalHeight > viewportHeight) {
+            targetY = coords.y - modalHeight - cursorOffset; // Try above cursor
+             // If still off-screen (e.g., modal taller than viewport), align to bottom edge
+            if (targetY < 0) targetY = Math.max(0, viewportHeight - modalHeight - SNAP_GAP); // Use SNAP_GAP
+        }
+         // If it's still off-screen after trying above (e.g., near bottom edge and modal tall), align to bottom
+         if (targetY + modalHeight > viewportHeight) {
+             targetY = Math.max(0, viewportHeight - modalHeight - SNAP_GAP);
+         }
+
+        // Ensure it's not off the left or top edge
+        targetX = Math.max(SNAP_GAP, targetX); // Use SNAP_GAP as a small margin
+        targetY = Math.max(SNAP_GAP, targetY); // Use SNAP_GAP
+
+        colorPickerModal.style.left = `${targetX}px`;
+        colorPickerModal.style.top = `${targetY}px`;
+
+        console.log(`Positioning picker at: (${targetX}, ${targetY})`);
+
+    } else {
+        // Fallback to default position if no event provided
+         console.log("No event provided, using default picker position.");
+         colorPickerModal.style.left = '150px';
+         colorPickerModal.style.top = '150px';
+    }
+    // --- END Position the modal ---
 
     colorPickerModal.classList.add('visible');
     isPickerUpdating = false;
@@ -2673,7 +2723,7 @@ pickerApplyButton.addEventListener('click', (event) => {
 
     // Provide visual feedback
     if (applySuccess) {
-        updatePaletteView();
+    updatePaletteView();
         pickerApplyButton.textContent = "Applied!"; // Success feedback
         // You could also add a class like pickerApplyButton.classList.add('success');
         setTimeout(() => {
@@ -3350,7 +3400,7 @@ function handlePaletteImport(file) {
                  importPaletteButton.textContent = originalButtonText;
                  importPaletteButton.classList.remove('success');
              }, 1500);
-         } else {
+        } else {
              importPaletteButton.textContent = "Import Failed";
              importPaletteButton.classList.remove('success');
              importPaletteButton.classList.add('error');
@@ -3358,7 +3408,7 @@ function handlePaletteImport(file) {
                  importPaletteButton.textContent = originalButtonText;
                  importPaletteButton.classList.remove('error');
              }, 2000);
-         }
+        }
     };
 
     reader.onerror = (event) => {
@@ -3572,7 +3622,57 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     // --- Update Title ---
     colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
 
-    // ... (Positioning logic) ...
+    // --- Position the modal near the event location (mouse or touch) ---
+    if (event) {
+        const coords = getEventCoords(event);
+        const viewportWidth = canvasViewport.clientWidth;
+        const viewportHeight = canvasViewport.clientHeight;
+        const modalWidth = colorPickerModal.offsetWidth;
+        const modalHeight = colorPickerModal.offsetHeight;
+        const cursorOffset = 20; // Pixels offset from cursor
+
+        let targetX = coords.x + cursorOffset;
+        let targetY = coords.y + cursorOffset;
+
+        // Prevent spawning off the right edge
+        if (targetX + modalWidth > viewportWidth) {
+            targetX = coords.x - modalWidth - cursorOffset; // Try left of cursor
+             // If still off-screen (e.g., modal wider than viewport), align to right edge
+             if (targetX < 0) targetX = Math.max(0, viewportWidth - modalWidth - SNAP_GAP); // Use SNAP_GAP as a small margin
+        }
+         // If it's still off-screen after trying left (e.g., near right edge and modal wide), align to right
+         if (targetX + modalWidth > viewportWidth) {
+              targetX = Math.max(0, viewportWidth - modalWidth - SNAP_GAP);
+         }
+
+
+        // Prevent spawning off the bottom edge
+        if (targetY + modalHeight > viewportHeight) {
+            targetY = coords.y - modalHeight - cursorOffset; // Try above cursor
+             // If still off-screen (e.g., modal taller than viewport), align to bottom edge
+            if (targetY < 0) targetY = Math.max(0, viewportHeight - modalHeight - SNAP_GAP); // Use SNAP_GAP
+        }
+         // If it's still off-screen after trying above (e.g., near bottom edge and modal tall), align to bottom
+         if (targetY + modalHeight > viewportHeight) {
+             targetY = Math.max(0, viewportHeight - modalHeight - SNAP_GAP);
+         }
+
+        // Ensure it's not off the left or top edge
+        targetX = Math.max(SNAP_GAP, targetX); // Use SNAP_GAP as a small margin
+        targetY = Math.max(SNAP_GAP, targetY); // Use SNAP_GAP
+
+        colorPickerModal.style.left = `${targetX}px`;
+        colorPickerModal.style.top = `${targetY}px`;
+
+        console.log(`Positioning picker at: (${targetX}, ${targetY})`);
+
+    } else {
+        // Fallback to default position if no event provided
+         console.log("No event provided, using default picker position.");
+         colorPickerModal.style.left = '150px';
+         colorPickerModal.style.top = '150px';
+    }
+    // --- END Position the modal ---
 
     colorPickerModal.classList.add('visible');
     isPickerUpdating = false;
@@ -3661,7 +3761,7 @@ pickerApplyButton.addEventListener('click', (event) => {
 
     // Provide visual feedback
     if (applySuccess) {
-        updatePaletteView();
+    updatePaletteView();
         pickerApplyButton.textContent = "Applied!"; // Success feedback
         // You could also add a class like pickerApplyButton.classList.add('success');
         setTimeout(() => {
