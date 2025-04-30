@@ -1653,125 +1653,145 @@ generateXButton.addEventListener('click', () => {
     const targetX = parseInt(generateXValueInput.value, 10);
     const ref1X = parseInt(generateRef1ValueInput.value, 10);
     const ref2X = parseInt(generateRef2ValueInput.value, 10);
+    const originalButtonText = generateXButton.textContent; // Store original text
+    let generateSuccess = false; // Flag for feedback
 
     console.log(`--- Generate Row Clicked --- Target: ${targetX}x, Ref1: ${ref1X}x, Ref2: ${ref2X}x`);
 
-    if (isNaN(targetX) || isNaN(ref1X) || isNaN(ref2X)) {
-        alert('Please enter valid numbers for Target X, Ref 1 X, and Ref 2 X.');
-        return;
-    }
-    if (ref1X === ref2X) {
-         alert('Reference 1 X and Reference 2 X cannot be the same.');
-         return;
-    }
-
-    // Find the exact rows for ref1 and ref2
-    let rowRef1 = null;
-    let rowRef2 = null;
-    let existingRowIndex = -1;
-
-    sourceGridData.forEach((row, index) => {
-        const currentX = parseXValue(row[0]);
-        if (currentX === null) return;
-
-        if (currentX === targetX) {
-            existingRowIndex = index;
+    try {
+        if (isNaN(targetX) || isNaN(ref1X) || isNaN(ref2X)) {
+            // alert('Please enter valid numbers for Target X, Ref 1 X, and Ref 2 X.'); // Replaced alert
+             throw new Error('Please enter valid numbers.');
         }
-        if (currentX === ref1X) {
-            rowRef1 = row;
+        if (ref1X === ref2X) {
+            // alert('Reference 1 X and Reference 2 X cannot be the same.'); // Replaced alert
+            throw new Error('Reference X values cannot be the same.');
         }
-        if (currentX === ref2X) {
-            rowRef2 = row;
+
+        // Find the exact rows for ref1 and ref2
+        let rowRef1 = null;
+        let rowRef2 = null;
+        let existingRowIndex = -1;
+
+        sourceGridData.forEach((row, index) => {
+            const currentX = parseXValue(row[0]);
+            if (currentX === null) return;
+
+            if (currentX === targetX) {
+                existingRowIndex = index;
+            }
+            if (currentX === ref1X) {
+                rowRef1 = row;
+            }
+            if (currentX === ref2X) {
+                rowRef2 = row;
+            }
+        });
+
+        if (existingRowIndex !== -1) {
+            // alert(`Row ${targetX}x already exists.`); // Replaced alert
+            throw new Error(`Row ${targetX}x already exists.`);
         }
-    });
-
-    if (existingRowIndex !== -1) {
-        alert(`Row ${targetX}x already exists.`);
-        return;
-    }
-    if (!rowRef1) {
-        alert(`Could not find reference row ${ref1X}x.`);
-        return;
-    }
-    if (!rowRef2) {
-        alert(`Could not find reference row ${ref2X}x.`);
-        return;
-    }
-
-    // Calculate interpolation/extrapolation factor t relative to ref1 and ref2
-    // t = (targetX - ref1X) / (ref2X - ref1X);
-    // Let's adjust the formula slightly to be consistent with previous interpolateRgb call (where t is between 0 and 1 for interpolation)
-    // We define t based on the distance from ref1 towards ref2.
-    const t = (targetX - ref1X) / (ref2X - ref1X);
-    console.log(`Calculation factor t: ${t}`); // Can be < 0 or > 1 for extrapolation
-
-    if (isNaN(t)) {
-        console.error('Invalid factor (NaN). ref1X and ref2X might be identical.');
-        alert('Internal error calculating factor (reference values might be identical).');
-        return;
-    }
-
-    const newRow = [`${targetX}x`];
-    const numCols = rowRef1.length; // Assume ref1 and ref2 have same length
-    console.log(`Generating new row with ${numCols} columns...`);
-
-    // Interpolate/Extrapolate columns
-    for (let j = 1; j < numCols - 1; j++) {
-        const colorRef1Str = rowRef1[j];
-        const colorRef2Str = rowRef2[j];
-        const rgbRef1 = isValidHex(colorRef1Str) ? hexToRgb(colorRef1Str) : null;
-        const rgbRef2 = isValidHex(colorRef2Str) ? hexToRgb(colorRef2Str) : null;
-
-        if (rgbRef1 && rgbRef2) {
-            // Use the standard linear interpolation formula: R = R1 + (R2 - R1) * t
-            const newR = Math.round(rgbRef1.r + (rgbRef2.r - rgbRef1.r) * t);
-            const newG = Math.round(rgbRef1.g + (rgbRef2.g - rgbRef1.g) * t);
-            const newB = Math.round(rgbRef1.b + (rgbRef2.b - rgbRef1.b) * t);
-
-            // Clamp results to valid 0-255 range
-            const clamp = (val) => Math.max(0, Math.min(255, val));
-
-            newRow.push(rgbToHex(clamp(newR), clamp(newG), clamp(newB)));
-        } else {
-            // If colors can't be processed (e.g., one is a label), add placeholder
-            newRow.push('-');
+        if (!rowRef1) {
+            // alert(`Could not find reference row ${ref1X}x.`); // Replaced alert
+            throw new Error(`Could not find reference row ${ref1X}x.`);
         }
-    }
+        if (!rowRef2) {
+            // alert(`Could not find reference row ${ref2X}x.`); // Replaced alert
+            throw new Error(`Could not find reference row ${ref2X}x.`);
+        }
 
-    newRow.push(`${targetX}x`);
+        // Calculate interpolation/extrapolation factor t relative to ref1 and ref2
+        const t = (targetX - ref1X) / (ref2X - ref1X);
+        console.log(`Calculation factor t: ${t}`);
 
-    // Find insertion index (maintaining sort order, descending X)
-    let insertIndex = sourceGridData.findIndex(row => {
-        const currentX = parseXValue(row[0]);
-        return currentX !== null && currentX < targetX;
-    });
-    if (insertIndex === -1) {
-        // Find the last row with any X value (could be 0x)
-        let lastXIndex = -1;
-        for(let i = sourceGridData.length - 1; i >= 0; i--) {
-            if (parseXValue(sourceGridData[i][0]) !== null) {
-                lastXIndex = i;
-                break;
+        if (isNaN(t)) {
+            console.error('Invalid factor (NaN). ref1X and ref2X might be identical.');
+            // alert('Internal error calculating factor (reference values might be identical).'); // Replaced alert
+             throw new Error('Internal error calculating factor.');
+        }
+
+        const newRow = [`${targetX}x`];
+        const numCols = rowRef1.length;
+        console.log(`Generating new row with ${numCols} columns...`);
+
+        // Interpolate/Extrapolate columns
+        for (let j = 1; j < numCols - 1; j++) {
+            const colorRef1Str = rowRef1[j];
+            const colorRef2Str = rowRef2[j];
+            const rgbRef1 = isValidHex(colorRef1Str) ? hexToRgb(colorRef1Str) : null;
+            const rgbRef2 = isValidHex(colorRef2Str) ? hexToRgb(colorRef2Str) : null;
+
+            if (rgbRef1 && rgbRef2) {
+                const newR = Math.round(rgbRef1.r + (rgbRef2.r - rgbRef1.r) * t);
+                const newG = Math.round(rgbRef1.g + (rgbRef2.g - rgbRef1.g) * t);
+                const newB = Math.round(rgbRef1.b + (rgbRef2.b - rgbRef1.b) * t);
+
+                const clamp = (val) => Math.max(0, Math.min(255, val));
+                newRow.push(rgbToHex(clamp(newR), clamp(newG), clamp(newB)));
+            } else {
+                newRow.push('-');
             }
         }
-        // Insert after the last row with an X, or at the very end if none found (!)
-        insertIndex = (lastXIndex !== -1) ? lastXIndex + 1 : sourceGridData.length;
+
+        newRow.push(`${targetX}x`);
+
+        // Find insertion index
+        let insertIndex = sourceGridData.findIndex(row => {
+            const currentX = parseXValue(row[0]);
+            return currentX !== null && currentX < targetX;
+        });
+        if (insertIndex === -1) {
+            let lastXIndex = -1;
+            for(let i = sourceGridData.length - 1; i >= 0; i--) {
+                if (parseXValue(sourceGridData[i][0]) !== null) {
+                    lastXIndex = i;
+                    break;
+                }
+            }
+            insertIndex = (lastXIndex !== -1) ? lastXIndex + 1 : sourceGridData.length;
+        }
+
+        console.log(`Inserting new row at source index ${insertIndex}`);
+        sourceGridData.splice(insertIndex, 0, newRow);
+
+        // Update state and render
+        console.log('Updating state and re-rendering...');
+        isInterpolationEnabled = false;
+        interpolationToggle.checked = false;
+        currentGridData = sourceGridData.map(row => [...row]);
+        renderPalette(currentGridData);
+        generateXValueInput.value = '';
+
+        // alert(`Generated row ${targetX}x using references ${ref1X}x and ${ref2X}x.`); // Replaced alert
+        console.log(`--- Generate Row Successful ---`);
+        generateSuccess = true; // Mark success
+
+    } catch (error) {
+        console.error("Error generating row:", error);
+        // alert(`Error generating row: ${error.message}`); // Replaced alert
+        generateSuccess = false; // Mark failure
+        // Do not return here, proceed to feedback
     }
 
-    console.log(`Inserting new row at source index ${insertIndex}`);
-    sourceGridData.splice(insertIndex, 0, newRow);
-
-    // Update state and render
-    console.log('Updating state and re-rendering...');
-    isInterpolationEnabled = false; // Disable other interpolation
-    interpolationToggle.checked = false;
-    currentGridData = sourceGridData.map(row => [...row]);
-    renderPalette(currentGridData);
-    generateXValueInput.value = ''; // Clear only target input
-    // Keep ref inputs populated for potentially generating sequences
-
-    alert(`Generated row ${targetX}x using references ${ref1X}x and ${ref2X}x.`);
-    console.log(`--- Generate Row Successful ---`);
+    // Provide visual feedback on the button
+    if (generateSuccess) {
+        generateXButton.textContent = "Generated!";
+        generateXButton.classList.remove('error'); // Ensure error class is removed
+        generateXButton.classList.add('success');
+        setTimeout(() => {
+            generateXButton.textContent = originalButtonText;
+            generateXButton.classList.remove('success');
+        }, 1500);
+    } else {
+        generateXButton.textContent = "Error";
+         generateXButton.classList.remove('success'); // Ensure success class is removed
+        generateXButton.classList.add('error');
+        setTimeout(() => {
+            generateXButton.textContent = originalButtonText;
+             generateXButton.classList.remove('error');
+        }, 2000);
+    }
 });
 
 // --- NEW: Popout Dragging State ---
@@ -1983,6 +2003,9 @@ popoutResizeHandle.addEventListener('touchstart', startPopoutResize, { passive: 
 // --- NEW: Popout Update Button Listener (Uses Status Message) ---
 popoutUpdateButton.addEventListener('click', () => {
     const textData = popoutPaletteInput.value;
+    const originalButtonText = popoutUpdateButton.textContent; // Store original text
+    let updateSuccess = false; // Flag to track success
+
     try {
         const newDataParsed = parseSimpleFormat(textData);
         if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
@@ -1993,15 +2016,32 @@ popoutUpdateButton.addEventListener('click', () => {
         interpolationToggle.checked = false;
         currentGridData = sourceGridData.map(row => [...row]);
         renderPalette(currentGridData); // Re-render main palette
-        // popoutEditor.style.display = 'none'; // REMOVE: Don't hide popout on success
-        showPopoutStatus('Palette updated.', false); // Use status message
+        updateSuccess = true; // Mark as success
+        // showPopoutStatus('Palette updated.', false); // REMOVE: Use button feedback instead
+
     } catch (error) {
         console.error("Error parsing or processing text input:", error);
-        showPopoutStatus(`Error: ${error.message}`, true); // Use status message
-        // Don't hide popout on error
+        // showPopoutStatus(`Error: ${error.message}`, true); // REMOVE: Use button feedback instead
+        updateSuccess = false; // Mark as failure
+    }
+
+    // Provide visual feedback on the button
+    if (updateSuccess) {
+        popoutUpdateButton.textContent = "Updated!"; // Success feedback
+         // Optional: add a 'success' class for styling
+        setTimeout(() => {
+            popoutUpdateButton.textContent = originalButtonText; // Reset text
+             // Optional: remove the 'success' class
+        }, 1500); // Show feedback for 1.5 seconds
+    } else {
+        popoutUpdateButton.textContent = "Error"; // Error feedback
+         // Optional: add an 'error' class for styling
+         setTimeout(() => {
+             popoutUpdateButton.textContent = originalButtonText; // Reset text
+             // Optional: remove the 'error' class
+         }, 2000); // Show feedback slightly longer for errors
     }
 });
-
 // --- NEW: Popout Status Message Logic ---
 let statusTimeout = null;
 
@@ -2029,6 +2069,9 @@ function showPopoutStatus(message, isError = false) {
 
 // --- NEW: Palette Export Function ---
 function exportPaletteData() {
+     const originalButtonText = exportPaletteButton.textContent; // Store original text
+     let exportSuccess = false; // Flag for feedback
+
     try {
         const paletteText = convertToSimpleFormat(sourceGridData);
         const blob = new Blob([paletteText], { type: 'text/plain;charset=utf-8' });
@@ -2045,17 +2088,42 @@ function exportPaletteData() {
         URL.revokeObjectURL(url);
 
         console.log('Palette data exported.');
-        alert('Palette exported as .txt file.');
+        // alert('Palette exported as .txt file.'); // Replaced alert
+        exportSuccess = true; // Mark success
 
     } catch (error) {
         console.error('Error exporting palette data:', error);
-        alert('Failed to export palette data.');
+        // alert('Failed to export palette data.'); // Replaced alert
+        exportSuccess = false; // Mark failure
+        // Do not return here, proceed to feedback
+    }
+
+     // Provide visual feedback on the button
+    if (exportSuccess) {
+        exportPaletteButton.textContent = "Exported!";
+         exportPaletteButton.classList.remove('error'); // Ensure error class removed
+        exportPaletteButton.classList.add('success');
+        setTimeout(() => {
+            exportPaletteButton.textContent = originalButtonText;
+             exportPaletteButton.classList.remove('success');
+        }, 1500);
+    } else {
+        exportPaletteButton.textContent = "Failed to Export";
+         exportPaletteButton.classList.remove('success'); // Ensure success class removed
+        exportPaletteButton.classList.add('error');
+         setTimeout(() => {
+             exportPaletteButton.textContent = originalButtonText;
+             exportPaletteButton.classList.remove('error');
+         }, 2000);
     }
 }
 
 // --- Local Storage Functions ---
 
 function saveStateToLocalStorage() {
+    const originalButtonText = saveStateButton.textContent; // Store original text
+    let saveSuccess = false; // Flag for feedback
+
     try {
         const stateToSave = {
             sourceGridData: sourceGridData,
@@ -2075,10 +2143,32 @@ function saveStateToLocalStorage() {
         };
         localStorage.setItem(localStorageKey, JSON.stringify(stateToSave));
         console.log('Application state saved to local storage.');
-        alert('Current state saved!');
+        // alert('Current state saved!'); // Replaced alert
+        saveSuccess = true; // Mark success
     } catch (error) {
         console.error('Error saving state to local storage:', error);
-        alert('Failed to save state. Local storage might be full or disabled.');
+        // alert('Failed to save state. Local storage might be full or disabled.'); // Replaced alert
+        saveSuccess = false; // Mark failure
+        // Do not return here, proceed to feedback
+    }
+
+     // Provide visual feedback on the button
+    if (saveSuccess) {
+        saveStateButton.textContent = "Saved!";
+         saveStateButton.classList.remove('error'); // Ensure error class removed
+        saveStateButton.classList.add('success');
+        setTimeout(() => {
+            saveStateButton.textContent = originalButtonText;
+             saveStateButton.classList.remove('success');
+        }, 1500);
+    } else {
+        saveStateButton.textContent = "Failed to Save";
+         saveStateButton.classList.remove('success'); // Ensure success class removed
+        saveStateButton.classList.add('error');
+         setTimeout(() => {
+             saveStateButton.textContent = originalButtonText;
+             saveStateButton.classList.remove('error');
+         }, 2000);
     }
 }
 
@@ -2132,11 +2222,12 @@ resetStateButton.addEventListener('click', () => {
         try {
             localStorage.removeItem(localStorageKey);
             console.log('Saved state removed from local storage.');
-            alert('State reset. Reloading page...');
+            // alert('State reset. Reloading page...'); // REMOVED alert
             location.reload();
         } catch (error) {
             console.error('Error removing state from local storage:', error);
-            alert('Failed to reset state. Please clear local storage manually if needed.');
+            // alert('Failed to reset state. Please clear local storage manually if needed.'); // This error is less common and might still warrant an alert, but let's remove for consistency. Could replace with a non-blocking message if a dedicated UI element existed.
+            console.warn('Manual local storage clear might be needed.');
         }
     }
 });
@@ -2146,10 +2237,19 @@ exportPaletteButton.addEventListener('click', exportPaletteData);
 
 // --- Palette Import Logic --- (Implementation)
 function handlePaletteImport(file) {
+     const originalButtonText = importPaletteButton.textContent; // Store original text
+     let importSuccess = false; // Flag for feedback, will be set inside onload/onerror
+
     if (!file || !file.type.match('text.*')) {
         console.warn('No text file selected or file type not supported.');
-        alert('Please select a valid .txt file.');
-        return;
+        // alert('Please select a valid .txt file.'); // Replaced alert
+         importPaletteButton.textContent = "Invalid File"; // Immediate feedback
+         importPaletteButton.classList.add('error');
+         setTimeout(() => {
+             importPaletteButton.textContent = originalButtonText;
+             importPaletteButton.classList.remove('error');
+         }, 2000);
+        return; // Exit function
     }
 
     const reader = new FileReader();
@@ -2161,41 +2261,71 @@ function handlePaletteImport(file) {
             if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
                 throw new Error("Imported data is not a valid grid. Check format.");
             }
-            // Basic validation: check if first/last cell of first row looks like a label (e.g., ends with 'x')
-            // This is a heuristic and might need refinement
+            // Basic validation (heuristic)
             if (newDataParsed.length > 0 && newDataParsed[0].length > 0) {
                 const firstCell = newDataParsed[0][0];
                 const lastCell = newDataParsed[0][newDataParsed[0].length - 1];
-                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') { // || !firstCell.endsWith('x') || !lastCell.endsWith('x') -> Removed endsWith check for more flexibility
+                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') {
                     console.warn('Imported data format warning: First/last cells of first row may not be labels.');
-                    // Optionally, you could alert the user here, but let's allow import for now.
                 }
             }
 
             sourceGridData = newDataParsed;
-            isInterpolationEnabled = false; // Reset interpolation
+            isInterpolationEnabled = false;
             interpolationToggle.checked = false;
             currentGridData = sourceGridData.map(row => [...row]);
             renderPalette(currentGridData); // Re-render main palette
 
-            alert('Palette imported successfully!');
+            // alert('Palette imported successfully!'); // Replaced alert
             console.log('Palette data imported from file:', file.name);
+            importSuccess = true; // Mark success
 
             // If popout is open, update its content too
             if (popoutEditor.style.display === 'flex') {
                 popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-                showPopoutStatus('Palette imported.', false); // Show status in popout
+                // showPopoutStatus('Palette imported.', false); // REMOVED: Use button feedback
             }
 
         } catch (error) {
             console.error("Error parsing or processing imported file:", error);
-            alert(`Error importing palette: ${error.message}`);
+            // alert(`Error importing palette: ${error.message}`); // Replaced alert
+            importSuccess = false; // Mark failure
+            // Do not re-throw, proceed to feedback
         }
+
+         // Provide visual feedback on the button after load/error
+         if (importSuccess) {
+             importPaletteButton.textContent = "Imported!";
+             importPaletteButton.classList.remove('error');
+             importPaletteButton.classList.add('success');
+             setTimeout(() => {
+                 importPaletteButton.textContent = originalButtonText;
+                 importPaletteButton.classList.remove('success');
+             }, 1500);
+         } else {
+             importPaletteButton.textContent = "Import Failed";
+             importPaletteButton.classList.remove('success');
+             importPaletteButton.classList.add('error');
+             setTimeout(() => {
+                 importPaletteButton.textContent = originalButtonText;
+                 importPaletteButton.classList.remove('error');
+             }, 2000);
+         }
     };
 
     reader.onerror = (event) => {
         console.error("File reading error:", event.target.error);
-        alert('Error reading the selected file.');
+        // alert('Error reading the selected file.'); // Replaced alert
+        importSuccess = false; // Mark failure
+
+         // Provide visual feedback on the button after error
+         importPaletteButton.textContent = "Read Error"; // Specific error
+         importPaletteButton.classList.remove('success');
+         importPaletteButton.classList.add('error');
+         setTimeout(() => {
+             importPaletteButton.textContent = originalButtonText;
+             importPaletteButton.classList.remove('error');
+         }, 2000);
     };
 
     reader.readAsText(file); // Read the file as text
@@ -2450,6 +2580,8 @@ pickerApplyButton.addEventListener('click', (event) => {
         closeColorPicker(); return;
     }
 
+    const originalButtonText = pickerApplyButton.textContent; // Store original text
+
     const isMultiSelect = selectedCells.length > 1;
     let applySuccess = false;
 
@@ -2472,17 +2604,30 @@ pickerApplyButton.addEventListener('click', (event) => {
                  applySuccess = false; // Consider this a failure? Or just log?
             }
         } else {
-            alert("Invalid HEX code. Cannot apply.");
+            // alert("Invalid HEX code. Cannot apply."); // Keep alert for prominent feedback
             console.error("Single apply failed: Invalid HEX.", finalHex);
             applySuccess = false;
             // return; // Keep picker open on error
         }
     }
 
-    // Only update view and close if apply was successful
+    // Provide visual feedback
     if (applySuccess) {
-    updatePaletteView();
-    closeColorPicker(); // This now also calls clearSelection()
+        updatePaletteView();
+        pickerApplyButton.textContent = "Applied!"; // Success feedback
+        // You could also add a class like pickerApplyButton.classList.add('success');
+        setTimeout(() => {
+            pickerApplyButton.textContent = originalButtonText; // Reset text
+             // pickerApplyButton.classList.remove('success');
+        }, 1500); // Show feedback for 1.5 seconds
+    } else {
+        // Failure feedback (specifically for invalid HEX for now)
+        pickerApplyButton.textContent = "Invalid HEX"; // Error feedback
+         // You could also add a class like pickerApplyButton.classList.add('error');
+         setTimeout(() => {
+             pickerApplyButton.textContent = originalButtonText; // Reset text
+             // pickerApplyButton.classList.remove('error');
+         }, 2000); // Show feedback slightly longer for errors
     }
 });
 
@@ -2497,6 +2642,8 @@ if (isTouchDevice) {
              console.warn("Apply touchend with no cells selected.");
              closeColorPicker(); return;
         }
+
+        const originalButtonText = pickerApplyButton.textContent; // Store original text
 
         const isMultiSelect = selectedCells.length > 1;
         let applySuccess = false;
@@ -2515,13 +2662,24 @@ if (isTouchDevice) {
                      console.log(`Applied ${finalHex} by touch to cell [${rowIndex}, ${colIndex}].`);
                      applySuccess = true;
                  } else { console.warn(`Invalid coords for single apply touch: [${rowIndex}, ${colIndex}]`); applySuccess = false; }
-             } else { alert("Invalid HEX code. Cannot apply."); console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false; }
+             } else { // alert("Invalid HEX code. Cannot apply.");
+                 console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false;
+             }
         }
 
-        // Only update view and close if apply was successful
+        // Provide visual feedback
         if (applySuccess) {
             updatePaletteView();
-            closeColorPicker();
+             pickerApplyButton.textContent = "Applied!"; // Success feedback
+             setTimeout(() => {
+                 pickerApplyButton.textContent = originalButtonText; // Reset text
+             }, 1500); // Show feedback for 1.5 seconds
+        } else {
+             // Failure feedback
+             pickerApplyButton.textContent = "Invalid HEX"; // Error feedback
+             setTimeout(() => {
+                 pickerApplyButton.textContent = originalButtonText; // Reset text
+             }, 2000); // Show feedback slightly longer for errors
         }
         touchEventHandled = true;
     }, { passive: false });
@@ -3052,11 +3210,12 @@ resetStateButton.addEventListener('click', () => {
         try {
             localStorage.removeItem(localStorageKey);
             console.log('Saved state removed from local storage.');
-            alert('State reset. Reloading page...');
+            // alert('State reset. Reloading page...'); // REMOVED alert
             location.reload();
         } catch (error) {
             console.error('Error removing state from local storage:', error);
-            alert('Failed to reset state. Please clear local storage manually if needed.');
+            // alert('Failed to reset state. Please clear local storage manually if needed.'); // This error is less common and might still warrant an alert, but let's remove for consistency. Could replace with a non-blocking message if a dedicated UI element existed.
+            console.warn('Manual local storage clear might be needed.');
         }
     }
 });
@@ -3066,10 +3225,19 @@ exportPaletteButton.addEventListener('click', exportPaletteData);
 
 // --- Palette Import Logic --- (Implementation)
 function handlePaletteImport(file) {
+     const originalButtonText = importPaletteButton.textContent; // Store original text
+     let importSuccess = false; // Flag for feedback, will be set inside onload/onerror
+
     if (!file || !file.type.match('text.*')) {
         console.warn('No text file selected or file type not supported.');
-        alert('Please select a valid .txt file.');
-        return;
+        // alert('Please select a valid .txt file.'); // Replaced alert
+         importPaletteButton.textContent = "Invalid File"; // Immediate feedback
+         importPaletteButton.classList.add('error');
+         setTimeout(() => {
+             importPaletteButton.textContent = originalButtonText;
+             importPaletteButton.classList.remove('error');
+         }, 2000);
+        return; // Exit function
     }
 
     const reader = new FileReader();
@@ -3081,41 +3249,71 @@ function handlePaletteImport(file) {
             if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
                 throw new Error("Imported data is not a valid grid. Check format.");
             }
-            // Basic validation: check if first/last cell of first row looks like a label (e.g., ends with 'x')
-            // This is a heuristic and might need refinement
+            // Basic validation (heuristic)
             if (newDataParsed.length > 0 && newDataParsed[0].length > 0) {
                 const firstCell = newDataParsed[0][0];
                 const lastCell = newDataParsed[0][newDataParsed[0].length - 1];
-                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') { // || !firstCell.endsWith('x') || !lastCell.endsWith('x') -> Removed endsWith check for more flexibility
+                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') {
                     console.warn('Imported data format warning: First/last cells of first row may not be labels.');
-                    // Optionally, you could alert the user here, but let's allow import for now.
                 }
             }
 
             sourceGridData = newDataParsed;
-            isInterpolationEnabled = false; // Reset interpolation
+            isInterpolationEnabled = false;
             interpolationToggle.checked = false;
             currentGridData = sourceGridData.map(row => [...row]);
             renderPalette(currentGridData); // Re-render main palette
 
-            alert('Palette imported successfully!');
+            // alert('Palette imported successfully!'); // Replaced alert
             console.log('Palette data imported from file:', file.name);
+            importSuccess = true; // Mark success
 
             // If popout is open, update its content too
             if (popoutEditor.style.display === 'flex') {
                 popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-                showPopoutStatus('Palette imported.', false); // Show status in popout
+                // showPopoutStatus('Palette imported.', false); // REMOVED: Use button feedback
             }
 
         } catch (error) {
             console.error("Error parsing or processing imported file:", error);
-            alert(`Error importing palette: ${error.message}`);
+            // alert(`Error importing palette: ${error.message}`); // Replaced alert
+            importSuccess = false; // Mark failure
+            // Do not re-throw, proceed to feedback
         }
+
+         // Provide visual feedback on the button after load/error
+         if (importSuccess) {
+             importPaletteButton.textContent = "Imported!";
+             importPaletteButton.classList.remove('error');
+             importPaletteButton.classList.add('success');
+             setTimeout(() => {
+                 importPaletteButton.textContent = originalButtonText;
+                 importPaletteButton.classList.remove('success');
+             }, 1500);
+         } else {
+             importPaletteButton.textContent = "Import Failed";
+             importPaletteButton.classList.remove('success');
+             importPaletteButton.classList.add('error');
+             setTimeout(() => {
+                 importPaletteButton.textContent = originalButtonText;
+                 importPaletteButton.classList.remove('error');
+             }, 2000);
+         }
     };
 
     reader.onerror = (event) => {
         console.error("File reading error:", event.target.error);
-        alert('Error reading the selected file.');
+        // alert('Error reading the selected file.'); // Replaced alert
+        importSuccess = false; // Mark failure
+
+         // Provide visual feedback on the button after error
+         importPaletteButton.textContent = "Read Error"; // Specific error
+         importPaletteButton.classList.remove('success');
+         importPaletteButton.classList.add('error');
+         setTimeout(() => {
+             importPaletteButton.textContent = originalButtonText;
+             importPaletteButton.classList.remove('error');
+         }, 2000);
     };
 
     reader.readAsText(file); // Read the file as text
@@ -3370,6 +3568,8 @@ pickerApplyButton.addEventListener('click', (event) => {
         closeColorPicker(); return;
     }
 
+    const originalButtonText = pickerApplyButton.textContent; // Store original text
+
     const isMultiSelect = selectedCells.length > 1;
     let applySuccess = false;
 
@@ -3392,17 +3592,30 @@ pickerApplyButton.addEventListener('click', (event) => {
                  applySuccess = false; // Consider this a failure? Or just log?
             }
         } else {
-            alert("Invalid HEX code. Cannot apply.");
+            // alert("Invalid HEX code. Cannot apply."); // Keep alert for prominent feedback
             console.error("Single apply failed: Invalid HEX.", finalHex);
             applySuccess = false;
             // return; // Keep picker open on error
         }
     }
 
-    // Only update view and close if apply was successful
+    // Provide visual feedback
     if (applySuccess) {
-    updatePaletteView();
-    closeColorPicker(); // This now also calls clearSelection()
+        updatePaletteView();
+        pickerApplyButton.textContent = "Applied!"; // Success feedback
+        // You could also add a class like pickerApplyButton.classList.add('success');
+        setTimeout(() => {
+            pickerApplyButton.textContent = originalButtonText; // Reset text
+             // pickerApplyButton.classList.remove('success');
+        }, 1500); // Show feedback for 1.5 seconds
+    } else {
+        // Failure feedback (specifically for invalid HEX for now)
+        pickerApplyButton.textContent = "Invalid HEX"; // Error feedback
+         // You could also add a class like pickerApplyButton.classList.add('error');
+         setTimeout(() => {
+             pickerApplyButton.textContent = originalButtonText; // Reset text
+             // pickerApplyButton.classList.remove('error');
+         }, 2000); // Show feedback slightly longer for errors
     }
 });
 
@@ -3417,6 +3630,8 @@ if (isTouchDevice) {
              console.warn("Apply touchend with no cells selected.");
              closeColorPicker(); return;
         }
+
+        const originalButtonText = pickerApplyButton.textContent; // Store original text
 
         const isMultiSelect = selectedCells.length > 1;
         let applySuccess = false;
@@ -3435,796 +3650,24 @@ if (isTouchDevice) {
                      console.log(`Applied ${finalHex} by touch to cell [${rowIndex}, ${colIndex}].`);
                      applySuccess = true;
                  } else { console.warn(`Invalid coords for single apply touch: [${rowIndex}, ${colIndex}]`); applySuccess = false; }
-             } else { alert("Invalid HEX code. Cannot apply."); console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false; }
-        }
-
-        // Only update view and close if apply was successful
-        if (applySuccess) {
-            updatePaletteView();
-            closeColorPicker();
-        }
-        touchEventHandled = true;
-    }, { passive: false });
-}
-
-// --- NEW: Color Picker Control Event Listeners ---
-
-// Close Button
-colorPickerCloseButton.addEventListener('click', closeColorPicker);
-
-// HSL Sliders and Number Inputs Synchronization
-[pickerHueSlider, pickerHueNumber].forEach(el => {
-    el.addEventListener('input', () => {
-        if (isPickerUpdating || pickerHueSlider.disabled) return; // Check disabled state
-        const h = parseInt(el.value, 10);
-        if (!isNaN(h)) {
-            pickerHueSlider.value = h;
-            pickerHueNumber.value = h;
-            updatePickerFromHsl();
-        }
-    });
-});
-
-[pickerSatSlider, pickerSatNumber].forEach(el => {
-    el.addEventListener('input', () => {
-        // --- Check disabled state ---
-        if (isPickerUpdating || pickerSatSlider.disabled) return;
-        const s = parseInt(el.value, 10);
-        if (!isNaN(s)) {
-            pickerSatSlider.value = s;
-            pickerSatNumber.value = s;
-            updatePickerFromHsl();
-        }
-    });
-});
-
-[pickerLumSlider, pickerLumNumber].forEach(el => {
-    el.addEventListener('input', () => {
-         // --- Check disabled state ---
-        if (isPickerUpdating || pickerLumSlider.disabled) return;
-        const l = parseInt(el.value, 10);
-        if (!isNaN(l)) {
-            pickerLumSlider.value = l;
-            pickerLumNumber.value = l;
-            updatePickerFromHsl();
-        }
-    });
-});
-
-// HEX Input Listener
-pickerHexInput.addEventListener('change', () => { // Use 'change' to trigger after blur or Enter
-     if (isPickerUpdating || pickerHexInput.disabled) return; // Check disabled state
-    updatePickerFromHex();
-});
-
-// Copy HEX Button
-pickerCopyHexButton.addEventListener('click', () => {
-    const hexValue = pickerHexInput.value;
-    // Only copy if it's a valid hex (or "Multiple" if we want to prevent copying that)
-    if (isValidHex(hexValue)) {
-         // Use the existing copy function but target the button itself for feedback
-        copyToClipboard(hexValue, pickerCopyHexButton);
-    } else if (hexValue !== "Multiple") {
-        console.warn("Attempted to copy invalid HEX:", hexValue);
-        // Optional: Add visual feedback for failed copy
-        pickerCopyHexButton.textContent = 'Invalid';
-        setTimeout(() => { pickerCopyHexButton.textContent = 'Copy'; }, 1500);
-    }
-});
-
-
-// Color Pick Toggle Button Listener
-colorPickToggleButton.addEventListener('click', () => {
-    isColorPickingMode = !isColorPickingMode;
-    colorPickToggleButton.classList.toggle('active', isColorPickingMode);
-    document.body.classList.toggle('color-picking-active', isColorPickingMode);
-    console.log("Color Picking Mode:", isColorPickingMode ? "ON" : "OFF");
-
-    // Clear selection when toggling mode off
-    if (!isColorPickingMode) {
-        clearSelection();
-        if (colorPickerModal.classList.contains('visible')) {
-            closeColorPicker(); // Also close picker if open
-        }
-    }
-});
-
-// --- NEW: Color Picker Drag Functions ---
-function startColorPickerDrag(event) {
-    // --- NEW: Prevent drag if target is a button inside the header ---
-    if (event.target.closest('button')) {
-        // console.log("Color Picker drag prevented: Target is a button.");
-        return;
-    }
-    // --- END NEW ---
-
-    if (isResizingColorPicker) return; // Don't drag if resizing
-
-    isDraggingColorPicker = true;
-    pickerInitialX = colorPickerModal.offsetLeft;
-    pickerInitialY = colorPickerModal.offsetTop;
-    const coords = getEventCoords(event);
-    pickerStartX = coords.x;
-    pickerStartY = coords.y;
-
-    document.addEventListener('mousemove', dragColorPicker);
-    document.addEventListener('mouseup', stopColorPickerDrag);
-    document.addEventListener('touchmove', dragColorPicker, { passive: false });
-    document.addEventListener('touchend', stopColorPickerDrag);
-
-    colorPickerHeader.style.cursor = 'grabbing';
-    document.body.style.userSelect = 'none';
-    if (event.type === 'touchstart') {
-        event.preventDefault();
-    }
-}
-
-function dragColorPicker(event) {
-    if (!isDraggingColorPicker) return;
-    const coords = getEventCoords(event);
-    const dx = coords.x - pickerStartX;
-    const dy = coords.y - pickerStartY;
-
-    let newLeft = pickerInitialX + dx;
-    let newTop = pickerInitialY + dy;
-
-    // Basic boundary checks (optional, could add snapping later)
-    const viewportWidth = canvasViewport.clientWidth;
-    const viewportHeight = canvasViewport.clientHeight;
-    const modalWidth = colorPickerModal.offsetWidth;
-    const modalHeight = colorPickerModal.offsetHeight;
-
-    newLeft = Math.max(0, Math.min(newLeft, viewportWidth - modalWidth));
-    newTop = Math.max(0, Math.min(newTop, viewportHeight - modalHeight));
-
-    colorPickerModal.style.left = `${newLeft}px`;
-    colorPickerModal.style.top = `${newTop}px`;
-
-    if (event.type === 'touchmove') {
-        event.preventDefault();
-    }
-}
-
-function stopColorPickerDrag() {
-    if (isDraggingColorPicker) {
-        isDraggingColorPicker = false;
-        document.removeEventListener('mousemove', dragColorPicker);
-        document.removeEventListener('mouseup', stopColorPickerDrag);
-        document.removeEventListener('touchmove', dragColorPicker);
-        document.removeEventListener('touchend', stopColorPickerDrag);
-        colorPickerHeader.style.cursor = 'move';
-        document.body.style.userSelect = '';
-    }
-}
-
-// --- NEW: Color Picker Resize Functions ---
-function startColorPickerResize(event) {
-     // --- NEW: Prevent resize if target is not the handle itself (optional but safer) ---
-     if (event.target !== colorPickerResizeHandle) {
-        // console.log("Color Picker resize prevented: Target not resize handle.");
-        return;
-     }
-     // --- END NEW ---
-
-    if (isDraggingColorPicker) return; // Don't resize if dragging
-
-    isResizingColorPicker = true;
-    const coords = getEventCoords(event);
-    cpResizeStartX = coords.x;
-    cpResizeStartY = coords.y;
-    cpResizeInitialWidth = colorPickerModal.offsetWidth;
-    cpResizeInitialHeight = colorPickerModal.offsetHeight;
-
-    document.addEventListener('mousemove', resizeColorPicker);
-    document.addEventListener('mouseup', stopColorPickerResize);
-    document.addEventListener('touchmove', resizeColorPicker, { passive: false });
-    document.addEventListener('touchend', stopColorPickerResize);
-
-    document.body.style.cursor = 'nwse-resize';
-    document.body.style.userSelect = 'none';
-    if (event.type === 'touchstart') {
-        event.preventDefault();
-    }
-}
-
-function resizeColorPicker(event) {
-    if (!isResizingColorPicker) return;
-    const coords = getEventCoords(event);
-    const dx = coords.x - cpResizeStartX;
-    const dy = coords.y - cpResizeStartY;
-
-    const minWidth = parseInt(getComputedStyle(colorPickerModal).minWidth, 10) || 250;
-    const minHeight = parseInt(getComputedStyle(colorPickerModal).minHeight, 10) || 300;
-    const currentLeft = colorPickerModal.offsetLeft;
-    const currentTop = colorPickerModal.offsetTop;
-    const viewportWidth = canvasViewport.clientWidth;
-    const viewportHeight = canvasViewport.clientHeight;
-
-    let newWidth = cpResizeInitialWidth + dx;
-    let newHeight = cpResizeInitialHeight + dy;
-
-    // Enforce minimum dimensions
-    newWidth = Math.max(minWidth, newWidth);
-    newHeight = Math.max(minHeight, newHeight);
-
-    // Enforce maximum dimensions (prevent resizing beyond viewport edges)
-    newWidth = Math.min(newWidth, viewportWidth - currentLeft);
-    newHeight = Math.min(newHeight, viewportHeight - currentTop);
-
-    colorPickerModal.style.width = `${newWidth}px`;
-    colorPickerModal.style.height = `${newHeight}px`;
-
-    if (event.type === 'touchmove') {
-        event.preventDefault();
-    }
-}
-
-function stopColorPickerResize() {
-    if (isResizingColorPicker) {
-        isResizingColorPicker = false;
-        document.removeEventListener('mousemove', resizeColorPicker);
-        document.removeEventListener('mouseup', stopColorPickerResize);
-        document.removeEventListener('touchmove', resizeColorPicker);
-        document.removeEventListener('touchend', stopColorPickerResize);
-        document.body.style.cursor = '';
-        document.body.style.userSelect = '';
-    }
-}
-
-// --- NEW: Add Color Picker Drag/Resize Listeners ---
-colorPickerHeader.addEventListener('mousedown', startColorPickerDrag);
-colorPickerHeader.addEventListener('touchstart', startColorPickerDrag, { passive: false });
-colorPickerResizeHandle.addEventListener('mousedown', startColorPickerResize);
-colorPickerResizeHandle.addEventListener('touchstart', startColorPickerResize, { passive: false });
-
-// --- NEW: Color Pick Toggle Button Listener ---
-// ... existing listener ...
-
-// --- State Management Functions ---
-function saveState() {
-    try {
-        const state = {
-            sourceGridData,
-            isInterpolationEnabled,
-            interpolationSteps,
-            saturationOffset,
-            paletteOffsetX, // Save current position
-            paletteOffsetY, // Save current position
-            scale, // Save current zoom
-            // Save other relevant states like UI scale, popout position/size etc. if needed
-            uiScale: currentUiScale,
-            popoutEditorState: {
-                left: popoutEditor.style.left,
-                top: popoutEditor.style.top,
-                width: popoutEditor.style.width,
-                height: popoutEditor.style.height,
-                display: popoutEditor.style.display,
-            },
-             colorPickerState: {
-                left: colorPickerModal.style.left,
-                top: colorPickerModal.style.top,
-                width: colorPickerModal.style.width,
-                height: colorPickerModal.style.height,
-                // Don't save 'display' or 'visible' class for color picker, it shouldn't reopen automatically
-            }
-        };
-        localStorage.setItem(localStorageKey, JSON.stringify(state));
-        console.log("Application state saved.");
-        // Optionally provide feedback to the user
-        saveStateButton.textContent = "Saved!";
-        setTimeout(() => { saveStateButton.textContent = "Save Current State"; }, 1500);
-    } catch (error) {
-        console.error("Error saving state:", error);
-        alert("Could not save application state. Local storage might be full or disabled.");
-    }
-}
-
-function loadState() {
-    try {
-        const savedStateString = localStorage.getItem(localStorageKey);
-        if (savedStateString) {
-            const savedState = JSON.parse(savedStateString);
-            console.log("Loading saved state:", savedState);
-
-            // --- Load Palette Data and Settings ---
-            if (savedState.sourceGridData && Array.isArray(savedState.sourceGridData)) {
-                // Basic validation: check if it's an array of arrays
-                if (savedState.sourceGridData.every(row => Array.isArray(row))) {
-                     sourceGridData = savedState.sourceGridData.map(row => [...row]); // Deep copy
-                     // Update the popout editor textarea if it's visible
-                     if (popoutEditor.style.display !== 'none') {
-                         popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-                     }
-                } else {
-                    console.warn("Loaded sourceGridData format is invalid. Using default.");
-                }
-            }
-            isInterpolationEnabled = typeof savedState.isInterpolationEnabled === 'boolean' ? savedState.isInterpolationEnabled : false;
-            interpolationSteps = typeof savedState.interpolationSteps === 'number' ? savedState.interpolationSteps : 1;
-            saturationOffset = typeof savedState.saturationOffset === 'number' ? savedState.saturationOffset : 0;
-            currentUiScale = typeof savedState.uiScale === 'number' ? savedState.uiScale : 100;
-
-            // --- Load Position and Zoom ---
-            let positionLoaded = false;
-            if (typeof savedState.paletteOffsetX === 'number' && typeof savedState.paletteOffsetY === 'number') {
-                paletteOffsetX = savedState.paletteOffsetX;
-                paletteOffsetY = savedState.paletteOffsetY;
-                positionLoaded = true;
-            }
-             if (typeof savedState.scale === 'number' && savedState.scale >= minScale && savedState.scale <= maxScale) {
-                scale = savedState.scale;
-            } else {
-                 scale = 1; // Reset scale if invalid or not found, even if position was loaded
-            }
-
-            // --- NEW: Set flag if position/zoom were loaded ---
-            if (positionLoaded) { // Check only if position was loaded, zoom defaults to 1 if missing/invalid
-                 stateLoadedSuccessfully = true;
-                 console.log("Position/Zoom state loaded successfully.");
-            } else {
-                 console.log("Position/Zoom state not found or invalid in saved data.");
-            }
-            // --- END NEW ---
-
-
-            // --- Load Popout Editor State ---
-            if (savedState.popoutEditorState) {
-                popoutEditor.style.left = savedState.popoutEditorState.left || '';
-                popoutEditor.style.top = savedState.popoutEditorState.top || '';
-                popoutEditor.style.width = savedState.popoutEditorState.width || '';
-                popoutEditor.style.height = savedState.popoutEditorState.height || '';
-                popoutEditor.style.display = savedState.popoutEditorState.display || 'none';
-                 // If popout is now visible, load its content
-                 if (popoutEditor.style.display !== 'none' && sourceGridData) {
-                     popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-                 }
-            }
-
-            // --- Load Color Picker State (Position/Size Only) ---
-             if (savedState.colorPickerState) {
-                 colorPickerModal.style.left = savedState.colorPickerState.left || '';
-                 colorPickerModal.style.top = savedState.colorPickerState.top || '';
-                 colorPickerModal.style.width = savedState.colorPickerState.width || '';
-                 colorPickerModal.style.height = savedState.colorPickerState.height || '';
-                 // Do NOT restore visibility state
+             } else { // alert("Invalid HEX code. Cannot apply.");
+                 console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false;
              }
-
-
-            // --- Update UI Elements to Reflect Loaded State ---
-            interpolationToggle.checked = isInterpolationEnabled;
-            interpolationStepsSlider.value = interpolationSteps;
-            interpolationStepsNumber.value = interpolationSteps;
-            saturationOffsetSlider.value = saturationOffset;
-            saturationOffsetNumber.value = saturationOffset;
-            // Update zoom controls
-            zoomSlider.value = Math.round(scale * 100);
-            zoomNumber.value = Math.round(scale * 100);
-            // Update UI Scale input
-            uiScaleNumber.value = currentUiScale;
-            applyUiScale(currentUiScale); // Apply the loaded UI scale
-
-            console.log("State loaded and applied.");
-
-        } else {
-            console.log("No saved state found.");
-             stateLoadedSuccessfully = false; // Explicitly false if no state string
-        }
-    } catch (error) {
-        console.error("Error loading state:", error);
-        // Don't alert, just proceed with defaults
-        localStorage.removeItem(localStorageKey); // Clear potentially corrupted state
-        stateLoadedSuccessfully = false; // Ensure flag is false on error
-    }
-}
-
-function resetState() {
-    if (confirm("Are you sure you want to reset all settings and palette data? This will reload the page.")) {
-        localStorage.removeItem(localStorageKey);
-        // Clear specific session things if needed (like selection) - though reload handles this
-        selectedCells = [];
-        selectionAnchor = null;
-        // Reload the page to apply default state
-        window.location.reload();
-    }
-}
-
-// --- State Management Listeners ---
-saveStateButton.addEventListener('click', saveStateToLocalStorage);
-resetStateButton.addEventListener('click', () => {
-    if (confirm('Are you sure you want to reset all saved settings and reload the page?')) {
-        try {
-            localStorage.removeItem(localStorageKey);
-            console.log('Saved state removed from local storage.');
-            alert('State reset. Reloading page...');
-            location.reload();
-        } catch (error) {
-            console.error('Error removing state from local storage:', error);
-            alert('Failed to reset state. Please clear local storage manually if needed.');
-        }
-    }
-});
-
-// --- NEW: Palette Export Listener ---
-exportPaletteButton.addEventListener('click', exportPaletteData);
-
-// --- Palette Import Logic --- (Implementation)
-function handlePaletteImport(file) {
-    if (!file || !file.type.match('text.*')) {
-        console.warn('No text file selected or file type not supported.');
-        alert('Please select a valid .txt file.');
-        return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-        const textData = event.target.result;
-        try {
-            const newDataParsed = parseSimpleFormat(textData);
-            if (!Array.isArray(newDataParsed) || newDataParsed.length === 0 || !Array.isArray(newDataParsed[0])) {
-                throw new Error("Imported data is not a valid grid. Check format.");
-            }
-            // Basic validation: check if first/last cell of first row looks like a label (e.g., ends with 'x')
-            // This is a heuristic and might need refinement
-            if (newDataParsed.length > 0 && newDataParsed[0].length > 0) {
-                const firstCell = newDataParsed[0][0];
-                const lastCell = newDataParsed[0][newDataParsed[0].length - 1];
-                if (typeof firstCell !== 'string' || typeof lastCell !== 'string') { // || !firstCell.endsWith('x') || !lastCell.endsWith('x') -> Removed endsWith check for more flexibility
-                    console.warn('Imported data format warning: First/last cells of first row may not be labels.');
-                    // Optionally, you could alert the user here, but let's allow import for now.
-                }
-            }
-
-            sourceGridData = newDataParsed;
-            isInterpolationEnabled = false; // Reset interpolation
-            interpolationToggle.checked = false;
-            currentGridData = sourceGridData.map(row => [...row]);
-            renderPalette(currentGridData); // Re-render main palette
-
-            alert('Palette imported successfully!');
-            console.log('Palette data imported from file:', file.name);
-
-            // If popout is open, update its content too
-            if (popoutEditor.style.display === 'flex') {
-                popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-                showPopoutStatus('Palette imported.', false); // Show status in popout
-            }
-
-        } catch (error) {
-            console.error("Error parsing or processing imported file:", error);
-            alert(`Error importing palette: ${error.message}`);
-        }
-    };
-
-    reader.onerror = (event) => {
-        console.error("File reading error:", event.target.error);
-        alert('Error reading the selected file.');
-    };
-
-    reader.readAsText(file); // Read the file as text
-}
-
-importPaletteButton.addEventListener('click', () => {
-    importPaletteFileInput.click(); // Trigger the hidden file input
-});
-
-importPaletteFileInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        handlePaletteImport(file);
-    }
-    // Reset the input value so the change event fires even if the same file is selected again
-    event.target.value = null;
-});
-
-// --- NEW: Color Picker Functions ---
-function updatePickerPreview(hex) {
-    colorPickerPreview.style.backgroundColor = hex;
-    // Optional: Update hue slider background dynamically
-    // pickerHueSlider.style.background = \`linear-gradient(to right, hsl(0, 100%, 50%), hsl(60, 100%, 50%), hsl(120, 100%, 50%), hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%))\`;
-}
-
-function updatePickerFromHsl() {
-    if (isPickerUpdating) return;
-    isPickerUpdating = true;
-
-    const h = parseInt(pickerHueNumber.value, 10);
-    const s = parseInt(pickerSatNumber.value, 10);
-    const l = parseInt(pickerLumNumber.value, 10);
-
-    if (isNaN(h) || isNaN(s) || isNaN(l)) {
-        isPickerUpdating = false;
-        return; // Avoid errors if inputs are temporarily invalid
-    }
-
-    const newHex = hslToHex(h, s, l);
-    pickerHexInput.value = newHex.toUpperCase();
-    updatePickerPreview(newHex);
-
-    isPickerUpdating = false;
-}
-
-function updatePickerFromHex() {
-    if (isPickerUpdating) return;
-    isPickerUpdating = true;
-
-    let hex = pickerHexInput.value;
-    if (!hex.startsWith('#')) {
-        hex = '#' + hex;
-    }
-
-    if (isValidHex(hex)) {
-        const hsl = hexToHsl(hex);
-        if (hsl) {
-            pickerHueSlider.value = hsl.h;
-            pickerHueNumber.value = hsl.h;
-            pickerSatSlider.value = hsl.s;
-            pickerSatNumber.value = hsl.s;
-            pickerLumSlider.value = hsl.l;
-            pickerLumNumber.value = hsl.l;
-            updatePickerPreview(hex);
-            pickerHexInput.value = hex.toUpperCase(); // Ensure # and uppercase
-        } else {
-            console.warn("Could not convert valid HEX to HSL:", hex);
-        }
-    } else {
-        // Maybe add visual feedback for invalid hex
-        console.log("Invalid HEX input:", hex);
-    }
-
-    isPickerUpdating = false;
-}
-
-function openColorPicker(rowIndex, cellIndex, event = null) {
-    // Check if source data exists for the coordinates (use first selected)
-    if (rowIndex >= sourceGridData.length || cellIndex >= sourceGridData[rowIndex].length) {
-         console.error(`Invalid coordinates for sourceGridData: [${rowIndex}][${cellIndex}]`);
-         clearSelection(); // Clear potentially invalid selection
-         return;
-    }
-    const originalHex = sourceGridData[rowIndex][cellIndex];
-
-    if (!isValidHex(originalHex)) {
-        console.error(`Cannot open picker: Cell at source[${rowIndex}][${cellIndex}] is not a valid HEX color.`, originalHex);
-        clearSelection(); // Clear invalid selection
-        return;
-    }
-
-    // We no longer store targetRow/Col globally, rely on selectedCells
-    // pickerTargetRow = rowIndex;
-    // pickerTargetCol = cellIndex;
-
-    const hsl = hexToHsl(originalHex);
-    if (!hsl) {
-        console.error("Error converting initial HEX to HSL:", originalHex);
-        clearSelection(); // Clear invalid selection
-        return;
-    }
-
-    isPickerUpdating = true;
-
-    // Determine if Multi-Select Mode
-    const isMultiSelect = selectedCells.length > 1;
-    const firstSelectedHsl = hsl; // HSL of the first selected cell
-
-    // --- Flags to determine if controls should be disabled in multi-select ---
-    let shouldDisableH = false; // NEW Hue flag
-    let shouldDisableS = false;
-    let shouldDisableL = false;
-
-    if (isMultiSelect) {
-        // Iterate through OTHER selected cells to check for variance
-        for (let i = 1; i < selectedCells.length; i++) {
-            const [r, c] = selectedCells[i];
-            if (r < sourceGridData.length && c < sourceGridData[r].length) {
-                const currentHex = sourceGridData[r][c];
-                const currentHsl = hexToHsl(currentHex);
-                if (currentHsl) {
-                    // --- NEW: Check Hue Variance ---
-                    if (!shouldDisableH && getHueDifference(currentHsl.h, firstSelectedHsl.h) > multiSelectHueTolerance) {
-                        shouldDisableH = true;
-                    }
-                    // --- END NEW ---
-
-                    if (!shouldDisableS && Math.abs(currentHsl.s - firstSelectedHsl.s) > multiSelectTolerance) {
-                        shouldDisableS = true;
-                    }
-                    if (!shouldDisableL && Math.abs(currentHsl.l - firstSelectedHsl.l) > multiSelectTolerance) {
-                        shouldDisableL = true;
-                    }
-                    // Optimization: If all are disabled, no need to check further
-                    if (shouldDisableH && shouldDisableS && shouldDisableL) break;
-                } else {
-                     console.warn(`Could not get HSL for selected cell [${r},${c}] during variance check.`);
-                }
-            }
-        }
-    }
-    // --- END Check variance ---
-
-    // Set initial values based on the *first* selected cell
-    pickerHueSlider.value = firstSelectedHsl.h;
-    pickerHueNumber.value = firstSelectedHsl.h; // Keep initial set
-    pickerSatSlider.value = firstSelectedHsl.s;
-    pickerSatNumber.value = firstSelectedHsl.s; // Keep initial set
-    pickerLumSlider.value = firstSelectedHsl.l;
-    pickerLumNumber.value = firstSelectedHsl.l; // Keep initial set
-    pickerHexInput.value = isMultiSelect ? "Multiple" : originalHex.toUpperCase();
-    updatePickerPreview(originalHex);
-
-    // --- Enable/Disable Controls based on mode and variance AND UPDATE DISPLAY ---
-    pickerHexInput.disabled = isMultiSelect; // Hex always disabled in multi
-
-    // --- Hue Controls ---
-    pickerHueSlider.disabled = isMultiSelect && shouldDisableH;
-    pickerHueNumber.disabled = isMultiSelect && shouldDisableH;
-     if (pickerHueNumber.disabled) {
-        pickerHueNumber.value = ''; // Clear value if disabled
-        pickerHueNumber.placeholder = 'Varies'; // Show placeholder
-    } else {
-        pickerHueNumber.value = firstSelectedHsl.h; // Ensure value is set if enabled
-        pickerHueNumber.placeholder = ''; // Clear placeholder
-    }
-
-    // --- Saturation Controls ---
-    pickerSatSlider.disabled = isMultiSelect && shouldDisableS;
-    pickerSatNumber.disabled = isMultiSelect && shouldDisableS;
-    if (pickerSatNumber.disabled) {
-        pickerSatNumber.value = '';
-        pickerSatNumber.placeholder = 'Varies';
-    } else {
-        pickerSatNumber.value = firstSelectedHsl.s;
-        pickerSatNumber.placeholder = '';
-    }
-
-    // --- Luminance Controls ---
-    pickerLumSlider.disabled = isMultiSelect && shouldDisableL;
-    pickerLumNumber.disabled = isMultiSelect && shouldDisableL;
-     if (pickerLumNumber.disabled) {
-        pickerLumNumber.value = '';
-        pickerLumNumber.placeholder = 'Varies';
-    } else {
-        pickerLumNumber.value = firstSelectedHsl.l;
-        pickerLumNumber.placeholder = '';
-    }
-
-    // Add/Remove visual class for disabled state
-    pickerHueSlider.closest('.picker-control-group').classList.toggle('disabled', pickerHueSlider.disabled); // Use slider's disabled state
-    pickerHexInput.closest('.picker-control-group').classList.toggle('disabled', pickerHexInput.disabled);
-    pickerSatSlider.closest('.picker-control-group').classList.toggle('disabled', pickerSatSlider.disabled);
-    pickerLumSlider.closest('.picker-control-group').classList.toggle('disabled', pickerLumSlider.disabled);
-
-    // --- Update Title ---
-    colorPickerModal.querySelector('.color-picker-title').textContent = isMultiSelect ? `Edit ${selectedCells.length} Colors` : "Edit Color";
-
-    // ... (Positioning logic) ...
-
-    colorPickerModal.classList.add('visible');
-    isPickerUpdating = false;
-
-    // --- Focus appropriate element ---
-        if (isMultiSelect) {
-        // Try focusing the first *enabled* slider (H, L, or S)
-        if (!pickerHueSlider.disabled) {
-            pickerHueSlider.focus();
-            } else if (!pickerLumSlider.disabled) {
-                 pickerLumSlider.focus();
-        } else if (!pickerSatSlider.disabled) {
-            pickerSatSlider.focus();
-        } // else maybe focus Apply button?
-            } else {
-        pickerHueSlider.focus(); // Focus Hue for single edit
-            }
-}
-
-function closeColorPicker() {
-    colorPickerModal.classList.remove('visible');
-    // Clear selection when picker is closed manually
-    clearSelection();
-    // Re-enable potentially disabled controls for next time
-    pickerHueSlider.disabled = false;
-    pickerHueNumber.disabled = false;
-    pickerHexInput.disabled = false;
-    // --- Re-enable S/L controls ---
-    pickerSatSlider.disabled = false;
-    pickerSatNumber.disabled = false;
-    pickerLumSlider.disabled = false;
-    pickerLumNumber.disabled = false;
-
-    // Remove disabled classes
-    pickerHueSlider.closest('.picker-control-group').classList.remove('disabled');
-    pickerHexInput.closest('.picker-control-group').classList.remove('disabled');
-    // --- Remove disabled class for S/L ---
-    pickerSatSlider.closest('.picker-control-group').classList.remove('disabled');
-    pickerLumSlider.closest('.picker-control-group').classList.remove('disabled');
-
-}
-
-// --- Event Listeners ---
-
-// Buttons
-pickerApplyButton.addEventListener('click', (event) => {
-    if (touchEventHandled) {
-        touchEventHandled = false; return;
-    }
-
-    if (selectedCells.length === 0) {
-        console.warn("Apply clicked with no cells selected.");
-        closeColorPicker(); return;
-    }
-
-    const isMultiSelect = selectedCells.length > 1;
-    let applySuccess = false;
-
-    if (isMultiSelect) {
-        // --- Use helper function for multi-select logic ---
-        applySuccess = applyMultiSelectChanges();
-        // --- End Use helper function ---
-    } else {
-        // Apply changes to a single cell (H, S, L)
-        const [rowIndex, colIndex] = selectedCells[0];
-        const finalHex = pickerHexInput.value;
-
-        if (isValidHex(finalHex)) {
-            if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
-                sourceGridData[rowIndex][colIndex] = finalHex;
-                console.log(`Applied ${finalHex} to cell [${rowIndex}, ${colIndex}].`);
-                applySuccess = true;
-            } else {
-                 console.warn(`Invalid coordinates for single apply: [${rowIndex}, ${colIndex}]`);
-                 applySuccess = false; // Consider this a failure? Or just log?
-            }
-        } else {
-            alert("Invalid HEX code. Cannot apply.");
-            console.error("Single apply failed: Invalid HEX.", finalHex);
-            applySuccess = false;
-            // return; // Keep picker open on error
-        }
-    }
-
-    // Only update view and close if apply was successful
-    if (applySuccess) {
-    updatePaletteView();
-    closeColorPicker(); // This now also calls clearSelection()
-    }
-});
-
-// --- Touch End handler for Apply Button ---
-if (isTouchDevice) {
-    pickerApplyButton.addEventListener('touchend', (event) => {
-        if (pointerHasMoved) return;
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (selectedCells.length === 0) {
-             console.warn("Apply touchend with no cells selected.");
-             closeColorPicker(); return;
         }
 
-        const isMultiSelect = selectedCells.length > 1;
-        let applySuccess = false;
-
-        if (isMultiSelect) {
-             // --- Use helper function for multi-select logic ---
-             applySuccess = applyMultiSelectChanges();
-             // --- End Use helper function ---
-        } else {
-            // Single select logic (same as click handler)
-            const [rowIndex, colIndex] = selectedCells[0];
-            const finalHex = pickerHexInput.value;
-             if (isValidHex(finalHex)) {
-                 if (rowIndex < sourceGridData.length && colIndex < sourceGridData[rowIndex].length) {
-                     sourceGridData[rowIndex][colIndex] = finalHex;
-                     console.log(`Applied ${finalHex} by touch to cell [${rowIndex}, ${colIndex}].`);
-                     applySuccess = true;
-                 } else { console.warn(`Invalid coords for single apply touch: [${rowIndex}, ${colIndex}]`); applySuccess = false; }
-             } else { alert("Invalid HEX code. Cannot apply."); console.error("Single apply touch failed: Invalid HEX.", finalHex); applySuccess = false; }
-        }
-
-        // Only update view and close if apply was successful
+        // Provide visual feedback
         if (applySuccess) {
             updatePaletteView();
-            closeColorPicker();
+             pickerApplyButton.textContent = "Applied!"; // Success feedback
+             setTimeout(() => {
+                 pickerApplyButton.textContent = originalButtonText; // Reset text
+             }, 1500); // Show feedback for 1.5 seconds
+        } else {
+             // Failure feedback
+             pickerApplyButton.textContent = "Invalid HEX"; // Error feedback
+             setTimeout(() => {
+                 pickerApplyButton.textContent = originalButtonText; // Reset text
+             }, 2000); // Show feedback slightly longer for errors
         }
         touchEventHandled = true;
     }, { passive: false });
