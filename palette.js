@@ -893,45 +893,104 @@ function renderPalette(gridData) {
                         return;
                     }
 
-                        // If not in color picking mode, let the click handler deal with copy
+                        // If not in color picking mode, or if interpolation is on, let click handler deal with copy
                         if (!isColorPickingMode || isInterpolationEnabled) {
-                            touchEventHandled = false; // Let click handler proceed for copy
-                        return;
-                    }
+                             touchEventHandled = false; // Let click handler proceed for copy/selection
+                            return; // Or handle single tap copy explicitly here? For now, let it fall through
+                        }
 
-                        // --- Handle Touch Selection ---
-                        // console.log("TouchEnd handling selection."); // Optional debug log
+                        // --- Handle Touch Selection (Tap-Tap Range) ---
                         const touchRowIndex = parseInt(cellContentDiv.dataset.rowIndex, 10);
                         const touchCellIndex = parseInt(cellContentDiv.dataset.cellIndex, 10);
 
-                        if (touchRowIndex >= sourceGridData.length || touchCellIndex >= sourceGridData[touchRowIndex].length) {
-                             console.warn("TouchEnd cell outside source data bounds.");
-        return;
-    }
-                        const touchedSourceHex = sourceGridData[touchRowIndex][touchCellIndex];
-                        const touchedHsl = hexToHsl(touchedSourceHex);
-
-                        if (!touchedHsl) {
-                            console.warn("Could not get HSL for touched cell:", touchedSourceHex);
-        return;
+                        // Validate coordinates against sourceGridData
+                        if (touchRowIndex >= sourceGridData.length || touchCellIndex >= sourceGridData[touchRowIndex].length || !isValidHex(sourceGridData[touchRowIndex][touchCellIndex])) {
+                            console.warn("TouchEnd on invalid cell or outside source data bounds.");
+                            clearSelection(); // Clear any pending range selection
+                            return;
                         }
 
-                        handleSwatchSelection(event, touchRowIndex, touchCellIndex, touchedHsl);
+                        if (isAwaitingRangeEndTap) {
+                            // --- This is the second tap ---
+                            if (!selectionAnchor) {
+                                // Should not happen, but reset defensively
+                                console.warn("Second tap detected, but no anchor set. Resetting.");
+                                isAwaitingRangeEndTap = false;
+                                selectionAnchor = [touchRowIndex, touchCellIndex]; // Treat as first tap
+                                applySelectionStyles(selectionAnchor); // Style just the new anchor
+                                // Do not open picker yet
+                            } else if (selectionAnchor[0] === touchRowIndex && selectionAnchor[1] === touchCellIndex) {
+                                // --- Tapped same cell again: Confirm single selection ---
+                                console.log("Range selection cancelled: Tapped anchor again. Confirming single select.");
+                                selectedCells = [selectionAnchor]; // Define selection as only the anchor
+                                // No need to re-apply style, it's already on anchor
+                                openColorPicker(selectionAnchor[0], selectionAnchor[1], event);
+                                isAwaitingRangeEndTap = false;
+                                // selectionAnchor remains set until clearSelection is called elsewhere
+                            } else {
+                                // --- Tapped different cell: Define range ---
+                                console.log("Range selection: Defining range.");
+                                const [anchorRow, anchorCol] = selectionAnchor;
+                                const targetRow = touchRowIndex;
+                                const targetCol = touchCellIndex;
 
-                        // After selection is handled, check if we should open the picker
-                        if (selectedCells.length > 0) {
-                            const firstSelectedCoords = selectedCells[0];
-                            openColorPicker(firstSelectedCoords[0], firstSelectedCoords[1], event);
-                        } else {
-                            if (colorPickerModal.classList.contains('visible')) {
-                                closeColorPicker();
+                                const minRow = Math.min(anchorRow, targetRow);
+                                const maxRow = Math.max(anchorRow, targetRow);
+                                const minCol = Math.min(anchorCol, targetCol);
+                                const maxCol = Math.max(anchorCol, targetCol);
+
+                                // Clear previous visual selection (keep anchor conceptually)
+                                selectedCells.forEach(coord => {
+                                    const cellDiv = paletteGrid.querySelector(`.cell-content[data-row-index="${coord[0]}"][data-cell-index="${coord[1]}"]`);
+                                    if (cellDiv) {
+                                        cellDiv.classList.remove('selected');
+                                        cellDiv.style.boxShadow = 'none';
+                                    }
+                                });
+                                selectedCells = []; // Reset selected cells array
+
+                                // Select cells within the rectangle
+                                for (let r = minRow; r <= maxRow; r++) {
+                                    for (let c = minCol; c <= maxCol; c++) {
+                                        if (r < sourceGridData.length &&
+                                            c < sourceGridData[r].length &&
+                                            isValidHex(sourceGridData[r][c]))
+                                        {
+                                            selectedCells.push([r, c]);
+                                            applySelectionStyles([r, c]); // Apply style to each cell in range
+                                        }
+                                    }
+                                }
+                                console.log(`Range selected (touch): ${selectedCells.length} cells.`);
+
+                                // Open/update picker after selection change
+                                if (selectedCells.length > 0) {
+                                    openColorPicker(selectedCells[0][0], selectedCells[0][1], event);
+                                } else if (colorPickerModal.classList.contains('visible')) {
+                                    closeColorPicker(); // Close if selection ended up empty
+                                }
+                                isAwaitingRangeEndTap = false;
+                                // selectionAnchor remains set until clearSelection is called elsewhere
                             }
+
+                        } else {
+                            // --- This is the first tap (or a tap outside range mode) ---
+                            console.log("Range selection: Setting anchor.");
+                            clearSelection(); // Clear previous selection AND resets isAwaitingRangeEndTap
+                            selectionAnchor = [touchRowIndex, touchCellIndex];
+                            applySelectionStyles(selectionAnchor); // Style just the anchor
+                            isAwaitingRangeEndTap = true;
+                            // Do NOT add to selectedCells yet
+                            // Do NOT open picker yet
                         }
 
                         // Set flag indicating touch handled this interaction
                         touchEventHandled = true;
                         // Prevent the browser from firing a 'click' event after this touchend
                         event.preventDefault();
+                        // Also stop propagation to prevent canvas viewport listeners if needed
+                        event.stopPropagation();
+
 
                     }, { passive: false }); // Use passive:false if preventDefault is needed
                 }
@@ -1218,6 +1277,7 @@ function clearSelection() {
     });
     selectedCells = []; // Reset the array
     selectionAnchor = null; // Reset selection anchor
+    isAwaitingRangeEndTap = false; // Reset touch range state
     // console.log("Selection cleared, anchor reset."); // Optional debug
 }
 
@@ -1298,11 +1358,11 @@ function endPan() {
          // Use a small delay to ensure handlers can read the value before reset.
          setTimeout(() => {
              pointerHasMoved = false;
-             // console.log("Reset pointerHasMoved"); // Optional debug log
-         }, 50); // 50ms delay might be enough
+         }, 50);
     }
-    // Reset touch handled flag regardless
+    // Reset touch flags regardless
     touchEventHandled = false;
+    isAwaitingRangeEndTap = false; // Cancel touch range selection on pan end
 }
 
 // --- REVISED: Zoom Logic (triggered by controls) ---
