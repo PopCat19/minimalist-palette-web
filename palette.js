@@ -475,6 +475,18 @@ const colorPickToggleButton = document.getElementById('color-pick-toggle-button'
 const colorPickerHeader = colorPickerModal.querySelector('.color-picker-header'); // NEW: Header ref
 const colorPickerResizeHandle = document.getElementById('color-picker-resize-handle'); // NEW: Resize handle ref
 
+// --- NEW: Tooltip DOM Elements ---
+const paletteTooltip = document.getElementById('palette-tooltip');
+const tooltipHexValue = paletteTooltip.querySelector('#tooltip-hex span');
+const tooltipHslValue = paletteTooltip.querySelector('#tooltip-hsl span');
+const tooltipRgbValue = paletteTooltip.querySelector('#tooltip-rgb span');
+
+// --- NEW: Global state for tooltip interaction ---
+let isShiftHeld = false;
+let isMouseOverTooltip = false;
+let allowTooltipInteraction = false; // Flag to allow mouse to move to tooltip
+let currentTooltipTargetCell = null; // Keep track of the cell that triggered the tooltip
+
 // --- Helper Functions ---
 function isValidHex(str) {
     return (
@@ -818,7 +830,14 @@ async function copyToClipboard(text, element) {
             textArea.select();
             document.execCommand("copy");
             document.body.removeChild(textArea);
-            showCopiedFeedback(element);
+            // Use showCopiedFeedback for general elements, or custom for tooltip spans
+            if (element && element.classList.contains('cell-content')) {
+                showCopiedFeedback(element);
+            } else if (element) { // For tooltip spans
+                const originalText = element.textContent;
+                element.textContent = 'Copied!';
+                setTimeout(() => { element.textContent = originalText; }, 1000);
+            }
         } catch (err) {
             console.error("Fallback copy failed: ", err);
             alert("Failed to copy. Your browser might not support this feature or require specific permissions.");
@@ -827,7 +846,14 @@ async function copyToClipboard(text, element) {
     }
     try {
         await navigator.clipboard.writeText(text);
-        showCopiedFeedback(element);
+        // Use showCopiedFeedback for general elements, or custom for tooltip spans
+        if (element && element.classList.contains('cell-content')) {
+            showCopiedFeedback(element);
+        } else if (element) { // For tooltip spans
+            const originalText = element.textContent;
+            element.textContent = 'Copied!';
+            setTimeout(() => { element.textContent = originalText; }, 1000);
+        }
     } catch (err) {
         console.error("Failed to copy text: ", err);
         alert("Failed to copy.");
@@ -837,6 +863,176 @@ function showCopiedFeedback(element) {
     element.classList.add("copied");
     setTimeout(() => element.classList.remove("copied"), 1000);
 }
+
+// --- NEW: Palette Tooltip Functions ---
+function updateAndShowPaletteTooltip(hexColor, event, cellElement) {
+    if (!paletteTooltip || !isValidHex(hexColor) || !tooltipHexValue || !tooltipHslValue || !tooltipRgbValue) {
+        hidePaletteTooltip();
+        return;
+    }
+    currentTooltipTargetCell = cellElement; // Store the triggering cell
+
+    const hsl = hexToHsl(hexColor);
+    const rgb = hexToRgb(hexColor);
+
+    tooltipHexValue.textContent = hexColor.toUpperCase();
+    if (hsl) {
+        tooltipHslValue.textContent = `H:${hsl.h}° S:${hsl.s}% L:${hsl.l}%`;
+    } else {
+        tooltipHslValue.textContent = 'N/A';
+    }
+    if (rgb) {
+        tooltipRgbValue.textContent = `R:${rgb.r} G:${rgb.g} B:${rgb.b}`;
+    } else {
+        tooltipRgbValue.textContent = 'N/A';
+    }
+
+    const offsetX = 15; // Offset from cursor
+    const offsetY = 15;
+    let newLeft = event.clientX + offsetX;
+    let newTop = event.clientY + offsetY;
+
+    paletteTooltip.style.display = 'block'; // Display first to measure
+
+    if (newLeft + paletteTooltip.offsetWidth > window.innerWidth) {
+        newLeft = event.clientX - paletteTooltip.offsetWidth - offsetX;
+    }
+    if (newTop + paletteTooltip.offsetHeight > window.innerHeight) {
+        newTop = event.clientY - paletteTooltip.offsetHeight - offsetY;
+    }
+
+    newLeft = Math.max(0, newLeft);
+    newTop = Math.max(0, newTop);
+
+    paletteTooltip.style.left = `${newLeft}px`;
+    paletteTooltip.style.top = `${newTop}px`;
+
+    if (isShiftHeld) {
+        paletteTooltip.classList.add('palette-tooltip--interactive');
+        allowTooltipInteraction = true;
+    } else {
+        paletteTooltip.classList.remove('palette-tooltip--interactive');
+        allowTooltipInteraction = false;
+    }
+
+    requestAnimationFrame(() => {
+        paletteTooltip.style.opacity = '1';
+    });
+}
+
+function hidePaletteTooltip() {
+    if (paletteTooltip) {
+        // If shift is held and mouse is over tooltip, don't hide
+        if (isShiftHeld && isMouseOverTooltip && allowTooltipInteraction) {
+            return;
+        }
+        paletteTooltip.style.opacity = '0';
+        paletteTooltip.classList.remove('palette-tooltip--interactive');
+        allowTooltipInteraction = false;
+        currentTooltipTargetCell = null;
+        setTimeout(() => {
+            if (paletteTooltip.style.opacity === '0') {
+                paletteTooltip.style.display = 'none';
+            }
+        }, 150);
+    }
+}
+
+// --- NEW: Tooltip Interaction Handlers ---
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Shift') {
+        isShiftHeld = true;
+        // If tooltip is visible (meaning mouse is likely over a swatch or was just now)
+        // make it interactive.
+        if (paletteTooltip.style.display === 'block' && currentTooltipTargetCell) {
+            paletteTooltip.classList.add('palette-tooltip--interactive');
+            allowTooltipInteraction = true;
+        }
+    }
+});
+
+document.addEventListener('keyup', (event) => {
+    if (event.key === 'Shift') {
+        isShiftHeld = false;
+        // If mouse is not over the tooltip when shift is released, hide it.
+        if (!isMouseOverTooltip) {
+            hidePaletteTooltip();
+        }
+        // Tooltip might still be interactive if mouse is over it,
+        // but general interaction allowance is reset.
+        // The 'palette-tooltip--interactive' class will be removed by hidePaletteTooltip
+        // or when mouse leaves tooltip.
+        allowTooltipInteraction = false; 
+        // If mouse IS over tooltip, it remains visible but non-interactive style is reapplied on mouseleave
+        if(isMouseOverTooltip && paletteTooltip.style.display === 'block') {
+            paletteTooltip.classList.remove('palette-tooltip--interactive');
+        }
+
+    }
+});
+
+paletteTooltip.addEventListener('mouseenter', () => {
+    isMouseOverTooltip = true;
+    if (isShiftHeld) { // Keep it interactive if shift is still held
+        paletteTooltip.classList.add('palette-tooltip--interactive');
+        allowTooltipInteraction = true;
+    }
+});
+
+paletteTooltip.addEventListener('mouseleave', () => {
+    isMouseOverTooltip = false;
+    // If shift is not held, hide the tooltip when mouse leaves it.
+    if (!isShiftHeld) {
+                    hidePaletteTooltip();
+    }
+    // Always remove interactive class if mouse leaves, shift release will handle full hide.
+    paletteTooltip.classList.remove('palette-tooltip--interactive');
+});
+
+function handleTooltipCopy(event) {
+    const targetSpan = event.target.closest('span[data-copy-type]');
+    if (!targetSpan || !allowTooltipInteraction) return;
+
+    const copyType = targetSpan.dataset.copyType;
+    let textToCopy = '';
+
+    // Reconstruct the text based on type, as spans only hold the value part
+    const hex = tooltipHexValue.textContent;
+    const hslFull = tooltipHslValue.textContent; // e.g., "H:X° S:Y% L:Z%"
+    const rgbFull = tooltipRgbValue.textContent; // e.g., "R:X G:Y B:Z"
+
+    switch (copyType) {
+        case 'hex':
+            textToCopy = hex;
+            break;
+        case 'hsl':
+            textToCopy = hslFull; // Copy the full HSL string
+            break;
+        case 'rgb':
+            textToCopy = rgbFull; // Copy the full RGB string
+            break;
+    }
+
+    if (textToCopy) {
+        copyToClipboard(textToCopy, targetSpan); // Pass targetSpan for feedback
+        // Optionally hide tooltip after copy
+        setTimeout(() => {
+            hidePaletteTooltip();
+        }, 1100); // Hide after "Copied!" message fades
+    }
+}
+
+[tooltipHexValue, tooltipHslValue, tooltipRgbValue].forEach(span => {
+    span.addEventListener('click', handleTooltipCopy);
+    // For keyboard accessibility (Enter key)
+    span.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            handleTooltipCopy(event);
+        }
+    });
+});
+
+// --- Core Logic ---
 
 // Render the palette grid from grid data
 function renderPalette(gridData) {
@@ -879,6 +1075,58 @@ function renderPalette(gridData) {
                 } else {
                     cellContentDiv.dataset.sourceHex = originalHexColor; // Fallback for generated/interpolated
                 }
+
+                // --- Tooltip Listeners ---
+                cellContentDiv.addEventListener('mouseenter', (event) => {
+                    const hexForTooltip = cellContentDiv.dataset.sourceHex || originalHexColor;
+                    if (isValidHex(hexForTooltip)) {
+                        // Pass the cellContentDiv as the third argument
+                        updateAndShowPaletteTooltip(hexForTooltip, event, cellContentDiv);
+                    }
+                });
+
+                cellContentDiv.addEventListener('mouseleave', () => {
+                    // If allowTooltipInteraction is true, it means Shift was held
+                    // when the tooltip became active for this cell. The user might be
+                    // trying to move their mouse to the tooltip. So, don't hide it here.
+                    // Hiding will be handled by Shift keyup or tooltip's own mouseleave.
+                    if (allowTooltipInteraction) {
+                        return;
+                    }
+
+                    // If not allowing interaction (e.g., Shift not held) and the mouse
+                    // is not currently over the tooltip itself, then hide it.
+                    if (!isMouseOverTooltip) {
+                    hidePaletteTooltip();
+                    }
+                });
+
+                cellContentDiv.addEventListener('mousemove', (event) => {
+                    // Only update position if tooltip is block
+                    if (paletteTooltip && paletteTooltip.style.display === 'block') {
+                        // If interaction is allowed AND mouse is NOT YET over the tooltip,
+                        // it means Shift is held and mouse is still over the swatch.
+                        // Tooltip should still follow the mouse over the swatch.
+                        // updateAndShowPaletteTooltip handles setting/removing interactive class.
+                        if (allowTooltipInteraction && !isMouseOverTooltip) {
+                        const hexForTooltip = cellContentDiv.dataset.sourceHex || originalHexColor;
+                        if (isValidHex(hexForTooltip)) {
+                                updateAndShowPaletteTooltip(hexForTooltip, event, cellContentDiv);
+                            }
+                        }
+                        // If interaction is NOT allowed, tooltip simply follows mouse over swatch.
+                        else if (!allowTooltipInteraction) {
+                            const hexForTooltip = cellContentDiv.dataset.sourceHex || originalHexColor;
+                            if (isValidHex(hexForTooltip)) {
+                                 updateAndShowPaletteTooltip(hexForTooltip, event, cellContentDiv);
+                            }
+                        }
+                        // If allowTooltipInteraction is true AND isMouseOverTooltip is true,
+                        // then the mouse is over the tooltip, and this swatch's mousemove
+                        // should not interfere with its position.
+                    }
+                });
+                // --- END Tooltip Listeners ---
 
                 // --- Touch End Listener (Handles Touch Selection/Picking) ---
                 if (isTouchDevice) {
@@ -1129,15 +1377,16 @@ function renderPalette(gridData) {
                 // --- END REVISED Click Listener ---
 
                 // --- Update mouseover/mouseout to respect selection ---
-                cellContentDiv.addEventListener('mouseover', () => {
+                cellContentDiv.addEventListener('mouseover', () => { // This is DOM mouseover, not our state var
                     if (!isColorPickingMode && !cellContentDiv.classList.contains('selected')) { // Don't show hover if selected
                         cellContentDiv.style.boxShadow = `inset 0 0 0 2px ${textColor}`;
                     }
                 });
-                cellContentDiv.addEventListener('mouseout', () => {
+                cellContentDiv.addEventListener('mouseout', () => { // This is DOM mouseout
                     if (!cellContentDiv.classList.contains('selected')) { // Don't remove shadow if selected
                         cellContentDiv.style.boxShadow = 'none';
                     }
+                    // Tooltip hiding is handled by 'mouseleave' on the cell itself and tooltip logic.
                 });
 
                 // --- Apply initial selected style if cell is in selectedCells ---
@@ -2237,8 +2486,8 @@ function loadStateFromLocalStorage() {
         const savedStateJSON = localStorage.getItem(localStorageKey);
         if (!savedStateJSON) {
             console.log('No saved state found in local storage.');
-            return;
-        }
+        return;
+    }
         const savedState = JSON.parse(savedStateJSON);
         console.log('Loading saved state:', savedState);
 
@@ -2442,7 +2691,7 @@ function updatePickerFromHex() {
 
     if (isValidHex(hex)) {
         const hsl = hexToHsl(hex);
-        if (hsl) {
+    if (hsl) {
             pickerHueSlider.value = hsl.h;
             pickerHueNumber.value = hsl.h;
             pickerSatSlider.value = hsl.s;
@@ -2451,9 +2700,9 @@ function updatePickerFromHex() {
             pickerLumNumber.value = hsl.l;
             updatePickerPreview(hex);
             pickerHexInput.value = hex.toUpperCase(); // Ensure # and uppercase
-        } else {
+    } else {
             console.warn("Could not convert valid HEX to HSL:", hex);
-        }
+    }
     } else {
         // Maybe add visual feedback for invalid hex
         console.log("Invalid HEX input:", hex);
@@ -2781,7 +3030,7 @@ if (isTouchDevice) {
         if (applySuccess) {
             updatePaletteView();
              pickerApplyButton.textContent = "Applied!"; // Success feedback
-             setTimeout(() => {
+        setTimeout(() => {
                  pickerApplyButton.textContent = originalButtonText; // Reset text
              }, 1500); // Show feedback for 1.5 seconds
         } else {
@@ -3057,7 +3306,7 @@ function initializeApp() {
             // Update zoom controls to reflect default scale
             zoomSlider.value = 100;
             zoomNumber.value = 100;
-        } else {
+                } else {
             console.warn("Could not center palette: Viewport or Grid dimensions are zero.");
         }
     } else {
@@ -3326,9 +3575,9 @@ resetStateButton.addEventListener('click', () => {
             console.error('Error removing state from local storage:', error);
             // alert('Failed to reset state. Please clear local storage manually if needed.'); // This error is less common and might still warrant an alert, but let's remove for consistency. Could replace with a non-blocking message if a dedicated UI element existed.
             console.warn('Manual local storage clear might be needed.');
-        }
-    }
-});
+                        }
+                    }
+                });
 
 // --- NEW: Palette Export Listener ---
 exportPaletteButton.addEventListener('click', exportPaletteData);
@@ -3505,7 +3754,7 @@ function openColorPicker(rowIndex, cellIndex, event = null) {
     if (rowIndex >= sourceGridData.length || cellIndex >= sourceGridData[rowIndex].length) {
          console.error(`Invalid coordinates for sourceGridData: [${rowIndex}][${cellIndex}]`);
          clearSelection(); // Clear potentially invalid selection
-         return;
+        return;
     }
     const originalHex = sourceGridData[rowIndex][cellIndex];
 
@@ -4095,9 +4344,9 @@ function initializeApp() {
             // Update zoom controls to reflect default scale
             zoomSlider.value = 100;
             zoomNumber.value = 100;
-        } else {
+    } else {
             console.warn("Could not center palette: Viewport or Grid dimensions are zero.");
-        }
+    }
     } else {
          console.log("Saved position state found, using loaded position.");
          // Ensure transform is applied with loaded state values (in case loadState didn't call it)
@@ -4469,7 +4718,7 @@ function loadState() {
             uiScaleNumber.value = currentUiScale;
             applyUiScale(currentUiScale); // Apply loaded UI scale immediately
 
-        } else {
+                } else {
             console.log("No saved state found.");
         }
     } catch (error) {

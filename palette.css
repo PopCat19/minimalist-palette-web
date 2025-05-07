@@ -1012,3 +1012,37 @@ button.error {
 button.error:hover { /* Keep red on hover */
     background-color: #d32f2f; /* Slightly darker red on hover */
 }
+
+/* --- Palette Cell Tooltip --- */
+.palette-tooltip {
+    position: fixed; /* Use fixed to position relative to viewport */
+    display: none; /* Hidden by default */
+    background-color: rgba(20, 20, 20, 0.9); /* Dark, slightly transparent */
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-input); /* Small radius */
+    padding: 0.8rem 1.2rem; /* 8px 12px */
+    font-size: 1.2rem; /* 12px */
+    z-index: 1200; /* Above most other elements */
+    pointer-events: none; /* Tooltip itself should not be interactive */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    transition: opacity 0.1s ease-out; /* Fast fade */
+    white-space: nowrap; /* Prevent line breaks */
+    opacity: 0; /* Start fully transparent for fade-in */
+}
+
+.palette-tooltip div {
+    margin-bottom: 0.4rem; /* 4px */
+}
+.palette-tooltip div:last-child {
+    margin-bottom: 0;
+}
+
+.palette-tooltip span {
+    font-family: var(--monospace-font-family);
+    margin-left: 0.5rem; /* 5px */
+    /* Default non-interactive appearance */
+    cursor: default;
+}
