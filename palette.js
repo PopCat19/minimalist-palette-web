@@ -949,6 +949,57 @@ document.addEventListener('keydown', (event) => {
             allowTooltipInteraction = true;
         }
     }
+
+    // Hotkey logic for copying from tooltip (1: HEX, 2: HSL, 3: RGB)
+    const activeElement = document.activeElement;
+    const isTyping = activeElement &&
+                     (activeElement.tagName === 'INPUT' ||
+                      activeElement.tagName === 'TEXTAREA' ||
+                      activeElement.isContentEditable);
+
+    // Check if tooltip is visible over a cell AND not typing in an input
+    if (!isTyping && currentTooltipTargetCell && paletteTooltip.style.display === 'block') {
+        let textToCopy = null;
+        let copyTypeForLog = ""; // For logging purposes
+
+        if (event.key === '1' || event.key === '2' || event.key === '3') {
+            // Prevent default browser action for these keys if any (e.g. navigating history)
+            event.preventDefault();
+
+            switch (event.key) {
+                case '1': // HEX
+                    textToCopy = tooltipHexValue.textContent;
+                    copyTypeForLog = "HEX";
+                    break;
+                case '2': // HSL
+                    textToCopy = tooltipHslValue.textContent; // Full string "H:X° S:Y% L:Z%"
+                    copyTypeForLog = "HSL";
+                    break;
+                case '3': // RGB
+                    const rgbFullText = tooltipRgbValue.textContent; // "R:X G:Y B:Z"
+                    const rgbMatch = rgbFullText.match(/R:(\d{1,3})\s*G:(\d{1,3})\s*B:(\d{1,3})/);
+                    if (rgbMatch) {
+                        textToCopy = `${rgbMatch[1]},${rgbMatch[2]},${rgbMatch[3]}`; // "X,Y,Z"
+                        copyTypeForLog = "RGB";
+                    } else {
+                        console.warn("Could not parse RGB from tooltip for hotkey copy:", rgbFullText);
+                    }
+                    break;
+            }
+
+            if (textToCopy) {
+                const cellDiv = currentTooltipTargetCell;
+
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showCopiedFeedback(cellDiv); // Use existing feedback function
+                    console.log(`${copyTypeForLog} value copied via hotkey: ${textToCopy}`);
+                }).catch(err => {
+                    console.error(`Hotkey copy for ${copyTypeForLog} failed: `, err);
+                    alert("Failed to copy."); // Use existing failure feedback
+                });
+            }
+        }
+    }
 });
 
 document.addEventListener('keyup', (event) => {
