@@ -3,7 +3,9 @@ html {
     box-sizing: border-box;
 }
 
-*, *:before, *:after {
+*,
+*:before,
+*:after {
     box-sizing: inherit;
 }
 
@@ -17,9 +19,17 @@ html {
     --viewport-height: 100vh;
 
     /* --- Typography (using rem where appropriate, em for relative scaling) --- */
-    --base-font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    --monospace-font-family: "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
-    --label-font-size: clamp(0.6em, 1.5vw, 0.8em); /* Keep em/vw for responsive cell labels */
+    --base-font-family:
+        system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol";
+    --monospace-font-family:
+        "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
+    --label-font-size: clamp(
+        0.6em,
+        1.5vw,
+        0.8em
+    ); /* Keep em/vw for responsive cell labels */
     --cell-content-font-size: 0.9rem; /* smaller -> approx 9px base */
     --config-button-font-size: 1.3rem; /* 13px */
     --modal-title-font-size: 1.6rem; /* 16px */
@@ -29,22 +39,22 @@ html {
     --copied-feedback-font-size: 1rem; /* 10px */
 
     /* --- Colors --- */
-    /* Refined Theme */
-    --bg-color: #0f0f0f;
-    --surface-color-1: #1a1a1a; /* Container, Modal */
-    --surface-color-2: #2a2a2a; /* Cells, Inputs */
-    --accent-color: #4a90e2;
-    --button-color: #3f3f3f;
-    --button-text-color: #e0e0e0;
-    --button-hover-color: #555555;
-    --text-color: #f0f0f0;
-    --text-color-muted: #aaaaaa;
-    --text-color-dark-bg: #000000; /* Text on light backgrounds */
-    --text-color-light-bg: #FFFFFF; /* Text on dark backgrounds */
-    --border-color: #404040;
-    --modal-overlay-color: rgba(0, 0, 0, 0.75); /* For copied feedback */
-    --placeholder-border-color: var(--border-color); /* Dashed border for empty interpolated cells */
-    --placeholder-text-color: var(--text-color-muted);
+    /* Rose Pine Base Theme */
+    --bg-color: #191724; /* Base */
+    --surface-color-1: #1f1d2e; /* Surface - Container, Modal */
+    --surface-color-2: #26233a; /* Overlay - Cells, Inputs */
+    --accent-color: #c4a7e7; /* Iris */
+    --button-color: #26233a; /* Overlay */
+    --button-text-color: #e0def4; /* Text */
+    --button-hover-color: #403d52; /* Highlight Med */
+    --text-color: #e0def4; /* Text */
+    --text-color-muted: #908caa; /* Subtle */
+    --text-color-dark-bg: #191724; /* Base for light backgrounds */
+    --text-color-light-bg: #e0def4; /* Text for dark backgrounds */
+    --border-color: #26233a; /* Overlay - minimal borders */
+    --modal-overlay-color: rgba(25, 23, 36, 0.85); /* Base with opacity */
+    --placeholder-border-color: #000000; /* Black for canvas grid dots */
+    --placeholder-text-color: #6e6a86; /* Muted */
 
     /* --- Borders & Radii (using rem) --- */
     --border-radius: 2.4rem; /* 24px */
@@ -83,14 +93,12 @@ html {
     --palette-input-margin-bottom: 1.5rem; /* 15px */
     /* Update Button */
     --update-button-padding: 0.9rem 1.8rem; /* 9px 18px */
-     /* Zoom Controls */
-     --zoom-label-margin-right: 0.5rem; /* 5px */
-     --zoom-label-font-size: 1.3rem; /* 13px */
-     --zoom-number-input-width: 5rem; /* 50px */
+    /* Zoom Controls */
+    --zoom-label-margin-right: 0.5rem; /* 5px */
+    --zoom-label-font-size: 1.3rem; /* 13px */
+    --zoom-number-input-width: 5rem; /* 50px */
 
-
-    /* --- Shadows & Z-Index --- */
-    --config-button-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    /* --- Z-Index --- */
     --z-index-modal: 1050;
     --z-index-config-button: 1100;
     --z-index-copied-feedback: 5;
@@ -124,10 +132,12 @@ body {
     overflow: hidden;
     position: relative;
     cursor: grab;
-    background-color: var(--bg-color);
-    /* Removed SVG background pattern */
+    background-color: #000000; /* Black background */
     /* Added radial-gradient dot pattern */
-    background-image: radial-gradient(#222 1px, transparent 1px); /* Dot color and size */
+    background-image: radial-gradient(
+        #ffffff 1px,
+        transparent 1px
+    ); /* White dots on black background */
     background-size: 15px 15px; /* Spacing of the dots */
 }
 #canvas-viewport.grabbing {
@@ -142,7 +152,7 @@ body {
     background-color: var(--surface-color-1);
     border-radius: var(--border-radius);
     padding: 0; /* Set padding to 0 */
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     /* Add overflow hidden potentially if outlines clip */
     /* overflow: hidden; */
     /* --- NEW: Set transform origin to top-left to match JS --- */
@@ -153,7 +163,10 @@ body {
 #palette-grid {
     display: grid;
     /* Assuming 27 columns based on JS data structure */
-    grid-template-columns: repeat(27, minmax(var(--cell-min-size), 1fr)); /* Allow cells to grow */
+    grid-template-columns: repeat(
+        27,
+        minmax(var(--cell-min-size), 1fr)
+    ); /* Allow cells to grow */
     gap: 8px; /* Replaced var(--cell-spacing) */
     padding: 8px; /* Replaced var(--cell-spacing) */
     width: max-content; /* Ensure grid shrinks/grows with content */
@@ -193,25 +206,31 @@ body {
 }
 
 .cell-content.swatch:hover {
-     /* Hover effect now handled by JS adding box-shadow */
-     border-radius: var(--border-radius-small); /* Keep radius */
-     z-index: 1; /* Keep z-index */
+    /* Hover effect now handled by JS adding box-shadow */
+    border-radius: var(--border-radius-small); /* Keep radius */
+    z-index: 1; /* Keep z-index */
 }
 
 .cell-content.label.interpolated-label {
-     background-color: transparent;
-     border: var(--border-width) dashed var(--placeholder-border-color);
-     color: var(--placeholder-text-color);
-     font-style: italic;
+    background-color: transparent;
+    border: var(--border-width) dashed var(--placeholder-border-color);
+    color: var(--placeholder-text-color);
+    font-style: italic;
 }
 
 /* Keep copied feedback as it targets .cell-content */
 .cell-content.copied::after {
     content: "Copied!";
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-color: var(--modal-overlay-color);
     color: var(--text-color-light-bg); /* Ensure contrast */
-    display: flex; justify-content: center; align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-size: var(--copied-feedback-font-size);
     font-weight: bold;
     border-radius: var(--border-radius-small);
@@ -225,7 +244,7 @@ body {
     /* Keep appearance styles */
     background-color: var(--surface-color-1);
     color: var(--text-color-muted);
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: var(--config-button-padding);
     font-size: var(--config-button-font-size);
@@ -233,20 +252,17 @@ body {
     text-align: center;
     cursor: pointer;
     transition: all var(--transition-duration) var(--transition-timing);
-    box-shadow: var(--config-button-shadow);
 }
 #config-toggle-button:hover {
     color: var(--text-color);
     background-color: var(--surface-color-2);
-    border-color: var(--accent-color);
 }
 
 /* NEW: Active state for config button */
 #config-toggle-button.active {
     background-color: var(--accent-color);
-    color: var(--text-color-light-bg); /* Contrast with accent color */
-    border-color: var(--accent-color);
-    box-shadow: none; /* Optional: Remove shadow when active */
+    color: var(--surface-color-1); /* Dark text on light accent color */
+    border: 2px solid var(--accent-color);
 }
 
 /* --- Config Modal --- */
@@ -261,10 +277,13 @@ body {
     transform-origin: bottom center; /* Revert to bottom origin */
     opacity: 0;
     visibility: hidden;
-    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear var(--transition-duration);
+    transition:
+        opacity var(--transition-duration) var(--transition-timing),
+        transform var(--transition-duration) var(--transition-timing),
+        visibility 0s linear var(--transition-duration);
     z-index: var(--z-index-modal);
-    background-color: rgba(26, 26, 26, 0.75);
-    border: var(--border-width-val) solid var(--border-color);
+    background-color: var(--surface-color-1);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: var(--modal-padding);
     width: 90%;
@@ -274,14 +293,15 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--modal-gap);
-    -webkit-backdrop-filter: blur(15px);
-    backdrop-filter: blur(15px);
 }
 #config-modal.visible {
     transform: translateX(-50%) scale(1);
-        opacity: 1;
+    opacity: 1;
     visibility: visible;
-    transition: opacity var(--transition-duration) var(--transition-timing), transform var(--transition-duration) var(--transition-timing), visibility 0s linear 0s;
+    transition:
+        opacity var(--transition-duration) var(--transition-timing),
+        transform var(--transition-duration) var(--transition-timing),
+        visibility 0s linear 0s;
 }
 
 .modal-close-button {
@@ -295,19 +315,24 @@ body {
     color: var(--text-color-muted);
     cursor: pointer;
 }
-.modal-close-button:hover { color: var(--text-color); }
+.modal-close-button:hover {
+    color: var(--text-color);
+}
 
 .config-section {
     padding-bottom: var(--modal-section-padding-bottom);
-    border-bottom: var(--border-width) solid var(--border-color);
+    border-bottom: none;
 }
-.config-section:last-child { border-bottom: none; padding-bottom: 0; }
+.config-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
 
 .config-section h3 {
     margin: 0 0 var(--modal-title-margin-bottom) 0;
     font-size: var(--modal-title-font-size);
     font-weight: 600;
-    color: var(--text-color);
+    color: #ebbcba; /* Rose for section headers */
 }
 
 /* NEW: Styling for Adjustment Group Wrappers */
@@ -371,7 +396,7 @@ body {
     /* Base styles, specific overrides below */
     cursor: pointer;
     border-radius: var(--border-radius-small);
-    border: var(--border-width) solid var(--border-color); /* Default border */
+    border: 2px solid var(--border-color);
     background-color: var(--button-color);
     color: var(--button-text-color);
     padding: var(--update-button-padding); /* Use a common button padding */
@@ -379,19 +404,20 @@ body {
     font-weight: 500;
     transition: all var(--transition-duration) var(--transition-timing);
 }
- .control-button:hover {
-     background-color: var(--button-hover-color);
-     border-color: var(--accent-color); /* Highlight border on hover */
- }
- .control-button:focus-visible {
-     outline: none;
-     border-color: var(--accent-color); /* Highlight border on focus */
- }
+.control-button:hover {
+    background-color: var(--button-hover-color);
+    background-color: var(--button-hover-color);
+}
+.control-button:focus-visible {
+    outline: none;
+    background-color: var(--button-hover-color);
+}
 
 #interpolation-controls,
 #saturation-controls,
-#zoom-controls { /* Combine styles for similar layout */
-     display: flex;
+#zoom-controls {
+    /* Combine styles for similar layout */
+    display: flex;
     flex-wrap: wrap; /* Allow wrapping on smaller screens */
     justify-content: flex-start; /* Align items to the start */
     gap: 10px; /* Replaced var(--control-group-gap) */
@@ -399,7 +425,8 @@ body {
 }
 #interpolation-controls label,
 #saturation-controls label,
-#zoom-controls label { /* Common label styles */
+#zoom-controls label {
+    /* Common label styles */
     cursor: pointer;
     user-select: none;
     margin-right: var(--zoom-label-margin-right);
@@ -407,45 +434,45 @@ body {
     color: var(--text-color-muted);
 }
 input[type="checkbox"] {
-     cursor: pointer;
-     accent-color: var(--accent-color);
+    cursor: pointer;
+    accent-color: var(--accent-color);
 }
 .slider-group {
-     display: flex;
-     align-items: center;
+    display: flex;
+    align-items: center;
     gap: 10px; /* Replaced var(--control-group-gap) */ /* Use consistent gap */
     flex-grow: 1; /* Allow slider group to take available space */
     min-width: 180px; /* Prevent extreme shrinking */
 }
 input[type="range"] {
-     /* width: var(--slider-width); */ /* REMOVED fixed width */
-     flex-grow: 1; /* NEW: Allow slider to grow */
-     min-width: 8rem; /* NEW: Prevent slider becoming too small */
-     height: var(--slider-height);
+    /* width: var(--slider-width); */ /* REMOVED fixed width */
+    flex-grow: 1; /* NEW: Allow slider to grow */
+    min-width: 8rem; /* NEW: Prevent slider becoming too small */
+    height: var(--slider-height);
     cursor: pointer;
-     accent-color: var(--accent-color);
-     vertical-align: middle;
+    accent-color: var(--accent-color);
+    vertical-align: middle;
 }
 input[type="number"] {
-     width: var(--number-input-width);
-     background-color: var(--surface-color-2);
-     color: var(--text-color);
-     border: var(--border-width) solid var(--border-color);
-     border-radius: var(--border-radius-input);
-     padding: var(--number-input-padding);
-     font-size: var(--number-input-font-size);
-     text-align: center;
-     -moz-appearance: textfield;
+    width: var(--number-input-width);
+    background-color: var(--surface-color-2);
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-input);
+    padding: var(--number-input-padding);
+    font-size: var(--number-input-font-size);
+    text-align: center;
+    -moz-appearance: textfield;
 }
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-     -webkit-appearance: none;
-     margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
- input[type="number"]:focus-visible {
-     outline: none;
-     border-color: var(--accent-color);
- }
+input[type="number"]:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
 
 #palette-editor-section {
     display: none;
@@ -454,19 +481,19 @@ input[type="number"]::-webkit-inner-spin-button {
     display: block;
 }
 /* Label specific styling */
- #palette-editor-section > label[for="palette-input"] {
-     display: block;
-     margin-bottom: 10px; /* Specific margin */
-     font-weight: 500;
-     font-size: var(--modal-label-font-size);
- }
+#palette-editor-section > label[for="palette-input"] {
+    display: block;
+    margin-bottom: 10px; /* Specific margin */
+    font-weight: 500;
+    font-size: var(--modal-label-font-size);
+}
 
 #palette-input {
     width: 100%;
     min-height: var(--palette-input-min-height);
-    background-color: var(--surface-color-2);
+    background-color: var(--bg-color);
     color: var(--text-color);
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: 14px; /* Reduced radius */
     padding: var(--palette-input-padding);
     font-family: var(--monospace-font-family);
@@ -474,32 +501,46 @@ input[type="number"]::-webkit-inner-spin-button {
     box-sizing: border-box;
     resize: vertical;
     margin-bottom: var(--palette-input-margin-bottom);
-    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
 }
-#palette-input:focus-visible { outline: none; border-color: var(--accent-color); }
+#palette-input:focus-visible {
+    outline: none;
+    border-color: var(--accent-color);
+}
 
-#update-button { /* Specific styles for the main update button */
+#update-button {
+    /* Specific styles for the main update button */
     background-color: var(--accent-color);
-    color: var(--text-color-light-bg); /* Ensure contrast */
-    border: none;
+    color: var(--surface-color-1); /* Dark text on light accent color */
+    border: 2px solid var(--accent-color);
     padding: var(--update-button-padding);
     border-radius: var(--border-radius-small);
     cursor: pointer;
     font-size: var(--button-font-size);
     font-weight: 500;
     transition: all var(--transition-duration) var(--transition-timing);
-    display: block; width: fit-content; margin: 0 auto;
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
 }
-#update-button:hover { background-color: #3a80d2; } /* Keep specific hover */
-#update-button:focus-visible { outline: none; border-color: var(--text-color-light-bg); }
+#update-button:hover {
+    background-color: #9ca0b0; /* Lighter iris for hover */
+    color: #ffffff; /* White text for better contrast */
+} /* Keep specific hover */
+#update-button:focus-visible {
+    outline: none;
+    background-color: var(--button-hover-color);
+    color: #ffffff; /* White text for better contrast */
+}
 
-
- #zoom-slider {
-      width: var(--slider-width); /* Reuse standard slider width */
- }
- #zoom-number {
-      width: var(--zoom-number-input-width); /* Specific width if needed */
- }
+#zoom-slider {
+    width: var(--slider-width); /* Reuse standard slider width */
+}
+#zoom-number {
+    width: var(--zoom-number-input-width); /* Specific width if needed */
+}
 
 /* --- NEW Bottom Controls Container --- */
 #bottom-controls {
@@ -514,13 +555,10 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-wrap: nowrap; /* ADDED: Explicitly prevent wrapping by default */
     min-width: max-content; /* NEW: Ensure container tries to fit content */
     /* justify-content: center; */ /* REMOVED: Apply wrap only in media query */
-    background-color: rgba(26, 26, 26, 0.75);
+    background-color: var(--surface-color-1);
     padding: 8px 12px;
     border-radius: var(--border-radius);
-    border: var(--border-width) solid var(--border-color);
-    box-shadow: var(--config-button-shadow);
-    -webkit-backdrop-filter: blur(15px);
-    backdrop-filter: blur(15px);
+    border: 2px solid var(--border-color);
 }
 
 /* NEW: Prevent children from shrinking, potentially causing wrapping */
@@ -529,7 +567,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 /* --- Media Query for Smaller Screens --- */
-@media (max-width: 700px) { /* Increased breakpoint from 550px */
+@media (max-width: 700px) {
+    /* Increased breakpoint from 550px */
     #bottom-controls {
         flex-wrap: wrap; /* OVERRIDE: Allow wrapping on small screens */
         justify-content: center;
@@ -559,7 +598,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* Adjust spacing for the connecting labels */
 #generate-x-controls .from-label,
 #generate-x-controls .and-label {
-    margin-left: 5px; 
+    margin-left: 5px;
 }
 
 #generate-x-controls input[type="number"] {
@@ -589,22 +628,20 @@ input[type="number"]::-webkit-inner-spin-button {
 
 /* --- Pop-out Editor Styles --- */
 #popout-editor {
-    display: none; /* Hidden by default */
+    /* Hide by default (shown by JS) */
+    display: none;
     position: absolute;
     top: 100px; /* Initial position (can be centered by JS later) */
     left: 100px;
     z-index: 1080; /* NEW: Above config modal and bottom controls */
-    background-color: rgba(30, 30, 30, 0.8); /* Slightly different semi-transparent BG */
-    border: var(--border-width) solid var(--border-color);
+    background-color: var(--surface-color-1);
+    border: 2px solid var(--border-color);
     border-radius: 12px; /* Smaller radius */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     width: 400px; /* Fixed width - initial width */
     /* max-width: 80vw; */ /* REMOVE: Max width constraint */
     /* NEW: Min dimensions */
     min-width: 250px;
     min-height: 200px;
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
     overflow: hidden; /* Prevents content spilling during resize */
     flex-direction: column;
 }
@@ -615,9 +652,9 @@ input[type="number"]::-webkit-inner-spin-button {
     align-items: center;
     /* padding: 6px 10px; */
     padding: 0.6rem 1rem; /* Use rem */
-    background-color: rgba(40, 40, 40, 0.85); /* Darker header */
+    background-color: var(--surface-color-2);
     cursor: move; /* Indicate draggable */
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: none;
     gap: 0.8rem; /* Add gap between title/buttons/close */
 }
 
@@ -625,6 +662,7 @@ input[type="number"]::-webkit-inner-spin-button {
     font-weight: 500;
     /* font-size: 14px; */
     font-size: 1.4rem; /* Use rem */
+    color: #f6c177; /* Gold for popout titles */
     white-space: nowrap; /* Prevent title wrapping */
     margin-right: auto; /* Push buttons to the right */
 }
@@ -650,7 +688,7 @@ input[type="number"]::-webkit-inner-spin-button {
     /* min-height: 300px; */
     min-height: var(--palette-input-min-height); /* Use variable */
     /* max-height: 60vh; */ /* REMOVE: Prevent excessive height */
-    background-color: var(--surface-color-2);
+    background-color: var(--bg-color);
     color: var(--text-color);
     border: none; /* Remove border, container has one */
     border-radius: 0; /* No radius needed inside */
@@ -660,7 +698,9 @@ input[type="number"]::-webkit-inner-spin-button {
     font-size: var(--input-font-size);
     box-sizing: border-box;
     /* resize: vertical; */ /* REMOVE: Allow only vertical resize - We handle resize via handle */
-    white-space: pre; overflow-wrap: normal; overflow-x: auto;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
     flex-grow: 1; /* Allow textarea to fill available space */
 }
 #popout-palette-input:focus-visible {
@@ -680,7 +720,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* --- NEW: Pop-out Resize Handle Styles --- */
 #popout-resize-handle {
     position: absolute;
-         bottom: 0;
+    bottom: 0;
     right: 0;
     width: 15px;
     height: 15px;
@@ -698,12 +738,13 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .reset-button {
-    background-color: #8b0000; /* Dark red */
-    border-color: #700000;
+    background-color: #eb6f92; /* Rose Pine Love */
+    color: var(--surface-color-1); /* Dark text on light danger color */
+    border: 2px solid #eb6f92;
 }
 .reset-button:hover {
-    background-color: #a00000;
-    border-color: #8b0000;
+    background-color: #eb6f9280; /* Love with opacity */
+    color: var(--surface-color-1); /* Dark text on light danger color */
 }
 
 /* NEW: Popout Status Message Styles */
@@ -722,10 +763,10 @@ input[type="number"]::-webkit-inner-spin-button {
     opacity: 1;
 }
 #popout-status-message.error {
-    color: #ff6b6b; /* Light red for error */
+    color: #eb6f92; /* Rose Pine Love for error */
 }
 #popout-status-message.success {
-    color: #6bcb77; /* Light green for success */
+    color: #9ccfd8; /* Rose Pine Foam for success */
 }
 
 /* NEW: Palette IO Group Styling */
@@ -746,10 +787,9 @@ input[type="number"]::-webkit-inner-spin-button {
     opacity: 0;
     visibility: hidden;
     z-index: 1100; /* Above popout editor */
-    background-color: rgba(30, 30, 30, 0.85); /* Slightly more opaque than popout */
-    border: var(--border-width) solid var(--border-color);
+    background-color: var(--surface-color-1);
+    border: 2px solid var(--border-color);
     border-radius: 10px; /* Slightly smaller radius */
-    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     /* REMOVED: Fixed width */
     /* width: 300px; */
     /* ADDED: Min/Max dimensions and Flex layout */
@@ -760,20 +800,21 @@ input[type="number"]::-webkit-inner-spin-button {
     display: flex; /* Use flex for internal layout */
     flex-direction: column;
     overflow: hidden; /* Hide overflow during resize */
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
-                   visibility 0s linear var(--transition-duration); /* Keep visibility transition */
+    transition:
+        opacity var(--transition-duration) var(--transition-timing),
+        /* Keep opacity transition */ visibility 0s linear
+            var(--transition-duration); /* Keep visibility transition */
     /* REMOVED: Transform transition */
 }
 
 #color-picker-modal.visible {
     display: flex; /* Use flex when visible */
-         opacity: 1;
-         visibility: visible;
+    opacity: 1;
+    visibility: visible;
     /* REMOVED: transform for showing */
-         transition: opacity var(--transition-duration) var(--transition-timing), /* Keep opacity transition */
-                   visibility 0s linear 0s; /* Keep visibility transition */
+    transition:
+        opacity var(--transition-duration) var(--transition-timing),
+        /* Keep opacity transition */ visibility 0s linear 0s; /* Keep visibility transition */
     /* REMOVED: Transform transition */
 }
 
@@ -782,8 +823,8 @@ input[type="number"]::-webkit-inner-spin-button {
     /* justify-content: space-between; */ /* REMOVED */
     align-items: center;
     padding: 0.6rem 0.8rem; /* Adjusted padding */
-    background-color: rgba(40, 40, 40, 0.9); /* Darker header */
-    border-bottom: 1px solid var(--border-color);
+    background-color: var(--surface-color-2);
+    border-bottom: none;
     cursor: move; /* ADDED: Draggable cursor */
     flex-shrink: 0; /* Prevent header shrinking */
     gap: 0.8rem; /* Add gap between elements */
@@ -792,7 +833,7 @@ input[type="number"]::-webkit-inner-spin-button {
 .color-picker-title {
     font-weight: 500;
     font-size: 1.4rem;
-    color: var(--text-color);
+    color: #9ccfd8; /* Rose Pine Foam for picker title */
     margin-right: auto; /* Push buttons to the right */
     white-space: nowrap; /* Prevent wrapping */
     overflow: hidden; /* Hide overflow */
@@ -803,15 +844,16 @@ input[type="number"]::-webkit-inner-spin-button {
 #picker-apply-button {
     /* Inherits .control-button styles */
     background-color: var(--accent-color);
-    color: var(--text-color-light-bg);
-    border: none;
+    color: var(--surface-color-1); /* Dark text on light accent color */
+    border: 2px solid var(--accent-color);
     padding: 0.4rem 1rem; /* Slightly smaller padding */
     font-size: 1.3rem; /* Slightly smaller font */
     flex-shrink: 0; /* Prevent shrinking */
     order: 1; /* Ensure it comes before the close button visually if needed */
 }
 #picker-apply-button:hover {
-    background-color: #3a80d2;
+    background-color: #a0a8c4; /* Lighter iris for hover */
+    color: var(--surface-color-1); /* Maintain dark text */
 }
 
 /* Use the same close button style as the config modal */
@@ -836,16 +878,16 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 #color-picker-preview {
-        width: 100%; 
+    width: 100%;
     height: 6rem; /* 60px preview height */
     border-radius: var(--border-radius-input);
-    border: 1px solid var(--border-color);
+    border: none;
     background-color: #888; /* Placeholder */
-    }
+}
 
 .color-picker-controls {
     display: flex;
-         flex-direction: column;
+    flex-direction: column;
     gap: 1rem;
 }
 
@@ -857,7 +899,7 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .picker-control-group label {
     font-size: 1.2rem; /* Smaller labels */
-    color: var(--text-color-muted);
+    color: #908caa; /* Rose Pine Subtle for labels */
     width: 1.5rem; /* Fixed width for alignment */
     text-align: right;
 }
@@ -874,7 +916,7 @@ input[type="number"]::-webkit-inner-spin-button {
     width: 4rem; /* 40px width */
     background-color: var(--surface-color-2);
     color: var(--text-color);
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius-input);
     padding: var(--number-input-padding);
     font-size: var(--number-input-font-size);
@@ -883,8 +925,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 .picker-control-group input[type="number"]::-webkit-outer-spin-button,
 .picker-control-group input[type="number"]::-webkit-inner-spin-button {
-     -webkit-appearance: none;
-     margin: 0;
+    -webkit-appearance: none;
+    margin: 0;
 }
 .picker-control-group input[type="number"]:focus-visible {
     outline: none;
@@ -905,7 +947,7 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-grow: 1;
     background-color: var(--surface-color-2);
     color: var(--text-color);
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius-input);
     padding: var(--number-input-padding); /* Reuse padding */
     font-family: var(--monospace-font-family);
@@ -942,28 +984,27 @@ input[type="number"]::-webkit-inner-spin-button {
     /* Inherit base styles from #config-toggle-button */
     background-color: var(--surface-color-1);
     color: var(--text-color-muted);
-    border: var(--border-width) solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: var(--config-button-padding);
     font-size: var(--config-button-font-size);
     font-weight: 500;
-        text-align: center;
+    text-align: center;
     cursor: pointer;
     transition: all var(--transition-duration) var(--transition-timing);
-    box-shadow: var(--config-button-shadow);
 }
 #color-pick-toggle-button:hover {
     color: var(--text-color);
     background-color: var(--surface-color-2);
-    border-color: var(--accent-color);
 }
 
 /* Active state for the color picker button */
 #color-pick-toggle-button.active {
-    background-color: var(--accent-color); /* Use accent color like config button */
-    color: var(--text-color-light-bg); /* Contrast with accent color */
-    border-color: var(--accent-color);
-    box-shadow: none;
+    background-color: var(
+        --accent-color
+    ); /* Use accent color like config button */
+    color: var(--surface-color-1); /* Dark text on light accent color */
+    border: 2px solid var(--accent-color);
 }
 
 /* --- NEW: Cursor change when color picking --- */
@@ -978,10 +1019,8 @@ body.color-picking-active #palette-grid .cell-content.swatch:hover {
 
 /* NEW: Style for selected swatches */
 .cell-content.selected {
-    /* Use box-shadow for persistent selection indicator */
-    box-shadow: inset 0 0 0 3px var(--accent-color) !important; /* Use !important to override hover temporarily */
-    /* outline: 3px solid var(--accent-color); */ /* Alternative: outline */
-    /* outline-offset: -3px; */
+    /* Use border for persistent selection indicator */
+    border: 3px solid var(--accent-color) !important;
     z-index: 2; /* Bring selected cells slightly forward */
 }
 
@@ -993,41 +1032,40 @@ body.color-picking-active #palette-grid .cell-content.swatch:hover {
 .picker-control-group.disabled label,
 .picker-control-group.disabled span {
     /* Optional: Dim labels/spans as well */
-     color: #777;
+    color: #777;
 }
 
 /* NEW: Success and Error Button Feedback Styles */
 button.success {
-    background-color: #4CAF50; /* Green */
-    color: white;
+    background-color: #9ccfd8; /* Rose Pine Foam */
+    color: #ffffff; /* White text for better contrast */
 }
-button.success:hover { /* Keep green on hover */
-    background-color: #45a049; /* Slightly darker green on hover */
+button.success:hover {
+    background-color: #8cc4d0; /* Darker foam on hover */
+    color: #ffffff; /* White text for better contrast */
 }
 
 button.error {
-    background-color: #f44336; /* Red */
-    color: white;
+    background-color: #eb6f92; /* Rose Pine Love */
+    color: #ffffff; /* White text for better contrast */
 }
-button.error:hover { /* Keep red on hover */
-    background-color: #d32f2f; /* Slightly darker red on hover */
+button.error:hover {
+    background-color: #eb6f9280; /* Love with opacity on hover */
+    color: #ffffff; /* White text for better contrast */
 }
 
 /* --- Palette Cell Tooltip --- */
 .palette-tooltip {
     position: fixed; /* Use fixed to position relative to viewport */
     display: none; /* Hidden by default */
-    background-color: rgba(20, 20, 20, 0.9); /* Dark, slightly transparent */
+    background-color: var(--surface-color-1); /* Rose Pine Surface */
     color: var(--text-color);
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: var(--border-radius-input); /* Small radius */
     padding: 0.8rem 1.2rem; /* 8px 12px */
     font-size: 1.2rem; /* 12px */
     z-index: 1200; /* Above most other elements */
     pointer-events: none; /* Tooltip itself should not be interactive */
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    -webkit-backdrop-filter: blur(5px);
-    backdrop-filter: blur(5px);
     transition: opacity 0.1s ease-out; /* Fast fade */
     white-space: nowrap; /* Prevent line breaks */
     opacity: 0; /* Start fully transparent for fade-in */
@@ -1041,8 +1079,8 @@ button.error:hover { /* Keep red on hover */
 }
 
 .palette-tooltip span {
+    color: #f6c177; /* Rose Pine Gold for tooltip values */
     font-family: var(--monospace-font-family);
     margin-left: 0.5rem; /* 5px */
-    /* Default non-interactive appearance */
     cursor: default;
 }
