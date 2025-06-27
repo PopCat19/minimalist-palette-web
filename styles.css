@@ -1,0 +1,320 @@
+@import "tailwindcss";
+@import "./rose-pine-theme/rose-pine-pine.css";
+
+/* Custom utility classes for the palette application */
+@layer utilities {
+  /* Canvas viewport utilities */
+  .canvas-viewport {
+    @apply relative overflow-hidden cursor-grab select-none;
+    @apply bg-rose-pine-base;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  .canvas-viewport.grabbing {
+    @apply cursor-grabbing;
+  }
+
+  /* Palette container utilities */
+  .palette-container {
+    @apply absolute;
+    transform-origin: 0 0;
+    transition: transform 0.1s var(--ease-palette);
+  }
+
+  /* Cell content utilities */
+  .cell-content {
+    @apply flex items-center justify-center;
+    @apply border border-rose-pine-highlight-low;
+    @apply text-rose-pine-text text-sm font-medium;
+    @apply transition-all duration-200;
+    width: var(--spacing-palette-cell);
+    height: var(--spacing-palette-cell);
+    border-radius: var(--radius-palette);
+  }
+
+  .cell-content.legend-label {
+    @apply bg-rose-pine-surface text-rose-pine-subtle;
+  }
+
+  .cell-content.swatch {
+    @apply cursor-pointer;
+  }
+
+  .cell-content.swatch:hover {
+    @apply border-rose-pine-foam scale-110 shadow-md;
+    box-shadow: var(--shadow-button);
+  }
+
+  .cell-content.interpolated-label {
+    @apply bg-rose-pine-highlight-low text-rose-pine-muted;
+    @apply border-rose-pine-highlight-med;
+  }
+
+  .cell-content.selected {
+    @apply ring-2 ring-rose-pine-love ring-offset-2 ring-offset-rose-pine-base;
+  }
+
+  /* Copy animation */
+  .cell-content.copied::after {
+    content: "Copied!";
+    @apply absolute top-full left-1/2 transform -translate-x-1/2 mt-2;
+    @apply bg-rose-pine-overlay text-rose-pine-text text-xs px-2 py-1;
+    @apply rounded-md pointer-events-none z-50;
+    border-radius: var(--radius-palette);
+    animation: fadeInOut 1.5s ease-out;
+  }
+
+  @keyframes fadeInOut {
+    0%, 100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+    20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* Button utilities */
+  .control-button {
+    @apply px-4 py-2 rounded-md;
+    @apply bg-rose-pine-surface text-rose-pine-text;
+    @apply border border-rose-pine-highlight-med;
+    @apply font-medium transition-all duration-200;
+    @apply hover:bg-rose-pine-highlight-low hover:border-rose-pine-subtle;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-pine-iris focus:ring-offset-2 focus:ring-offset-rose-pine-base;
+    border-radius: var(--radius-palette);
+    font-size: var(--font-size-button);
+    box-shadow: var(--shadow-button);
+  }
+
+  .control-button:hover {
+    transform: translateY(-1px);
+  }
+
+  .control-button.active {
+    @apply bg-rose-pine-pine text-rose-pine-base;
+    @apply border-rose-pine-pine;
+  }
+
+  .control-button.success {
+    @apply bg-rose-pine-foam text-rose-pine-base border-rose-pine-foam;
+  }
+
+  .control-button.success:hover {
+    @apply bg-rose-pine-foam/90;
+  }
+
+  .control-button.error {
+    @apply bg-rose-pine-love text-rose-pine-base border-rose-pine-love;
+  }
+
+  .control-button.error:hover {
+    @apply bg-rose-pine-love/90;
+  }
+
+  .reset-button {
+    @apply bg-rose-pine-love/20 text-rose-pine-love border-rose-pine-love/50;
+  }
+
+  .reset-button:hover {
+    @apply bg-rose-pine-love/30 border-rose-pine-love;
+  }
+
+  /* Modal utilities */
+  .modal-base {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    @apply bg-black/50 backdrop-blur-sm;
+    @apply opacity-0 pointer-events-none;
+    @apply transition-all duration-300;
+  }
+
+  .modal-base.visible {
+    @apply opacity-100 pointer-events-auto;
+  }
+
+  .modal-content {
+    @apply bg-rose-pine-overlay rounded-lg;
+    @apply border border-rose-pine-highlight-med;
+    @apply max-w-2xl w-full max-h-[90vh] overflow-auto;
+    border-radius: var(--radius-modal);
+    box-shadow: var(--shadow-modal);
+  }
+
+  .modal-header {
+    @apply flex items-center justify-between p-4;
+    @apply border-b border-rose-pine-highlight-med;
+  }
+
+  .modal-title {
+    @apply text-lg font-semibold text-rose-pine-text;
+  }
+
+  .modal-close-button {
+    @apply w-8 h-8 rounded-full;
+    @apply bg-rose-pine-surface text-rose-pine-subtle;
+    @apply hover:bg-rose-pine-highlight-low hover:text-rose-pine-text;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-pine-iris;
+    @apply transition-all duration-200;
+  }
+
+  /* Form controls */
+  .form-input {
+    @apply px-3 py-2 rounded-md;
+    @apply bg-rose-pine-surface text-rose-pine-text;
+    @apply border border-rose-pine-highlight-med;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-pine-iris focus:border-rose-pine-iris;
+    @apply transition-all duration-200;
+    border-radius: var(--radius-palette);
+  }
+
+  .form-input::placeholder {
+    @apply text-rose-pine-muted;
+  }
+
+  .form-textarea {
+    @apply form-input resize-none font-mono text-sm;
+    @apply min-h-[120px];
+  }
+
+  .form-slider {
+    @apply appearance-none bg-rose-pine-highlight-med rounded-full h-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-pine-iris;
+  }
+
+  .form-slider::-webkit-slider-thumb {
+    @apply appearance-none w-4 h-4 rounded-full;
+    @apply bg-rose-pine-pine border border-rose-pine-pine;
+    @apply cursor-pointer;
+  }
+
+  .form-slider::-moz-range-thumb {
+    @apply w-4 h-4 rounded-full;
+    @apply bg-rose-pine-pine border border-rose-pine-pine;
+    @apply cursor-pointer;
+  }
+
+  .form-checkbox {
+    @apply appearance-none w-4 h-4 rounded;
+    @apply bg-rose-pine-surface border border-rose-pine-highlight-med;
+    @apply checked:bg-rose-pine-pine checked:border-rose-pine-pine;
+    @apply focus:outline-none focus:ring-2 focus:ring-rose-pine-iris;
+    @apply transition-all duration-200;
+  }
+
+  .form-checkbox:checked {
+    background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='m13.854 3.646-7 7-.354.354-.354-.354-3-3 .708-.708L6.5 9.293l6.646-6.647.708.708z'/%3e%3c/svg%3e");
+  }
+
+  /* Tooltip utilities */
+  .palette-tooltip {
+    @apply absolute z-50 px-3 py-2;
+    @apply bg-rose-pine-overlay text-rose-pine-text;
+    @apply border border-rose-pine-highlight-med rounded-md;
+    @apply opacity-0 pointer-events-none;
+    @apply transition-all duration-200;
+    @apply text-xs font-mono;
+    border-radius: var(--radius-palette);
+    font-size: var(--font-size-tooltip);
+    box-shadow: var(--shadow-button);
+  }
+
+  .palette-tooltip.visible {
+    @apply opacity-100;
+  }
+
+  /* Status message utilities */
+  .status-message {
+    @apply px-3 py-1 rounded-md text-sm font-medium;
+    @apply opacity-0 transition-all duration-300;
+    border-radius: var(--radius-palette);
+  }
+
+  .status-message.visible {
+    @apply opacity-100;
+  }
+
+  .status-message.success {
+    @apply bg-rose-pine-foam/20 text-rose-pine-foam border border-rose-pine-foam/50;
+  }
+
+  .status-message.error {
+    @apply bg-rose-pine-love/20 text-rose-pine-love border border-rose-pine-love/50;
+  }
+
+  /* Layout utilities */
+  .bottom-controls {
+    @apply fixed bottom-4 left-4 right-4 z-40;
+    @apply flex items-center justify-between gap-4;
+    @apply bg-rose-pine-overlay/95 backdrop-blur-sm;
+    @apply border border-rose-pine-highlight-med rounded-lg p-4;
+    border-radius: var(--radius-modal);
+  }
+
+  .config-section {
+    @apply space-y-4 p-4;
+  }
+
+  .config-section:not(:last-child) {
+    @apply border-b border-rose-pine-highlight-med;
+  }
+
+  .config-section h3 {
+    @apply text-lg font-semibold text-rose-pine-text mb-4;
+  }
+
+  .control-group {
+    @apply flex items-center gap-3 flex-wrap;
+  }
+
+  .slider-group {
+    @apply flex items-center gap-2;
+  }
+
+  .adjustment-subheader {
+    @apply text-sm font-medium text-rose-pine-subtle mb-2;
+    @apply border-b border-rose-pine-highlight-low pb-1;
+  }
+
+  /* Resize handle */
+  .resize-handle {
+    @apply absolute bottom-0 right-0 w-4 h-4;
+    @apply bg-rose-pine-subtle/50 hover:bg-rose-pine-subtle;
+    @apply cursor-se-resize;
+    clip-path: polygon(100% 0%, 0% 100%, 100% 100%);
+  }
+
+  /* Color picking state */
+  .color-picking-active .cell-content.swatch {
+    @apply cursor-crosshair;
+  }
+
+  .color-picking-active .cell-content.swatch:hover {
+    @apply ring-2 ring-rose-pine-gold;
+  }
+
+  /* Responsive utilities */
+  @media (max-width: 700px) {
+    .bottom-controls {
+      @apply flex-col items-stretch gap-2 p-3;
+    }
+
+    .control-group {
+      @apply justify-center;
+    }
+  }
+}
+
+/* Custom properties for dynamic values */
+:root {
+  --palette-zoom: 100;
+  --ui-scale: 100;
+}
+
+/* Apply UI scaling */
+.ui-scaled {
+  font-size: calc(1rem * var(--ui-scale) / 100);
+}
+
+/* Disable text selection on palette elements */
+.palette-container * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
