@@ -132,13 +132,13 @@ body {
     overflow: hidden;
     position: relative;
     cursor: grab;
-    background-color: #000000; /* Black background */
+    background-color: var(--bg-color); /* Rose Pine Base background */
     /* Added radial-gradient dot pattern */
     background-image: radial-gradient(
-        #ffffff 1px,
-        transparent 1px
-    ); /* White dots on black background */
-    background-size: 15px 15px; /* Spacing of the dots */
+        var(--border-color) 2px,
+        transparent 2px
+    ); /* Overlay-colored thicker dots */
+    background-size: 20px 20px; /* Spacing of the dots */
 }
 #canvas-viewport.grabbing {
     cursor: grabbing;
@@ -242,9 +242,9 @@ body {
 #config-toggle-button {
     /* Removed position: fixed, bottom, left, transform, z-index */
     /* Keep appearance styles */
-    background-color: var(--surface-color-1);
+    background-color: var(--surface-color-2);
     color: var(--text-color-muted);
-    border: 2px solid var(--border-color);
+    border: none;
     border-radius: var(--border-radius);
     padding: var(--config-button-padding);
     font-size: var(--config-button-font-size);
@@ -262,7 +262,7 @@ body {
 #config-toggle-button.active {
     background-color: var(--accent-color);
     color: var(--surface-color-1); /* Dark text on light accent color */
-    border: 2px solid var(--accent-color);
+    border: none;
 }
 
 /* --- Config Modal --- */
@@ -396,8 +396,8 @@ body {
     /* Base styles, specific overrides below */
     cursor: pointer;
     border-radius: var(--border-radius-small);
-    border: 2px solid var(--border-color);
-    background-color: var(--button-color);
+    border: none;
+    background-color: var(--surface-color-2);
     color: var(--button-text-color);
     padding: var(--update-button-padding); /* Use a common button padding */
     font-size: var(--button-font-size);
@@ -410,7 +410,7 @@ body {
 }
 .control-button:focus-visible {
     outline: none;
-    background-color: var(--button-hover-color);
+    background-color: var(--surface-color-2);
 }
 
 #interpolation-controls,
@@ -514,7 +514,7 @@ input[type="number"]:focus-visible {
     /* Specific styles for the main update button */
     background-color: var(--accent-color);
     color: var(--surface-color-1); /* Dark text on light accent color */
-    border: 2px solid var(--accent-color);
+    border: none;
     padding: var(--update-button-padding);
     border-radius: var(--border-radius-small);
     cursor: pointer;
@@ -740,7 +740,7 @@ input[type="number"]:focus-visible {
 .reset-button {
     background-color: #eb6f92; /* Rose Pine Love */
     color: var(--surface-color-1); /* Dark text on light danger color */
-    border: 2px solid #eb6f92;
+    border: none;
 }
 .reset-button:hover {
     background-color: #eb6f9280; /* Love with opacity */
@@ -845,7 +845,7 @@ input[type="number"]:focus-visible {
     /* Inherits .control-button styles */
     background-color: var(--accent-color);
     color: var(--surface-color-1); /* Dark text on light accent color */
-    border: 2px solid var(--accent-color);
+    border: none;
     padding: 0.4rem 1rem; /* Slightly smaller padding */
     font-size: 1.3rem; /* Slightly smaller font */
     flex-shrink: 0; /* Prevent shrinking */
@@ -963,6 +963,7 @@ input[type="number"]:focus-visible {
     padding: 0.4rem 0.8rem; /* Smaller padding */
     font-size: 1.1rem;
     flex-shrink: 0;
+    border: none;
 }
 
 /* --- NEW: Color Picker Resize Handle --- */
@@ -982,9 +983,9 @@ input[type="number"]:focus-visible {
 /* --- NEW: Style for Color Picker Toggle Button --- */
 #color-pick-toggle-button {
     /* Inherit base styles from #config-toggle-button */
-    background-color: var(--surface-color-1);
+    background-color: var(--surface-color-2);
     color: var(--text-color-muted);
-    border: 2px solid var(--border-color);
+    border: none;
     border-radius: var(--border-radius);
     padding: var(--config-button-padding);
     font-size: var(--config-button-font-size);
@@ -1004,7 +1005,7 @@ input[type="number"]:focus-visible {
         --accent-color
     ); /* Use accent color like config button */
     color: var(--surface-color-1); /* Dark text on light accent color */
-    border: 2px solid var(--accent-color);
+    border: none;
 }
 
 /* --- NEW: Cursor change when color picking --- */
