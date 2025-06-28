@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Scrollable Square Color Palette - Rose Pine</title>
+        <title>Scrollable Square Color Palette - Rose Pine (Modular)</title>
         <!-- Tailwind CSS 4 via CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Rose Pine theme and custom styles -->
@@ -28,51 +28,7 @@
                 --palette-zoom: 100;
                 --ui-scale: 100;
             }
-        </style>
-        <script>
-            tailwind.config = {
-                theme: {
-                    extend: {
-                        colors: {
-                            "rose-pine": {
-                                base: "hsl(249deg, 22%, 12%)",
-                                surface: "hsl(247deg, 23%, 15%)",
-                                overlay: "hsl(248deg, 25%, 18%)",
-                                muted: "hsl(249deg, 12%, 47%)",
-                                subtle: "hsl(248deg, 15%, 61%)",
-                                text: "hsl(245deg, 50%, 91%)",
-                                love: "hsl(343deg, 76%, 68%)",
-                                gold: "hsl(35deg, 88%, 72%)",
-                                rose: "hsl(2deg, 55%, 83%)",
-                                pine: "hsl(197deg, 49%, 38%)",
-                                foam: "hsl(189deg, 43%, 73%)",
-                                iris: "hsl(267deg, 57%, 78%)",
-                                "highlight-low": "hsl(244deg, 18%, 15%)",
-                                "highlight-med": "hsl(249deg, 15%, 28%)",
-                                "highlight-high": "hsl(248deg, 13%, 36%)",
-                            },
-                        },
-                        animation: {
-                            "fade-in-out": "fadeInOut 1.5s ease-out",
-                        },
-                        keyframes: {
-                            fadeInOut: {
-                                "0%, 100%": {
-                                    opacity: "0",
-                                    transform:
-                                        "translateX(-50%) translateY(-4px)",
-                                },
-                                "20%, 80%": {
-                                    opacity: "1",
-                                    transform: "translateX(-50%) translateY(0)",
-                                },
-                            },
-                        },
-                    },
-                },
-            };
-        </script>
-        <style>
+
             /* Custom styles for palette functionality */
             .canvas-viewport {
                 position: relative;
@@ -497,6 +453,14 @@
                 background-color: var(--color-rose-pine-love);
                 color: var(--color-rose-pine-base);
             }
+
+            /* Grid setup */
+            #palette-grid {
+                display: grid;
+                gap: 0.125rem;
+                grid-template-columns: repeat(auto-fit, 2.5rem);
+                justify-content: start;
+            }
         </style>
         <!-- Include html2canvas library -->
         <script
@@ -519,25 +483,6 @@
                     class="control-button"
                     aria-label="Open Configuration"
                 >
-                    <svg
-                        class="w-4 h-4 mr-2 inline"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                        ></path>
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        ></path>
-                    </svg>
                     Config
                 </button>
 
@@ -547,31 +492,6 @@
                     class="control-button"
                     aria-label="Toggle Color Picker Mode"
                 >
-                    <svg
-                        class="w-4 h-4 mr-2 inline"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3H5v12a2 2 0 004 0V3z"
-                        ></path>
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M17 14l2-2-2-2"
-                        ></path>
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M13 18l2-2-2-2"
-                        ></path>
-                    </svg>
                     Pick Color
                 </button>
             </div>
@@ -640,19 +560,7 @@
                         class="modal-close-button"
                         aria-label="Close Pop-out Editor"
                     >
-                        <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                        </svg>
+                        ×
                     </button>
                 </div>
             </div>
@@ -683,19 +591,7 @@
                             class="modal-close-button"
                             aria-label="Close Color Picker"
                         >
-                            <svg
-                                class="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"
-                                ></path>
-                            </svg>
+                            ×
                         </button>
                     </div>
                 </div>
@@ -822,19 +718,7 @@
                         class="modal-close-button"
                         aria-label="Close Configuration"
                     >
-                        <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                        </svg>
+                        ×
                     </button>
                 </div>
 
@@ -847,19 +731,6 @@
                                 id="edit-palette-button"
                                 class="control-button"
                             >
-                                <svg
-                                    class="w-4 h-4 mr-2 inline"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                    ></path>
-                                </svg>
                                 Edit Palette Data
                             </button>
                         </div>
@@ -887,42 +758,10 @@
                                 id="export-png-button"
                                 class="control-button"
                             >
-                                <svg
-                                    class="w-4 h-4 mr-2 inline"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    ></path>
-                                </svg>
                                 Export PNG
                             </button>
                         </div>
                     </div>
-                </div>
-
-                <!-- Palette Editor Section -->
-                <div class="config-section hidden" id="palette-editor-section">
-                    <label
-                        for="palette-input"
-                        class="block text-sm font-medium text-rose-pine-text mb-3"
-                    >
-                        Palette Data (Space-Delimited rows, #Hex for colors):
-                    </label>
-                    <textarea
-                        id="palette-input"
-                        class="form-textarea w-full"
-                        spellcheck="false"
-                        placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
-                    ></textarea>
-                    <button id="update-button" class="control-button mt-3">
-                        Update Palette from Text
-                    </button>
                 </div>
 
                 <!-- Adjustments Section -->
@@ -1004,63 +843,6 @@
                             </div>
                         </div>
 
-                        <!-- Generate Row Controls -->
-                        <div class="space-y-3">
-                            <h4 class="adjustment-subheader">
-                                Generate Specific Row
-                            </h4>
-                            <div class="flex items-center gap-2 flex-wrap">
-                                <input
-                                    type="number"
-                                    id="generate-x-value"
-                                    class="form-input w-16 text-center"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    placeholder="Target"
-                                />
-                                <span class="text-sm text-rose-pine-muted"
-                                    >×</span
-                                >
-                                <span class="text-sm text-rose-pine-text"
-                                    >from</span
-                                >
-                                <input
-                                    type="number"
-                                    id="generate-ref1-value"
-                                    class="form-input w-16 text-center"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    placeholder="Ref 1"
-                                />
-                                <span class="text-sm text-rose-pine-muted"
-                                    >×</span
-                                >
-                                <span class="text-sm text-rose-pine-text"
-                                    >and</span
-                                >
-                                <input
-                                    type="number"
-                                    id="generate-ref2-value"
-                                    class="form-input w-16 text-center"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    placeholder="Ref 2"
-                                />
-                                <span class="text-sm text-rose-pine-muted"
-                                    >×</span
-                                >
-                                <button
-                                    id="generate-x-button"
-                                    class="control-button"
-                                >
-                                    Generate
-                                </button>
-                            </div>
-                        </div>
-
                         <!-- UI Scale Section -->
                         <div class="space-y-3">
                             <h4 class="adjustment-subheader">
@@ -1093,38 +875,12 @@
                     <h3>Application State</h3>
                     <div class="flex gap-3">
                         <button id="save-state-button" class="control-button">
-                            <svg
-                                class="w-4 h-4 mr-2 inline"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                                ></path>
-                            </svg>
                             Save Current State
                         </button>
                         <button
                             id="reset-state-button"
                             class="control-button reset-button"
                         >
-                            <svg
-                                class="w-4 h-4 mr-2 inline"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0V9a8 8 0 1115.356 2.586M4.582 9H9"
-                                ></path>
-                            </svg>
                             Reset All & Reload
                         </button>
                     </div>
@@ -1138,38 +894,12 @@
                             id="export-palette-button"
                             class="control-button"
                         >
-                            <svg
-                                class="w-4 h-4 mr-2 inline"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                ></path>
-                            </svg>
                             Export Palette (.txt)
                         </button>
                         <button
                             id="import-palette-button"
                             class="control-button"
                         >
-                            <svg
-                                class="w-4 h-4 mr-2 inline"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                                ></path>
-                            </svg>
                             Import Palette (.txt)
                         </button>
                         <input
