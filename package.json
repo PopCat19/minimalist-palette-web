@@ -1,13 +1,20 @@
 {
   "name": "minimalist-palette-web",
   "version": "1.0.0",
-  "description": "A minimalist color palette web application with Rose Pine theme using Tailwind CSS 4",
+  "description": "A minimalist color palette web application",
   "main": "index.html",
   "scripts": {
-    "dev": "tailwindcss --input styles.css --output dist/styles.css --watch",
-    "build": "tailwindcss --input styles.css --output dist/styles.css --minify",
+    "dev": "npm run dev:ts & npm run dev:css",
+    "dev:ts": "tsc --watch",
+    "dev:css": "tailwindcss --input styles.css --output dist/styles.css --watch",
+    "build": "npm run build:ts && npm run copy:ts && npm run build:css",
+    "build:ts": "tsc",
+    "build:css": "tailwindcss --input styles.css --output dist/styles.css --minify",
+    "copy:ts": "cp dist/config.js src/ && cp dist/state.js src/ && cp dist/domUtils.js src/ && cp dist/colorUtils.js src/ && cp dist/tooltips.js src/ && cp dist/importExport.js src/ && cp dist/default-palette.js src/",
+    "build:ts:watch": "tsc --watch",
     "serve": "python3 -m http.server 8000",
-    "start": "npm run build && npm run serve"
+    "start": "npm run build && npm run serve",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "color-palette",
@@ -18,9 +25,10 @@
   "author": "PopCat19",
   "license": "MIT",
   "devDependencies": {
-    "tailwindcss": "^4.0.0"
+    "@types/node": "^24.0.10",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.8.3"
   },
-  "dependencies": {},
   "engines": {
     "node": ">=16.0.0"
   }
