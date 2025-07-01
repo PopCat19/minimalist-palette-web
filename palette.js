@@ -1,355 +1,349 @@
-// --- Initial Data (Minimal Format: Strings for labels, #Hex for colors) ---
-let sourceGridData = [
-  // Freeze to prevent accidental modification
-  [
-    "100x",
-    "#FFFFFF",
-    "Red",
-    "Vermilion",
-    "Orange",
-    "Amber",
-    "Yellow",
-    "Lime",
-    "Chartreuse",
-    "Ddahai",
-    "Green",
-    "Erin",
-    "Spring",
-    "Gashtanta",
-    "Cyan",
-    "Capri",
-    "Azure",
-    "Cerulean",
-    "Blue",
-    "Volta",
-    "Violet",
-    "Llew",
-    "Magenta",
-    "Cerise",
-    "Rose",
-    "Crimson",
-    "100x",
-  ],
-  [
-    "96x",
-    "#F4F4F4",
-    "#FFEBEB",
-    "#FFF0EB",
-    "#FFF5EB",
-    "#FFFAEB",
-    "#FFFFEB",
-    "#FAFFEB",
-    "#F5FFEB",
-    "#F0FFEB",
-    "#EBFFEB",
-    "#EBFFF0",
-    "#EBFFF5",
-    "#EBFFFA",
-    "#EBFFFF",
-    "#EBFAFF",
-    "#EBF5FF",
-    "#EBF0FF",
-    "#EBEBFF",
-    "#F0EBFF",
-    "#F5EBFF",
-    "#FAEBFF",
-    "#FFEBFF",
-    "#FFEBFA",
-    "#FFEBF5",
-    "#FFEBF0",
-    "96x",
-  ],
-  [
-    "88x",
-    "#E0E0E0",
-    "#FFC2C2",
-    "#FFD1C2",
-    "#FFE0C2",
-    "#FFF0C2",
-    "#FFFFC2",
-    "#F0FFC2",
-    "#E0FFC2",
-    "#D1FFC2",
-    "#C2FFC2",
-    "#C2FFD1",
-    "#C2FFE0",
-    "#C2FFF0",
-    "#C2FFFF",
-    "#C2F0FF",
-    "#C2E0FF",
-    "#C2D1FF",
-    "#C2C2FF",
-    "#D1C2FF",
-    "#E0C2FF",
-    "#F0C2FF",
-    "#FFC2FF",
-    "#FFC2F0",
-    "#FFC2E0",
-    "#FFC2D1",
-    "88x",
-  ],
-  [
-    "80x",
-    "#CCCCCC",
-    "#FF9999",
-    "#FFB399",
-    "#FFCC99",
-    "#FFE599",
-    "#FFFF99",
-    "#E5FF99",
-    "#CCFF99",
-    "#B2FF99",
-    "#99FF99",
-    "#99FFB3",
-    "#99FFCC",
-    "#99FFE5",
-    "#99FFFF",
-    "#99E5FF",
-    "#99CCFF",
-    "#99B2FF",
-    "#9999FF",
-    "#B399FF",
-    "#CC99FF",
-    "#E599FF",
-    "#FF99FF",
-    "#FF99E5",
-    "#FF99CC",
-    "#FF99B2",
-    "80x",
-  ],
-  [
-    "64x",
-    "#A3A3A3",
-    "#FF4747",
-    "#FF7547",
-    "#FFA347",
-    "#FFD147",
-    "#FFFF47",
-    "#D1FF47",
-    "#A3FF47",
-    "#75FF47",
-    "#47FF47",
-    "#47FF75",
-    "#47FFA3",
-    "#47FFD1",
-    "#47FFFF",
-    "#47D1FF",
-    "#47A3FF",
-    "#4775FF",
-    "#4747FF",
-    "#7547FF",
-    "#A347FF",
-    "#D147FF",
-    "#FF47FF",
-    "#FF47D1",
-    "#FF47A3",
-    "#FF4775",
-    "64x",
-  ],
-  [
-    "48x",
-    "#7A7A7A",
-    "#B54040",
-    "#B55D40",
-    "#B57A40",
-    "#B59840",
-    "#B5B540",
-    "#98B540",
-    "#7AB540",
-    "#5DB540",
-    "#40B540",
-    "#40B55D",
-    "#40B57A",
-    "#40B598",
-    "#40B5B5",
-    "#4098B5",
-    "#407AB5",
-    "#405DB5",
-    "#4040B5",
-    "#5D40B5",
-    "#7A40B5",
-    "#9840B5",
-    "#B540B5",
-    "#B54098",
-    "#B5407A",
-    "#B5405D",
-    "48x",
-  ],
-  [
-    "32x",
-    "#525252",
-    "#792A2A",
-    "#793E2A",
-    "#79522A",
-    "#79652A",
-    "#79792A",
-    "#65792A",
-    "#52792A",
-    "#3E792A",
-    "#2A792A",
-    "#2A793E",
-    "#2A7952",
-    "#2A7965",
-    "#2A7979",
-    "#2A6579",
-    "#2A5279",
-    "#2A3E79",
-    "#2A2A79",
-    "#3E2A79",
-    "#522A79",
-    "#652A79",
-    "#792A79",
-    "#792A65",
-    "#792A52",
-    "#792A3E",
-    "32x",
-  ],
-  [
-    "24x",
-    "#3D3D3D",
-    "#5B2020",
-    "#5B2F20",
-    "#5B3D20",
-    "#5B4C20",
-    "#5B5B20",
-    "#4C5B20",
-    "#3D5B20",
-    "#2F5B20",
-    "#205B20",
-    "#205B2F",
-    "#205B3D",
-    "#205B4C",
-    "#205B5B",
-    "#204C5B",
-    "#203D5B",
-    "#202F5B",
-    "#20205B",
-    "#2F205B",
-    "#3D205B",
-    "#4C205B",
-    "#5B205B",
-    "#5B204C",
-    "#5B203D",
-    "#5B202F",
-    "24x",
-  ],
-  [
-    "16x",
-    "#292929",
-    "#3C1515",
-    "#3C1F15",
-    "#3C2915",
-    "#3C3315",
-    "#3C3C15",
-    "#333C15",
-    "#293C15",
-    "#1F3C15",
-    "#153C15",
-    "#153C1F",
-    "#153C29",
-    "#153C33",
-    "#153C3C",
-    "#15333C",
-    "#15293C",
-    "#151F3C",
-    "#15153C",
-    "#1F153C",
-    "#29153C",
-    "#33153C",
-    "#3C153C",
-    "#3C1533",
-    "#3C1529",
-    "#3C151F",
-    "16x",
-  ],
-  [
-    "12x",
-    "#1F1F1F",
-    "#2D1010",
-    "#2D1710",
-    "#2D1F10",
-    "#2D2610",
-    "#2D2D10",
-    "#262D10",
-    "#1F2D10",
-    "#172D10",
-    "#102D10",
-    "#102D17",
-    "#102D1F",
-    "#102D26",
-    "#102D2D",
-    "#10262D",
-    "#101F2D",
-    "#10172D",
-    "#10102D",
-    "#17102D",
-    "#1F102D",
-    "#26102D",
-    "#2D102D",
-    "#2D1026",
-    "#2D101F",
-    "#2D1017",
-    "12x",
-  ],
-  [
-    "8x",
-    "#141414",
-    "#1E0B0B",
-    "#1E100B",
-    "#1E140B",
-    "#1E190B",
-    "#1E1E0B",
-    "#191E0B",
-    "#141E0B",
-    "#101E0B",
-    "#0B1E0B",
-    "#0B1E10",
-    "#0B1E14",
-    "#0B1E19",
-    "#0B1E1E",
-    "#0B191E",
-    "#0B141E",
-    "#0B101E",
-    "#0B0B1E",
-    "#100B1E",
-    "#140B1E",
-    "#190B1E",
-    "#1E0B1E",
-    "#1E0B19",
-    "#1E0B14",
-    "#1E0B10",
-    "8x",
-  ],
-  [
-    "0x",
-    "#000000",
-    "0",
-    "15",
-    "30",
-    "45",
-    "60",
-    "75",
-    "90",
-    "105",
-    "120",
-    "135",
-    "150",
-    "165",
-    "180",
-    "195",
-    "210",
-    "225",
-    "240",
-    "255",
-    "270",
-    "285",
-    "300",
-    "315",
-    "330",
-    "345",
-    "0x",
-  ],
-];
+// --- Default Palette Data in YAML Format ---
+const defaultPaletteYAML = `palette:
+  row_0:
+    - label: "100x"
+    - color: "#FFFFFF"
+    - label: "Red"
+    - label: "Vermilion"
+    - label: "Orange"
+    - label: "Amber"
+    - label: "Yellow"
+    - label: "Lime"
+    - label: "Chartreuse"
+    - label: "Ddahai"
+    - label: "Green"
+    - label: "Erin"
+    - label: "Spring"
+    - label: "Gashtanta"
+    - label: "Cyan"
+    - label: "Capri"
+    - label: "Azure"
+    - label: "Cerulean"
+    - label: "Blue"
+    - label: "Volta"
+    - label: "Violet"
+    - label: "Llew"
+    - label: "Magenta"
+    - label: "Cerise"
+    - label: "Rose"
+    - label: "Crimson"
+    - label: "100x"
+  row_1:
+    - label: "96x"
+    - color: "#F4F4F4"
+    - color: "#FFEBEB"
+    - color: "#FFF0EB"
+    - color: "#FFF5EB"
+    - color: "#FFFAEB"
+    - color: "#FFFFEB"
+    - color: "#FAFFEB"
+    - color: "#F5FFEB"
+    - color: "#F0FFEB"
+    - color: "#EBFFEB"
+    - color: "#EBFFF0"
+    - color: "#EBFFF5"
+    - color: "#EBFFFA"
+    - color: "#EBFFFF"
+    - color: "#EBFAFF"
+    - color: "#EBF5FF"
+    - color: "#EBF0FF"
+    - color: "#EBEBFF"
+    - color: "#F0EBFF"
+    - color: "#F5EBFF"
+    - color: "#FAEBFF"
+    - color: "#FFEBFF"
+    - color: "#FFEBFA"
+    - color: "#FFEBF5"
+    - color: "#FFEBF0"
+    - label: "96x"
+  row_2:
+    - label: "88x"
+    - color: "#E0E0E0"
+    - color: "#FFC2C2"
+    - color: "#FFD1C2"
+    - color: "#FFE0C2"
+    - color: "#FFF0C2"
+    - color: "#FFFFC2"
+    - color: "#F0FFC2"
+    - color: "#E0FFC2"
+    - color: "#D1FFC2"
+    - color: "#C2FFC2"
+    - color: "#C2FFD1"
+    - color: "#C2FFE0"
+    - color: "#C2FFF0"
+    - color: "#C2FFFF"
+    - color: "#C2F0FF"
+    - color: "#C2E0FF"
+    - color: "#C2D1FF"
+    - color: "#C2C2FF"
+    - color: "#D1C2FF"
+    - color: "#E0C2FF"
+    - color: "#F0C2FF"
+    - color: "#FFC2FF"
+    - color: "#FFC2F0"
+    - color: "#FFC2E0"
+    - color: "#FFC2D1"
+    - label: "88x"
+  row_3:
+    - label: "80x"
+    - color: "#CCCCCC"
+    - color: "#FF9999"
+    - color: "#FFB399"
+    - color: "#FFCC99"
+    - color: "#FFE599"
+    - color: "#FFFF99"
+    - color: "#E5FF99"
+    - color: "#CCFF99"
+    - color: "#B2FF99"
+    - color: "#99FF99"
+    - color: "#99FFB3"
+    - color: "#99FFCC"
+    - color: "#99FFE5"
+    - color: "#99FFFF"
+    - color: "#99E5FF"
+    - color: "#99CCFF"
+    - color: "#99B2FF"
+    - color: "#9999FF"
+    - color: "#B399FF"
+    - color: "#CC99FF"
+    - color: "#E599FF"
+    - color: "#FF99FF"
+    - color: "#FF99E5"
+    - color: "#FF99CC"
+    - color: "#FF99B2"
+    - label: "80x"
+  row_4:
+    - label: "64x"
+    - color: "#A3A3A3"
+    - color: "#FF4747"
+    - color: "#FF7547"
+    - color: "#FFA347"
+    - color: "#FFD147"
+    - color: "#FFFF47"
+    - color: "#D1FF47"
+    - color: "#A3FF47"
+    - color: "#75FF47"
+    - color: "#47FF47"
+    - color: "#47FF75"
+    - color: "#47FFA3"
+    - color: "#47FFD1"
+    - color: "#47FFFF"
+    - color: "#47D1FF"
+    - color: "#47A3FF"
+    - color: "#4775FF"
+    - color: "#4747FF"
+    - color: "#7547FF"
+    - color: "#A347FF"
+    - color: "#D147FF"
+    - color: "#FF47FF"
+    - color: "#FF47D1"
+    - color: "#FF47A3"
+    - color: "#FF4775"
+    - label: "64x"
+  row_5:
+    - label: "48x"
+    - color: "#7A7A7A"
+    - color: "#B54040"
+    - color: "#B55D40"
+    - color: "#B57A40"
+    - color: "#B59840"
+    - color: "#B5B540"
+    - color: "#98B540"
+    - color: "#7AB540"
+    - color: "#5DB540"
+    - color: "#40B540"
+    - color: "#40B55D"
+    - color: "#40B57A"
+    - color: "#40B598"
+    - color: "#40B5B5"
+    - color: "#4098B5"
+    - color: "#407AB5"
+    - color: "#405DB5"
+    - color: "#4040B5"
+    - color: "#5D40B5"
+    - color: "#7A40B5"
+    - color: "#9840B5"
+    - color: "#B540B5"
+    - color: "#B54098"
+    - color: "#B5407A"
+    - color: "#B5405D"
+    - label: "48x"
+  row_6:
+    - label: "32x"
+    - color: "#525252"
+    - color: "#792A2A"
+    - color: "#793E2A"
+    - color: "#79522A"
+    - color: "#79652A"
+    - color: "#79792A"
+    - color: "#65792A"
+    - color: "#52792A"
+    - color: "#3E792A"
+    - color: "#2A792A"
+    - color: "#2A793E"
+    - color: "#2A7952"
+    - color: "#2A7965"
+    - color: "#2A7979"
+    - color: "#2A6579"
+    - color: "#2A5279"
+    - color: "#2A3E79"
+    - color: "#2A2A79"
+    - color: "#3E2A79"
+    - color: "#522A79"
+    - color: "#652A79"
+    - color: "#792A79"
+    - color: "#792A65"
+    - color: "#792A52"
+    - color: "#792A3E"
+    - label: "32x"
+  row_7:
+    - label: "24x"
+    - color: "#3D3D3D"
+    - color: "#5B2020"
+    - color: "#5B2F20"
+    - color: "#5B3D20"
+    - color: "#5B4C20"
+    - color: "#5B5B20"
+    - color: "#4C5B20"
+    - color: "#3D5B20"
+    - color: "#2F5B20"
+    - color: "#205B20"
+    - color: "#205B2F"
+    - color: "#205B3D"
+    - color: "#205B4C"
+    - color: "#205B5B"
+    - color: "#204C5B"
+    - color: "#203D5B"
+    - color: "#202F5B"
+    - color: "#20205B"
+    - color: "#2F205B"
+    - color: "#3D205B"
+    - color: "#4C205B"
+    - color: "#5B205B"
+    - color: "#5B204C"
+    - color: "#5B203D"
+    - color: "#5B202F"
+    - label: "24x"
+  row_8:
+    - label: "16x"
+    - color: "#292929"
+    - color: "#3C1515"
+    - color: "#3C1F15"
+    - color: "#3C2915"
+    - color: "#3C3315"
+    - color: "#3C3C15"
+    - color: "#333C15"
+    - color: "#293C15"
+    - color: "#1F3C15"
+    - color: "#153C15"
+    - color: "#153C1F"
+    - color: "#153C29"
+    - color: "#153C33"
+    - color: "#153C3C"
+    - color: "#15333C"
+    - color: "#15293C"
+    - color: "#151F3C"
+    - color: "#15153C"
+    - color: "#1F153C"
+    - color: "#29153C"
+    - color: "#33153C"
+    - color: "#3C153C"
+    - color: "#3C1533"
+    - color: "#3C1529"
+    - color: "#3C151F"
+    - label: "16x"
+  row_9:
+    - label: "12x"
+    - color: "#1F1F1F"
+    - color: "#2D1010"
+    - color: "#2D1710"
+    - color: "#2D1F10"
+    - color: "#2D2610"
+    - color: "#2D2D10"
+    - color: "#262D10"
+    - color: "#1F2D10"
+    - color: "#172D10"
+    - color: "#102D10"
+    - color: "#102D17"
+    - color: "#102D1F"
+    - color: "#102D26"
+    - color: "#102D2D"
+    - color: "#10262D"
+    - color: "#101F2D"
+    - color: "#10172D"
+    - color: "#10102D"
+    - color: "#17102D"
+    - color: "#1F102D"
+    - color: "#26102D"
+    - color: "#2D102D"
+    - color: "#2D1026"
+    - color: "#2D101F"
+    - color: "#2D1017"
+    - label: "12x"
+  row_10:
+    - label: "8x"
+    - color: "#141414"
+    - color: "#1E0B0B"
+    - color: "#1E100B"
+    - color: "#1E140B"
+    - color: "#1E190B"
+    - color: "#1E1E0B"
+    - color: "#191E0B"
+    - color: "#141E0B"
+    - color: "#101E0B"
+    - color: "#0B1E0B"
+    - color: "#0B1E10"
+    - color: "#0B1E14"
+    - color: "#0B1E19"
+    - color: "#0B1E1E"
+    - color: "#0B191E"
+    - color: "#0B141E"
+    - color: "#0B101E"
+    - color: "#0B0B1E"
+    - color: "#100B1E"
+    - color: "#140B1E"
+    - color: "#190B1E"
+    - color: "#1E0B1E"
+    - color: "#1E0B19"
+    - color: "#1E0B14"
+    - color: "#1E0B10"
+    - label: "8x"
+  row_11:
+    - label: "0x"
+    - color: "#000000"
+    - label: "0"
+    - label: "15"
+    - label: "30"
+    - label: "45"
+    - label: "60"
+    - label: "75"
+    - label: "90"
+    - label: "105"
+    - label: "120"
+    - label: "135"
+    - label: "150"
+    - label: "165"
+    - label: "180"
+    - label: "195"
+    - label: "210"
+    - label: "225"
+    - label: "240"
+    - label: "255"
+    - label: "270"
+    - label: "285"
+    - label: "300"
+    - label: "315"
+    - label: "330"
+    - label: "345"
+    - label: "0x"
+
+metadata:
+  version: "1.0"
+  description: "Default minimalist color palette"
+`;
+
+// Load default palette from YAML
+let sourceGridData = convertYAMLToGrid(defaultPaletteYAML) || [];
 
 // --- State Variables ---
 let currentGridData = [...sourceGridData.map((row) => [...row])];
@@ -415,6 +409,7 @@ const paletteInput = document.getElementById("palette-input");
 const updateButton = document.getElementById("update-button");
 const exportPngButton = document.getElementById("export-png-button");
 const exportScaleInput = document.getElementById("export-scale-input"); // NEW: Export Scale Input
+const resetViewButton = document.getElementById("reset-view-button"); // NEW: Reset View Button
 
 // Adjustment controls (now inside modal)
 const interpolationToggle = document.getElementById("interpolation-toggle");
@@ -463,6 +458,7 @@ const importPaletteButton = document.getElementById("import-palette-button");
 const importPaletteFileInput = document.getElementById(
   "import-palette-file-input",
 );
+const stateTimestampDiv = document.getElementById("state-timestamp");
 
 // --- NEW: Color Picker Modal Elements ---
 const colorPickerModal = document.getElementById("color-picker-modal");
@@ -511,6 +507,72 @@ function isValidHex(str) {
     (str.length === 4 || str.length === 7) &&
     /^#[0-9A-Fa-f]+$/.test(str)
   );
+}
+
+// --- YAML Conversion Functions ---
+function convertGridToYAML(gridData) {
+  let yaml = "palette:\n";
+  gridData.forEach((row, rowIndex) => {
+    yaml += `  row_${rowIndex}:\n`;
+    row.forEach((cell, cellIndex) => {
+      if (isValidHex(cell)) {
+        yaml += `    - color: "${cell}"\n`;
+      } else {
+        yaml += `    - label: "${cell}"\n`;
+      }
+    });
+  });
+  yaml += "\nmetadata:\n";
+  yaml += `  timestamp: "${new Date().toISOString()}"\n`;
+  yaml += `  version: "1.0"\n`;
+  return yaml;
+}
+
+function convertYAMLToGrid(yamlString) {
+  try {
+    // Simple YAML parser for our specific format
+    const lines = yamlString.split("\n");
+    const gridData = [];
+    let currentRow = null;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === "palette:" || trimmed.startsWith("metadata:"))
+        continue;
+
+      // Check if this is a row declaration
+      if (trimmed.startsWith("row_")) {
+        if (currentRow !== null) {
+          gridData.push(currentRow);
+        }
+        currentRow = [];
+      }
+      // Check if this is a cell
+      else if (trimmed.startsWith("- ")) {
+        if (currentRow === null) continue;
+
+        // Extract color or label
+        const colorMatch = trimmed.match(/- color: "([^"]+)"/);
+        const labelMatch = trimmed.match(/- label: "([^"]+)"/);
+
+        if (colorMatch) {
+          currentRow.push(colorMatch[1]);
+        } else if (labelMatch) {
+          currentRow.push(labelMatch[1]);
+        }
+      }
+    }
+
+    // Don't forget the last row
+    if (currentRow !== null && currentRow.length > 0) {
+      gridData.push(currentRow);
+    }
+
+    return gridData;
+  } catch (error) {
+    console.error("Error parsing YAML:", error);
+    return null;
+  }
 }
 function hexToRgb(hex) {
   let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
@@ -921,18 +983,23 @@ function updateAndShowPaletteTooltip(hexColor, event, cellElement) {
     tooltipRgbValue.textContent = "N/A";
   }
 
-  const offsetX = 15; // Offset from cursor
+  // Get the bounding rect of the cell element to position tooltip relative to it
+  const cellRect = cellElement.getBoundingClientRect();
+  const offsetX = 15; // Offset from cell
   const offsetY = 15;
-  let newLeft = event.clientX + offsetX;
-  let newTop = event.clientY + offsetY;
+
+  // Position tooltip relative to the cell's screen position
+  let newLeft = cellRect.right + offsetX;
+  let newTop = cellRect.top + offsetY;
 
   paletteTooltip.style.display = "block"; // Display first to measure
 
+  // Adjust if tooltip would go off screen
   if (newLeft + paletteTooltip.offsetWidth > window.innerWidth) {
-    newLeft = event.clientX - paletteTooltip.offsetWidth - offsetX;
+    newLeft = cellRect.left - paletteTooltip.offsetWidth - offsetX;
   }
   if (newTop + paletteTooltip.offsetHeight > window.innerHeight) {
-    newTop = event.clientY - paletteTooltip.offsetHeight - offsetY;
+    newTop = cellRect.top - paletteTooltip.offsetHeight - offsetY;
   }
 
   newLeft = Math.max(0, newLeft);
@@ -993,11 +1060,9 @@ document.addEventListener("keydown", (event) => {
       activeElement.isContentEditable);
 
   // Check if tooltip is visible over a cell AND not typing in an input
-  if (
-    !isTyping &&
-    currentTooltipTargetCell &&
-    paletteTooltip.style.display === "block"
-  ) {
+  // Allow keybind copy if we have a target cell, even if tooltip isn't visible
+  // This fixes the zoom issue where tooltip might be hidden but we still want to copy
+  if (!isTyping && currentTooltipTargetCell) {
     let textToCopy = null;
     let copyTypeForLog = ""; // For logging purposes
 
@@ -1337,7 +1402,6 @@ function renderPalette(gridData) {
                     );
                     if (cellDiv) {
                       cellDiv.classList.remove("selected");
-                      cellDiv.style.boxShadow = "none";
                     }
                   });
                   selectedCells = []; // Reset selected cells array
@@ -1428,17 +1492,13 @@ function renderPalette(gridData) {
           const clickedHsl = hexToHsl(clickedSourceHex); // Needed for similarity check later
 
           // --- Determine Action based on Modifiers ---
-          const isCtrlShiftClick = event.ctrlKey && event.shiftKey;
-          const isShiftClick = event.shiftKey && !event.ctrlKey; // Exclusive Shift
+          const isCtrlClick = event.ctrlKey && !event.shiftKey; // Ctrl for individual selection
+          const isShiftClick = event.shiftKey && !event.ctrlKey; // Shift for range selection
           const isSimpleClick = !event.shiftKey && !event.ctrlKey;
 
-          // 1. Ctrl + Shift Click: Range Selection
-          if (
-            isCtrlShiftClick &&
-            isColorPickingMode &&
-            !isInterpolationEnabled
-          ) {
-            console.log("Ctrl+Shift Click detected.");
+          // 1. Shift Click: Range Selection
+          if (isShiftClick && isColorPickingMode && !isInterpolationEnabled) {
+            console.log("Shift Click (Range Selection) detected.");
             if (!selectionAnchor) {
               // First click in a potential range select sequence
               console.log("Setting anchor point.");
@@ -1465,7 +1525,6 @@ function renderPalette(gridData) {
                 );
                 if (cellDiv) {
                   cellDiv.classList.remove("selected");
-                  cellDiv.style.boxShadow = "none";
                 }
               });
               selectedCells = []; // Reset selected cells array
@@ -1493,33 +1552,38 @@ function renderPalette(gridData) {
               closeColorPicker(); // Close if selection ended up empty
             }
 
-            // 2. Shift Click (Exclusive): Add/Remove Similar
-          } else if (
-            isShiftClick &&
-            isColorPickingMode &&
-            !isInterpolationEnabled
-          ) {
-            console.log("Shift Click detected.");
-            if (!clickedHsl) {
-              console.warn("Cannot Shift+Click: Invalid HSL.");
-              return;
-            }
+            // 2. Ctrl Click: Toggle individual selection (add/remove)
+            else if (
+              isCtrlClick &&
+              isColorPickingMode &&
+              !isInterpolationEnabled
+            ) {
+              console.log("Ctrl Click (Toggle Selection) detected.");
+              if (!clickedHsl) {
+                console.warn("Cannot Ctrl+Click: Invalid HSL.");
+                return;
+              }
 
-            // If selection is empty, this click sets the anchor
-            if (selectedCells.length === 0) {
-              selectionAnchor = [clickRowIndex, clickCellIndex];
-              console.log("Setting anchor with first Shift+Click.");
-            }
-            // Use handleSwatchSelection for the add/remove/similarity logic
-            handleSwatchSelection(
-              event,
-              clickRowIndex,
-              clickCellIndex,
-              clickedHsl,
-            );
-            // Open/update picker after selection change
-            if (selectedCells.length > 0) {
-              openColorPicker(selectedCells[0][0], selectedCells[0][1], event);
+              // If selection is empty, this click sets the anchor
+              if (selectedCells.length === 0) {
+                selectionAnchor = [clickRowIndex, clickCellIndex];
+                console.log("Setting anchor with first Ctrl+Click.");
+              }
+              // Use handleSwatchSelection for the add/remove/similarity logic
+              handleSwatchSelection(
+                event,
+                clickRowIndex,
+                clickCellIndex,
+                clickedHsl,
+              );
+              // Open/update picker after selection change
+              if (selectedCells.length > 0) {
+                openColorPicker(
+                  selectedCells[0][0],
+                  selectedCells[0][1],
+                  event,
+                );
+              }
             } else if (colorPickerModal.classList.contains("visible")) {
               closeColorPicker(); // Close if selection ended up empty
             }
@@ -1579,8 +1643,7 @@ function renderPalette(gridData) {
           )
         ) {
           cellContentDiv.classList.add("selected");
-          // Apply shadow style directly as mouseout won't run initially
-          cellContentDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
+          // CSS class handles the selection styling
         }
       } else if (typeof cellData === "string") {
         // Label rendering
@@ -1599,8 +1662,22 @@ function renderPalette(gridData) {
             cellContentDiv.classList.add("legend-label");
           }
         }
-        // Prevent labels from being selectable
-        cellContentDiv.style.pointerEvents = "none";
+        // Make labels clickable to copy
+        cellContentDiv.style.cursor = "pointer";
+        cellContentDiv.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const labelText = cellContentDiv.textContent;
+          navigator.clipboard
+            .writeText(labelText)
+            .then(() => {
+              showCopiedFeedback(cellContentDiv);
+              console.log(`Label copied: ${labelText}`);
+            })
+            .catch((err) => {
+              console.error("Failed to copy label:", err);
+              alert("Failed to copy label.");
+            });
+        });
       } else {
         // Error handling
         console.warn(
@@ -1625,10 +1702,7 @@ function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
 
   const isMultiSelectIntent =
     (event.type === "touchend" && isTouchDevice && isColorPickingMode) ||
-    (event.type === "click" &&
-      !isTouchDevice &&
-      event.shiftKey &&
-      !event.ctrlKey); // Check for exclusive shift
+    (event.type === "click" && event.ctrlKey && !event.shiftKey); // Check for exclusive ctrl - removed !isTouchDevice check
 
   const cellId = `${rowIndex}-${colIndex}`;
   const existingIndex = selectedCells.findIndex(
@@ -1646,7 +1720,6 @@ function handleSwatchSelection(event, rowIndex, colIndex, clickedHsl) {
       // Already selected, deselect it
       selectedCells.splice(existingIndex, 1);
       targetDiv.classList.remove("selected");
-      targetDiv.style.boxShadow = "none";
       // If we just deselected the anchor, clear the anchor
       if (
         selectionAnchor &&
@@ -1741,7 +1814,6 @@ function clearSelection() {
     );
     if (cellDiv) {
       cellDiv.classList.remove("selected");
-      cellDiv.style.boxShadow = "none";
     }
   });
   selectedCells = []; // Reset the array
@@ -1877,6 +1949,43 @@ function updateTransform() {
   paletteContainer.style.transform = `translate(${paletteOffsetX}px, ${paletteOffsetY}px) scale(${scale})`;
 }
 
+// --- Reset View Function ---
+function resetView() {
+  const viewportWidth = canvasViewport.clientWidth;
+  const viewportHeight = canvasViewport.clientHeight;
+  const containerWidth = paletteContainer.offsetWidth;
+  const containerHeight = paletteContainer.offsetHeight;
+
+  if (
+    viewportWidth > 0 &&
+    viewportHeight > 0 &&
+    containerWidth > 0 &&
+    containerHeight > 0
+  ) {
+    // Reset scale to 1
+    scale = 1;
+
+    // Calculate centered offsets
+    paletteOffsetX = (viewportWidth - containerWidth * scale) / 2;
+    paletteOffsetY = (viewportHeight - containerHeight * scale) / 2;
+
+    // Apply the transform
+    updateTransform();
+
+    // Update zoom controls
+    zoomSlider.value = 100;
+    zoomNumber.value = 100;
+
+    console.log(
+      `Reset view: offset(${paletteOffsetX}, ${paletteOffsetY}), scale: ${scale}`,
+    );
+  } else {
+    console.warn(
+      "Could not reset view: Viewport or Container dimensions are zero.",
+    );
+  }
+}
+
 // --- Event Listeners ---
 
 // Panning Listeners
@@ -1985,24 +2094,170 @@ configModal.addEventListener("click", (event) => {
 
 // Show/Hide Palette Editor within Modal
 editPaletteButton.addEventListener("click", () => {
-  // configModal.classList.add('editor-visible'); // OLD: Show modal section
-  popoutPaletteInput.value = convertToSimpleFormat(sourceGridData); // Load current source data
-  popoutEditor.style.display = "flex"; // Show the popout (use flex due to CSS)
+  // Check if desktop (wider than 768px is common breakpoint)
+  const isDesktop = window.innerWidth > 768;
 
-  // Center the popout initially (optional)
-  const viewportWidth = canvasViewport.clientWidth;
-  const viewportHeight = canvasViewport.clientHeight;
-  popoutEditor.style.left = `${(viewportWidth - popoutEditor.offsetWidth) / 2}px`;
-  popoutEditor.style.top = `${(viewportHeight - popoutEditor.offsetHeight) / 3}px`; // Position slightly higher than pure center
+  if (isDesktop) {
+    // Desktop: Use browser window pop-out
+    const editorContent = convertToSimpleFormat(sourceGridData);
+    const popoutWindow = window.open(
+      "",
+      "PaletteEditor",
+      "width=600,height=800,resizable=yes,scrollbars=yes",
+    );
 
-  popoutPaletteInput.focus(); // Focus the textarea
-  popoutPaletteInput.select(); // Select text for easy replacement
+    if (popoutWindow) {
+      // Create HTML content for the popout window
+      popoutWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Edit Palette Data</title>
+          <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: 'Ubuntu Mono', monospace;
+              background-color: #191724;
+              color: #e0def4;
+            }
+            h1 {
+              font-size: 1.5rem;
+              margin-bottom: 1rem;
+              color: #ebbcba;
+            }
+            textarea {
+              width: 100%;
+              height: calc(100vh - 180px);
+              background-color: #1f1d2e;
+              color: #e0def4;
+              border: 2px solid #403d52;
+              border-radius: 8px;
+              padding: 1rem;
+              font-family: 'Ubuntu Mono', monospace;
+              font-size: 0.875rem;
+              resize: none;
+              box-sizing: border-box;
+            }
+            textarea:focus {
+              outline: none;
+              border-color: #f6c177;
+            }
+            .button-group {
+              margin-top: 1rem;
+              display: flex;
+              gap: 1rem;
+            }
+            button {
+              padding: 0.75rem 1.5rem;
+              background-color: #31748f;
+              color: #e0def4;
+              border: none;
+              border-radius: 6px;
+              font-family: 'Inter', sans-serif;
+              font-weight: 500;
+              cursor: pointer;
+              transition: background-color 0.2s;
+            }
+            button:hover {
+              background-color: #3e8fb0;
+            }
+            button.cancel {
+              background-color: #6e6a86;
+            }
+            button.cancel:hover {
+              background-color: #908caa;
+            }
+            .status {
+              margin-top: 0.5rem;
+              color: #9ccfd8;
+              font-size: 0.875rem;
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Edit Palette Data</h1>
+          <p style="color: #908caa; margin-bottom: 1rem;">Space-delimited rows, #Hex for colors</p>
+          <textarea id="paletteData" spellcheck="false">${editorContent}</textarea>
+          <div class="button-group">
+            <button onclick="applyChanges()">Apply Changes</button>
+            <button class="cancel" onclick="window.close()">Cancel</button>
+          </div>
+          <div id="status" class="status"></div>
+          <script>
+            function applyChanges() {
+              const newData = document.getElementById('paletteData').value;
+              if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({
+                  type: 'updatePalette',
+                  data: newData
+                }, '*');
+                document.getElementById('status').textContent = 'Changes applied!';
+                // Don't close the window automatically
+              } else {
+                alert('Parent window not found. Please apply changes manually.');
+              }
+            }
+            // Focus textarea on load
+            document.getElementById('paletteData').focus();
+            document.getElementById('paletteData').select();
+          </script>
+        </body>
+        </html>
+      `);
+      popoutWindow.document.close();
+    } else {
+      alert("Please allow pop-ups for this site to use the palette editor.");
+    }
+  } else {
+    // Mobile: Use inline editor in modal
+    if (paletteEditorSection.classList.contains("hidden")) {
+      paletteEditorSection.classList.remove("hidden");
+      paletteInput.value = convertToSimpleFormat(sourceGridData);
+      editPaletteButton.textContent = "Close Editor";
+      paletteInput.focus();
+      paletteInput.select();
+    } else {
+      paletteEditorSection.classList.add("hidden");
+      editPaletteButton.textContent = "Edit Palette Data";
+    }
+  }
 });
 
-// --- NEW: Popout Close Button Listener ---
-popoutCloseButton.addEventListener("click", () => {
-  popoutEditor.style.display = "none"; // Hide the popout
+// Listen for messages from popout window
+window.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "updatePalette") {
+    const newDataParsed = parseSimpleFormat(event.data.data);
+    if (
+      Array.isArray(newDataParsed) &&
+      newDataParsed.length > 0 &&
+      Array.isArray(newDataParsed[0])
+    ) {
+      sourceGridData = newDataParsed;
+      isInterpolationEnabled = false;
+      interpolationToggle.checked = false;
+      currentGridData = sourceGridData.map((row) => [...row]);
+      renderPalette(currentGridData);
+
+      // Show success feedback
+      const originalText = updateButton.textContent;
+      updateButton.textContent = "Updated!";
+      updateButton.classList.add("success");
+      setTimeout(() => {
+        updateButton.textContent = originalText;
+        updateButton.classList.remove("success");
+      }, 2000);
+    }
+  }
 });
+
+// --- NEW: Popout Close Button Listener --- (keeping for legacy support)
+if (popoutCloseButton) {
+  popoutCloseButton.addEventListener("click", () => {
+    popoutEditor.style.display = "none"; // Hide the popout
+  });
+}
 
 // Update Button (now only for the modal editor, which is unused but kept for now)
 // updateButton.addEventListener('click', () => { ... });
@@ -2641,14 +2896,15 @@ function exportPaletteData() {
   let exportSuccess = false; // Flag for feedback
 
   try {
-    const paletteText = convertToSimpleFormat(sourceGridData);
-    const blob = new Blob([paletteText], { type: "text/plain;charset=utf-8" });
+    // Convert to YAML format instead of simple format
+    const yamlData = convertGridToYAML(sourceGridData);
+    const blob = new Blob([yamlData], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
 
     const downloadLink = document.createElement("a");
     downloadLink.href = url;
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    downloadLink.download = `palette_${timestamp}.txt`;
+    downloadLink.download = `palette_${timestamp}.yaml`;
 
     document.body.appendChild(downloadLink);
     downloadLink.click();
@@ -2700,7 +2956,8 @@ function saveStateToLocalStorage() {
       paletteZoom: scale,
       paletteOffsetX: paletteOffsetX,
       paletteOffsetY: paletteOffsetY,
-      uiScalePercent: parseInt(uiScaleNumber.value, 10) || 100,
+      uiScalePercent: parseInt(uiScaleNumber.value || "100", 10),
+      timestamp: new Date().toISOString(),
       popout: {
         left: popoutEditor.style.left || "",
         top: popoutEditor.style.top || "",
@@ -2712,6 +2969,10 @@ function saveStateToLocalStorage() {
     console.log("Application state saved to local storage.");
     // alert('Current state saved!'); // Replaced alert
     saveSuccess = true; // Mark success
+    // Update timestamp display
+    if (stateTimestampDiv) {
+      stateTimestampDiv.textContent = `Last saved: ${new Date().toLocaleString()}`;
+    }
   } catch (error) {
     console.error("Error saving state to local storage:", error);
     // alert('Failed to save state. Local storage might be full or disabled.'); // Replaced alert
@@ -2744,10 +3005,19 @@ function loadStateFromLocalStorage() {
     const savedStateJSON = localStorage.getItem(localStorageKey);
     if (!savedStateJSON) {
       console.log("No saved state found in local storage.");
+      stateLoadedSuccessfully = false;
       return;
     }
     const savedState = JSON.parse(savedStateJSON);
     console.log("Loading saved state:", savedState);
+
+    // Reset the flag at the start of loading
+    stateLoadedSuccessfully = false;
+
+    // Display timestamp if available
+    if (savedState.timestamp && stateTimestampDiv) {
+      stateTimestampDiv.textContent = `Last saved: ${new Date(savedState.timestamp).toLocaleString()}`;
+    }
 
     if (
       Array.isArray(savedState.sourceGridData) &&
@@ -2831,6 +3101,11 @@ resetStateButton.addEventListener("click", () => {
   }
 });
 
+// Reset View button listener
+if (resetViewButton) {
+  resetViewButton.addEventListener("click", resetView);
+}
+
 // --- NEW: Palette Export Listener ---
 exportPaletteButton.addEventListener("click", exportPaletteData);
 
@@ -2839,9 +3114,14 @@ function handlePaletteImport(file) {
   const originalButtonText = importPaletteButton.textContent; // Store original text
   let importSuccess = false; // Flag for feedback, will be set inside onload/onerror
 
-  if (!file || !file.type.match("text.*")) {
-    console.warn("No text file selected or file type not supported.");
-    // alert('Please select a valid .txt file.'); // Replaced alert
+  if (
+    !file ||
+    (!file.type.match("text.*") &&
+      !file.name.endsWith(".yaml") &&
+      !file.name.endsWith(".yml"))
+  ) {
+    console.warn("No text/yaml file selected or file type not supported.");
+    // alert('Please select a valid .txt/.yaml file.'); // Replaced alert
     importPaletteButton.textContent = "Invalid File"; // Immediate feedback
     importPaletteButton.classList.add("error");
     setTimeout(() => {
@@ -2856,7 +3136,20 @@ function handlePaletteImport(file) {
   reader.onload = (event) => {
     const textData = event.target.result;
     try {
-      const newDataParsed = parseSimpleFormat(textData);
+      // Try to parse as YAML first, fall back to simple format
+      let newDataParsed;
+      if (
+        file.name.endsWith(".yaml") ||
+        file.name.endsWith(".yml") ||
+        textData.trim().startsWith("palette:")
+      ) {
+        newDataParsed = convertYAMLToGrid(textData);
+        if (!newDataParsed) {
+          throw new Error("Failed to parse YAML format");
+        }
+      } else {
+        newDataParsed = parseSimpleFormat(textData);
+      }
       if (
         !Array.isArray(newDataParsed) ||
         newDataParsed.length === 0 ||
@@ -3644,33 +3937,40 @@ function initializeApp() {
   if (!stateLoadedSuccessfully) {
     console.log("No saved position state found, centering palette.");
     // Ensure the grid has dimensions after updatePaletteView
-    const viewportWidth = canvasViewport.clientWidth;
-    const viewportHeight = canvasViewport.clientHeight;
-    const gridWidth = paletteGrid.offsetWidth;
-    const gridHeight = paletteGrid.offsetHeight;
+    // Use setTimeout to ensure DOM has updated
+    setTimeout(() => {
+      const viewportWidth = canvasViewport.clientWidth;
+      const viewportHeight = canvasViewport.clientHeight;
+      const containerWidth = paletteContainer.offsetWidth;
+      const containerHeight = paletteContainer.offsetHeight;
 
-    if (
-      viewportWidth > 0 &&
-      viewportHeight > 0 &&
-      gridWidth > 0 &&
-      gridHeight > 0
-    ) {
-      // Calculate centered offsets
-      paletteOffsetX = (viewportWidth - gridWidth) / 2;
-      paletteOffsetY = (viewportHeight - gridHeight) / 2;
-      scale = 1; // Ensure default scale
+      if (
+        viewportWidth > 0 &&
+        viewportHeight > 0 &&
+        containerWidth > 0 &&
+        containerHeight > 0
+      ) {
+        // Calculate centered offsets considering scale
+        paletteOffsetX = (viewportWidth - containerWidth * scale) / 2;
+        paletteOffsetY = (viewportHeight - containerHeight * scale) / 2;
+        scale = 1; // Ensure default scale
 
-      // Apply the transform
-      updateTransform();
+        // Apply the transform
+        updateTransform();
 
-      // Update zoom controls to reflect default scale
-      zoomSlider.value = 100;
-      zoomNumber.value = 100;
-    } else {
-      console.warn(
-        "Could not center palette: Viewport or Grid dimensions are zero.",
-      );
-    }
+        // Update zoom controls to reflect default scale
+        zoomSlider.value = 100;
+        zoomNumber.value = 100;
+
+        console.log(
+          `Centered palette: offset(${paletteOffsetX}, ${paletteOffsetY}), container(${containerWidth}x${containerHeight}), viewport(${viewportWidth}x${viewportHeight})`,
+        );
+      } else {
+        console.warn(
+          "Could not center palette: Viewport or Container dimensions are zero.",
+        );
+      }
+    }, 0);
   } else {
     console.log("Saved position state found, using loaded position.");
     // Ensure transform is applied with loaded state values (in case loadState didn't call it)
@@ -3778,7 +4078,6 @@ function applySelectionStyles(coords) {
   );
   if (cellDiv) {
     cellDiv.classList.add("selected");
-    cellDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
   }
 }
 
@@ -3837,6 +4136,14 @@ function loadState() {
     if (savedStateString) {
       const savedState = JSON.parse(savedStateString);
       console.log("Loading saved state:", savedState);
+
+      // Reset the flag at the start of loading
+      stateLoadedSuccessfully = false;
+
+      // Display timestamp if available
+      if (savedState.timestamp && stateTimestampDiv) {
+        stateTimestampDiv.textContent = `Last saved: ${new Date(savedState.timestamp).toLocaleString()}`;
+      }
 
       // --- Load Palette Data and Settings ---
       if (
@@ -4934,7 +5241,6 @@ function applySelectionStyles(coords) {
   );
   if (cellDiv) {
     cellDiv.classList.add("selected");
-    cellDiv.style.boxShadow = `inset 0 0 0 3px var(--accent-color)`;
   }
 }
 

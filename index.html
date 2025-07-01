@@ -4,6 +4,13 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Scrollable Square Color Palette - Rose Pine</title>
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap"
+            rel="stylesheet"
+        />
         <!-- Tailwind CSS 4 via CDN -->
         <script src="https://cdn.tailwindcss.com"></script>
         <!-- Rose Pine theme and custom styles -->
@@ -190,7 +197,8 @@
             }
 
             .color-picking-active .cell-content.swatch:hover {
-                outline: 2px solid var(--color-rose-pine-gold);
+                border-color: var(--color-rose-pine-gold);
+                border-width: 2px;
             }
 
             .resize-handle {
@@ -244,7 +252,8 @@
                 opacity: 0;
                 transition: opacity 0.15s ease;
                 font-family:
-                    ui-monospace, SFMono-Regular, Monaco, Consolas, monospace;
+                    "Ubuntu Mono", ui-monospace, SFMono-Regular, Monaco,
+                    Consolas, monospace;
             }
 
             .palette-tooltip--interactive {
@@ -318,7 +327,8 @@
                 padding: 0.75rem;
                 font-size: 0.875rem;
                 font-family:
-                    ui-monospace, SFMono-Regular, Monaco, Consolas, monospace;
+                    "Ubuntu Mono", ui-monospace, SFMono-Regular, Monaco,
+                    Consolas, monospace;
                 resize: vertical;
             }
 
@@ -904,6 +914,29 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Reset View Button -->
+                    <div>
+                        <button
+                            id="reset-view-button"
+                            class="control-button reset-button"
+                            type="button"
+                        >
+                            <svg
+                                class="w-5 h-5 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
+                                ></path>
+                            </svg>
+                            Reset View
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Palette Editor Section -->
@@ -1091,6 +1124,10 @@
                 <!-- State Management Section -->
                 <div class="config-section">
                     <h3>Application State</h3>
+                    <div
+                        id="state-timestamp"
+                        class="text-sm text-gray-500 mb-2"
+                    ></div>
                     <div class="flex gap-3">
                         <button id="save-state-button" class="control-button">
                             <svg
