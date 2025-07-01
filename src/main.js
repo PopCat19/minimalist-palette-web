@@ -1,7 +1,8 @@
 // --- Main Application Entry Point ---
 
-import { sourceGridData, CONSTANTS, INITIAL_OFFSETS } from "./config.js";
+import { CONSTANTS, INITIAL_OFFSETS } from "./config.js";
 import {
+  sourceGridData,
   currentGridData,
   isInterpolationEnabled,
   interpolationSteps,
@@ -45,6 +46,13 @@ import {
   setupSwatchEventListeners,
 } from "./interactions.js";
 import { CanvasInteractionManager } from "./canvasManager.js";
+import {
+  initColorPicker,
+  openColorPicker,
+  closeColorPicker,
+} from "./colorPicker.js";
+import { initPopoutEditor, openPopoutEditor } from "./popoutEditor.js";
+import { initImportExport } from "./importExport.js";
 
 // DOM elements
 let elements = {};
@@ -80,6 +88,11 @@ export function initializeApp() {
 
   // Setup tooltip functionality
   setupTooltipEventListeners();
+
+  // Initialize new modules
+  initColorPicker();
+  initPopoutEditor();
+  initImportExport();
 
   // Initial render
   updatePaletteView();
@@ -121,19 +134,11 @@ function setupConfigModalListeners() {
     }
   });
 
-  elements.editPaletteButton.addEventListener("click", () => {
-    elements.popoutPaletteInput.value = convertToSimpleFormat(sourceGridData);
-    elements.popoutEditor.style.display = "flex";
-
-    // Center the popout initially
-    const viewportWidth = elements.canvasViewport.clientWidth;
-    const viewportHeight = elements.canvasViewport.clientHeight;
-    elements.popoutEditor.style.left = `${(viewportWidth - elements.popoutEditor.offsetWidth) / 2}px`;
-    elements.popoutEditor.style.top = `${(viewportHeight - elements.popoutEditor.offsetHeight) / 3}px`;
-
-    elements.popoutPaletteInput.focus();
-    elements.popoutPaletteInput.select();
-  });
+  // Palette editor listeners
+  function setupPaletteEditorListeners() {
+    elements.editPaletteButton?.addEventListener("click", () => {
+      openPopoutEditor();
+    });
 
   elements.popoutCloseButton.addEventListener("click", () => {
     elements.popoutEditor.style.display = "none";
