@@ -20,11 +20,11 @@ html {
 
     /* --- Typography (using rem where appropriate, em for relative scaling) --- */
     --base-font-family:
-        "Inter", Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Oxygen,
-        Ubuntu, Helvetica, Arial, sans-serif, "Apple Color Emoji",
-        "Segoe UI Emoji", "Segoe UI Symbol";
+        system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+        "Segoe UI Symbol";
     --monospace-font-family:
-        "Ubuntu Mono", "SF Mono", Monaco, Consolas, monospace;
+        "SF Mono", Monaco, Consolas, "Ubuntu Mono", monospace;
     --label-font-size: clamp(
         0.6em,
         1.5vw,
@@ -1020,20 +1020,9 @@ body.color-picking-active #palette-grid .cell-content.swatch:hover {
 
 /* NEW: Style for selected swatches */
 .cell-content.selected {
-    /* Use outline for persistent selection indicator to avoid double borders */
-    outline: 3px solid var(--accent-color) !important;
-    outline-offset: -3px; /* Negative offset to place outline inside the element */
+    /* Use border for persistent selection indicator */
+    border: 3px solid var(--accent-color) !important;
     z-index: 2; /* Bring selected cells slightly forward */
-}
-
-/* Hover state for swatches when not in color picking mode */
-.cell-content.swatch:hover:not(.selected) {
-    box-shadow: inset 0 0 0 2px currentColor;
-}
-
-/* Disable hover in color picking mode */
-body.color-picking-active .cell-content.swatch:hover:not(.selected) {
-    box-shadow: none;
 }
 
 /* NEW: Style for disabled control groups in picker */
@@ -1095,11 +1084,4 @@ button.error:hover {
     font-family: var(--monospace-font-family);
     margin-left: 0.5rem; /* 5px */
     cursor: default;
-}
-
-/* Timestamp display */
-#state-timestamp {
-    color: var(--muted-color);
-    font-size: 0.875rem;
-    margin-bottom: 0.5rem;
 }

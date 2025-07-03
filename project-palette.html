@@ -4,15 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Scrollable Square Color Palette</title>
-        <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap"
-            rel="stylesheet"
-        />
         <!-- Link External CSS -->
-        <link rel="stylesheet" href="palette.css" />
+        <link rel="stylesheet" href="palette.css">
         <!-- Include html2canvas library -->
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -25,36 +18,15 @@
         <!-- NEW Container for Bottom Controls -->
         <div id="bottom-controls">
             <!-- Config Toggle Button (Moved inside) -->
-            <button id="config-toggle-button" aria-label="Open Configuration">
-                Config
-            </button>
+            <button id="config-toggle-button" aria-label="Open Configuration">Config</button>
             <!-- NEW: Color Picker Toggle Button -->
-            <button
-                id="color-pick-toggle-button"
-                aria-label="Toggle Color Picker Mode"
-            >
-                Pick Color
-            </button>
+            <button id="color-pick-toggle-button" aria-label="Toggle Color Picker Mode">Pick Color</button>
 
             <!-- Zoom Controls (Moved here) -->
             <div id="zoom-controls" class="control-group">
                 <label for="zoom-number">Zoom:</label>
-                <input
-                    type="range"
-                    id="zoom-slider"
-                    min="40"
-                    max="200"
-                    value="100"
-                    step="4"
-                />
-                <input
-                    type="number"
-                    id="zoom-number"
-                    min="40"
-                    max="200"
-                    value="100"
-                    step="4"
-                />
+                <input type="range" id="zoom-slider" min="40" max="200" value="100" step="4">
+                <input type="number" id="zoom-number" min="40" max="200" value="100" step="4">
             </div>
         </div>
 
@@ -73,15 +45,8 @@
             <div class="popout-header">
                 <span class="popout-title">Palette Data</span>
                 <span id="popout-status-message"></span>
-                <button id="popout-update-button" class="control-button">
-                    Update Palette
-                </button>
-                <button
-                    id="popout-close-button"
-                    aria-label="Close Pop-out Editor"
-                >
-                    &times;
-                </button>
+                <button id="popout-update-button" class="control-button">Update Palette</button>
+                <button id="popout-close-button" aria-label="Close Pop-out Editor">&times;</button>
             </div>
             <textarea id="popout-palette-input" spellcheck="false"></textarea>
             <!-- NEW: Resize Handle -->
@@ -92,90 +57,33 @@
         <div id="color-picker-modal">
             <div class="color-picker-header">
                 <span class="color-picker-title">Edit Color</span>
-                <button
-                    id="picker-apply-button"
-                    class="control-button apply-button"
-                >
-                    Apply
-                </button>
-                <button
-                    id="color-picker-close-button"
-                    class="modal-close-button"
-                    aria-label="Close Color Picker"
-                >
-                    &times;
-                </button>
+                <button id="picker-apply-button" class="control-button apply-button">Apply</button>
+                <button id="color-picker-close-button" class="modal-close-button" aria-label="Close Color Picker">&times;</button>
             </div>
             <div class="color-picker-body">
                 <div id="color-picker-preview"></div>
                 <div class="color-picker-controls">
                     <div class="picker-control-group">
                         <label for="picker-hue-slider">H:</label>
-                        <input
-                            type="range"
-                            id="picker-hue-slider"
-                            min="0"
-                            max="360"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-hue-number"
-                            min="0"
-                            max="360"
-                            step="1"
-                        />
+                        <input type="range" id="picker-hue-slider" min="0" max="360" step="1">
+                        <input type="number" id="picker-hue-number" min="0" max="360" step="1">
                     </div>
                     <div class="picker-control-group">
                         <label for="picker-sat-slider">S:</label>
-                        <input
-                            type="range"
-                            id="picker-sat-slider"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-sat-number"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
+                        <input type="range" id="picker-sat-slider" min="0" max="100" step="1">
+                        <input type="number" id="picker-sat-number" min="0" max="100" step="1">
                         <span>%</span>
                     </div>
                     <div class="picker-control-group">
                         <label for="picker-lum-slider">L:</label>
-                        <input
-                            type="range"
-                            id="picker-lum-slider"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-lum-number"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
+                        <input type="range" id="picker-lum-slider" min="0" max="100" step="1">
+                        <input type="number" id="picker-lum-number" min="0" max="100" step="1">
                         <span>%</span>
                     </div>
                     <div class="picker-control-group hex-group">
                         <label for="picker-hex-input">HEX:</label>
-                        <input
-                            type="text"
-                            id="picker-hex-input"
-                            spellcheck="false"
-                        />
-                        <button
-                            id="picker-copy-hex-button"
-                            class="control-button copy-button"
-                            aria-label="Copy HEX Code"
-                        >
-                            Copy
-                        </button>
+                        <input type="text" id="picker-hex-input" spellcheck="false">
+                        <button id="picker-copy-hex-button" class="control-button copy-button" aria-label="Copy HEX Code">Copy</button>
                     </div>
                 </div>
             </div>
@@ -186,9 +94,7 @@
 
         <!-- Configuration Modal -->
         <div id="config-modal">
-            <button class="modal-close-button" aria-label="Close Configuration">
-                &times;
-            </button>
+            <button class="modal-close-button" aria-label="Close Configuration">&times;</button>
 
             <div class="config-section">
                 <h3>Palette Actions</h3>
@@ -198,19 +104,8 @@
                     </button>
                     <!-- Wrapper for Export Controls -->
                     <div class="export-controls-group">
-                        <label
-                            for="export-scale-input"
-                            class="export-scale-label"
-                            >Scale:</label
-                        >
-                        <input
-                            type="number"
-                            id="export-scale-input"
-                            min="1"
-                            max="10"
-                            step="0.5"
-                            value="2"
-                        />
+                        <label for="export-scale-input" class="export-scale-label">Scale:</label>
+                        <input type="number" id="export-scale-input" min="1" max="10" step="0.5" value="2">
                         <span>x</span>
                         <button id="export-png-button" class="control-button">
                             Export as PNG
@@ -219,16 +114,11 @@
                 </div>
             </div>
 
-            <div class="config-section" id="palette-editor-section">
-                <!-- <h3>Edit Palette</h3> -->
-                <label
+             <div class="config-section" id="palette-editor-section">
+                 <!-- <h3>Edit Palette</h3> -->
+                 <label
                     for="palette-input"
-                    style="
-                        display: block;
-                        margin-bottom: 10px;
-                        font-weight: 500;
-                        font-size: 14px;
-                    "
+                    style="display: block; margin-bottom: 10px; font-weight: 500; font-size: 14px;"
                 >
                     Palette Data (Space-Delimited rows, #Hex for colors):
                 </label>
@@ -242,158 +132,88 @@
 
             <div class="config-section">
                 <h3>Adjustments</h3>
-                <!-- Wrapper for Interpolation Controls -->
-                <div
-                    id="interpolation-controls-wrapper"
-                    class="adjustment-group"
-                >
-                    <div id="interpolation-controls" class="control-group">
+                 <!-- Wrapper for Interpolation Controls -->
+                 <div id="interpolation-controls-wrapper" class="adjustment-group">
+                     <div id="interpolation-controls" class="control-group">
                         <label for="interpolation-toggle">
                             Distribute Shades (Vertical):
                         </label>
                         <input type="checkbox" id="interpolation-toggle" />
-                        <div
-                            id="interpolation-steps-group"
-                            class="slider-group"
-                        >
-                            <label for="interpolation-steps-slider"
-                                >Steps:</label
-                            >
+                        <div id="interpolation-steps-group" class="slider-group">
+                            <label for="interpolation-steps-slider">Steps:</label>
                             <input
                                 type="range"
                                 id="interpolation-steps-slider"
-                                min="1"
-                                max="10"
-                                value="1"
-                                step="1"
+                                     min="1" max="10" value="1" step="1"
                             />
                             <input
                                 type="number"
                                 id="interpolation-steps-number"
-                                min="1"
-                                max="10"
-                                value="1"
+                                     min="1" max="10" value="1"
                             />
                         </div>
                     </div>
-                </div>
+                 </div>
 
-                <!-- Wrapper for Saturation Controls -->
-                <div id="saturation-controls-wrapper" class="adjustment-group">
-                    <div id="saturation-controls" class="control-group">
-                        <label for="saturation-offset-slider"
-                            >Saturation Offset:</label
-                        >
+                 <!-- Wrapper for Saturation Controls -->
+                 <div id="saturation-controls-wrapper" class="adjustment-group">
+                      <div id="saturation-controls" class="control-group">
+                        <label for="saturation-offset-slider">Saturation Offset:</label>
                         <div id="saturation-offset-group" class="slider-group">
                             <input
                                 type="range"
                                 id="saturation-offset-slider"
-                                min="-100"
-                                max="100"
-                                value="0"
-                                step="1"
+                                     min="-100" max="100" value="0" step="1"
                             />
                             <input
                                 type="number"
                                 id="saturation-offset-number"
-                                min="-100"
-                                max="100"
-                                value="0"
+                                     min="-100" max="100" value="0"
                             />
                             <span>%</span>
                         </div>
                     </div>
-                </div>
+                 </div>
 
                 <!-- Wrapper for Generate Row Controls -->
-                <div id="generate-x-controls-wrapper" class="adjustment-group">
+                 <div id="generate-x-controls-wrapper" class="adjustment-group">
                     <!-- NEW: Subheader for Generate Row -->
                     <h4 class="adjustment-subheader">Generate Specific Row</h4>
                     <!-- Controls group (label removed) -->
-                    <div
-                        id="generate-x-controls"
-                        class="control-group generate-row-layout"
-                    >
+                    <div id="generate-x-controls" class="control-group generate-row-layout">
                         <!-- Removed <label for="generate-x-value">Generate Row:</label> -->
-                        <input
-                            type="number"
-                            id="generate-x-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Target"
-                        />
+                        <input type="number" id="generate-x-value" min="0" max="100" step="1" placeholder="Target">
                         <span>x</span>
-                        <label for="generate-ref1-value" class="from-label"
-                            >from</label
-                        >
-                        <input
-                            type="number"
-                            id="generate-ref1-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Ref 1"
-                        />
+                        <label for="generate-ref1-value" class="from-label">from</label>
+                        <input type="number" id="generate-ref1-value" min="0" max="100" step="1" placeholder="Ref 1">
                         <span>x</span>
-                        <label for="generate-ref2-value" class="and-label"
-                            >and</label
-                        >
-                        <input
-                            type="number"
-                            id="generate-ref2-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Ref 2"
-                        />
+                        <label for="generate-ref2-value" class="and-label">and</label>
+                        <input type="number" id="generate-ref2-value" min="0" max="100" step="1" placeholder="Ref 2">
                         <span>x</span>
-                        <button id="generate-x-button" class="control-button">
-                            Generate
-                        </button>
+                        <button id="generate-x-button" class="control-button">Generate</button>
                     </div>
-                </div>
+                 </div>
 
-                <!-- NEW: UI Scale Section -->
-                <div class="adjustment-group">
-                    <h4 class="adjustment-subheader">Interface Scale</h4>
-                    <div class="control-group">
-                        <label for="ui-scale-number">UI Scale:</label>
-                        <div class="slider-group">
-                            <input
-                                type="number"
-                                id="ui-scale-number"
-                                min="50"
-                                max="200"
-                                value="100"
-                            />
-                            %
-                        </div>
-                    </div>
-                </div>
-                <!-- END NEW Section -->
+                 <!-- NEW: UI Scale Section -->
+                 <div class="adjustment-group">
+                     <h4 class="adjustment-subheader">Interface Scale</h4>
+                     <div class="control-group">
+                         <label for="ui-scale-number">UI Scale:</label>
+                         <div class="slider-group">
+                             <input type="number" id="ui-scale-number" min="50" max="200" value="100"> %
+                         </div>
+                     </div>
+                 </div>
+                 <!-- END NEW Section -->
+
             </div>
 
             <!-- NEW: State Management Section -->
             <div class="config-section">
                 <h3>Application State</h3>
-                <div
-                    id="state-timestamp"
-                    class="text-sm text-gray-500 mb-2"
-                ></div>
                 <div class="control-group state-management-group">
-                    <button id="save-state-button" class="control-button">
-                        Save Current State
-                    </button>
-                    <button
-                        id="reset-state-button"
-                        class="control-button reset-button"
-                    >
-                        Reset All & Reload
-                    </button>
-                    <button id="reset-view-button" class="control-button">
-                        Reset View
-                    </button>
+                    <button id="save-state-button" class="control-button">Save Current State</button>
+                    <button id="reset-state-button" class="control-button reset-button">Reset All & Reload</button>
                 </div>
             </div>
             <!-- END NEW Section -->
@@ -402,24 +222,15 @@
             <div class="config-section">
                 <h3>Palette Data</h3>
                 <div class="control-group palette-io-group">
-                    <button id="export-palette-button" class="control-button">
-                        Export Palette (.yaml)
-                    </button>
-                    <button id="import-palette-button" class="control-button">
-                        Import Palette (.yaml/.txt)
-                    </button>
-                    <input
-                        type="file"
-                        id="import-palette-file-input"
-                        accept=".txt,.yaml,.yml"
-                        style="display: none"
-                    />
-                    <!-- Hidden file input -->
+                    <button id="export-palette-button" class="control-button">Export Palette (.txt)</button>
+                    <button id="import-palette-button" class="control-button">Import Palette (.txt)</button>
+                    <input type="file" id="import-palette-file-input" accept=".txt" style="display: none;"> <!-- Hidden file input -->
                     <!-- Add URL input/button here later if needed -->
                 </div>
                 <!-- Add Drag-drop zone instructions/styling later if needed -->
             </div>
             <!-- END NEW Section -->
+
         </div>
 
         <!-- NEW: Palette Cell Tooltip -->
