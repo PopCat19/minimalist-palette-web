@@ -3,16 +3,511 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Scrollable Square Color Palette</title>
+        <title>Scrollable Square Color Palette - Rose Pine</title>
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap"
             rel="stylesheet"
         />
-        <!-- Link External CSS -->
-        <link rel="stylesheet" href="palette.css" />
+        <!-- Tailwind CSS 4 via CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Rose Pine theme and custom styles -->
+        <style>
+            :root {
+                --color-rose-pine-base: hsl(249deg, 22%, 12%);
+                --color-rose-pine-surface: hsl(247deg, 23%, 15%);
+                --color-rose-pine-overlay: hsl(248deg, 25%, 18%);
+                --color-rose-pine-muted: hsl(249deg, 12%, 47%);
+                --color-rose-pine-subtle: hsl(248deg, 15%, 61%);
+                --color-rose-pine-text: hsl(245deg, 50%, 91%);
+                --color-rose-pine-love: hsl(343deg, 76%, 68%);
+                --color-rose-pine-gold: hsl(35deg, 88%, 72%);
+                --color-rose-pine-rose: hsl(2deg, 55%, 83%);
+                --color-rose-pine-pine: hsl(197deg, 49%, 38%);
+                --color-rose-pine-foam: hsl(189deg, 43%, 73%);
+                --color-rose-pine-iris: hsl(267deg, 57%, 78%);
+                --color-rose-pine-highlight-low: hsl(244deg, 18%, 15%);
+                --color-rose-pine-highlight-med: hsl(249deg, 15%, 28%);
+                --color-rose-pine-highlight-high: hsl(248deg, 13%, 36%);
+
+                --palette-zoom: 100;
+                --ui-scale: 100;
+            }
+        </style>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            "rose-pine": {
+                                base: "hsl(249deg, 22%, 12%)",
+                                surface: "hsl(247deg, 23%, 15%)",
+                                overlay: "hsl(248deg, 25%, 18%)",
+                                muted: "hsl(249deg, 12%, 47%)",
+                                subtle: "hsl(248deg, 15%, 61%)",
+                                text: "hsl(245deg, 50%, 91%)",
+                                love: "hsl(343deg, 76%, 68%)",
+                                gold: "hsl(35deg, 88%, 72%)",
+                                rose: "hsl(2deg, 55%, 83%)",
+                                pine: "hsl(197deg, 49%, 38%)",
+                                foam: "hsl(189deg, 43%, 73%)",
+                                iris: "hsl(267deg, 57%, 78%)",
+                                "highlight-low": "hsl(244deg, 18%, 15%)",
+                                "highlight-med": "hsl(249deg, 15%, 28%)",
+                                "highlight-high": "hsl(248deg, 13%, 36%)",
+                            },
+                        },
+                        animation: {
+                            "fade-in-out": "fadeInOut 1.5s ease-out",
+                        },
+                        keyframes: {
+                            fadeInOut: {
+                                "0%, 100%": {
+                                    opacity: "0",
+                                    transform:
+                                        "translateX(-50%) translateY(-4px)",
+                                },
+                                "20%, 80%": {
+                                    opacity: "1",
+                                    transform: "translateX(-50%) translateY(0)",
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            /* Custom styles for palette functionality */
+            .canvas-viewport {
+                position: relative;
+                overflow: hidden;
+                cursor: grab;
+                user-select: none;
+                width: 100vw;
+                height: 100vh;
+                background-color: var(--color-rose-pine-base);
+            }
+
+            .canvas-viewport.grabbing {
+                cursor: grabbing;
+            }
+
+            .palette-container {
+                position: absolute;
+                transform-origin: 0 0;
+                transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            .cell-content {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid var(--color-rose-pine-highlight-low);
+                color: var(--color-rose-pine-text);
+                font-size: 0.875rem;
+                font-weight: 500;
+                transition: all 0.2s;
+                width: 2.5rem;
+                height: 2.5rem;
+                border-radius: 0.375rem;
+            }
+
+            .cell-content.legend-label {
+                background-color: var(--color-rose-pine-surface);
+                color: var(--color-rose-pine-subtle);
+            }
+
+            .cell-content.swatch {
+                cursor: pointer;
+            }
+
+            .cell-content.swatch:hover {
+                border-color: var(--color-rose-pine-foam);
+                transform: scale(1.1);
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            }
+
+            .cell-content.interpolated-label {
+                background-color: var(--color-rose-pine-highlight-low);
+                color: var(--color-rose-pine-muted);
+                border-color: var(--color-rose-pine-highlight-med);
+            }
+
+            .cell-content.selected {
+                outline: 2px solid var(--color-rose-pine-love);
+                outline-offset: 2px;
+            }
+
+            .cell-content.copied::after {
+                content: "Copied!";
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                margin-top: 0.5rem;
+                background-color: var(--color-rose-pine-overlay);
+                color: var(--color-rose-pine-text);
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.375rem;
+                pointer-events: none;
+                z-index: 50;
+                animation: fadeInOut 1.5s ease-out;
+            }
+
+            @keyframes fadeInOut {
+                0%,
+                100% {
+                    opacity: 0;
+                    transform: translateX(-50%) translateY(-4px);
+                }
+                20%,
+                80% {
+                    opacity: 1;
+                    transform: translateX(-50%) translateY(0);
+                }
+            }
+
+            .bottom-controls {
+                position: fixed;
+                bottom: 1rem;
+                left: 1rem;
+                right: 1rem;
+                z-index: 40;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                background-color: color-mix(
+                    in srgb,
+                    var(--color-rose-pine-overlay) 95%,
+                    transparent
+                );
+                backdrop-filter: blur(8px);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.5rem;
+                padding: 1rem;
+            }
+
+            .color-picking-active .cell-content.swatch {
+                cursor: crosshair;
+            }
+
+            .color-picking-active .cell-content.swatch:hover {
+                border-color: var(--color-rose-pine-gold);
+                border-width: 2px;
+            }
+
+            .resize-handle {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 1rem;
+                height: 1rem;
+                background-color: color-mix(
+                    in srgb,
+                    var(--color-rose-pine-subtle) 50%,
+                    transparent
+                );
+                cursor: se-resize;
+                clip-path: polygon(100% 0%, 0% 100%, 100% 100%);
+            }
+
+            .resize-handle:hover {
+                background-color: var(--color-rose-pine-subtle);
+            }
+
+            .ui-scaled {
+                font-size: calc(1rem * var(--ui-scale) / 100);
+            }
+
+            .palette-container * {
+                user-select: none;
+            }
+
+            @media (max-width: 700px) {
+                .bottom-controls {
+                    flex-direction: column;
+                    align-items: stretch;
+                    gap: 0.5rem;
+                    padding: 0.75rem;
+                }
+            }
+
+            /* Tooltip styles */
+            .palette-tooltip {
+                position: fixed;
+                display: none;
+                background-color: var(--color-rose-pine-surface);
+                color: var(--color-rose-pine-text);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.375rem;
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+                z-index: 1200;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.15s ease;
+                font-family:
+                    "Ubuntu Mono", ui-monospace, SFMono-Regular, Monaco,
+                    Consolas, monospace;
+            }
+
+            .palette-tooltip--interactive {
+                pointer-events: auto;
+                cursor: pointer;
+            }
+
+            .palette-tooltip--interactive span {
+                cursor: pointer;
+                padding: 0.125rem 0.25rem;
+                border-radius: 0.25rem;
+                transition: background-color 0.15s ease;
+            }
+
+            .palette-tooltip--interactive span:hover {
+                background-color: var(--color-rose-pine-highlight-low);
+            }
+
+            .palette-tooltip span {
+                color: var(--color-rose-pine-gold);
+                font-weight: 500;
+            }
+
+            /* Form styles */
+            .form-slider {
+                appearance: none;
+                background: var(--color-rose-pine-highlight-low);
+                border-radius: 0.25rem;
+                height: 0.5rem;
+                outline: none;
+            }
+
+            .form-slider::-webkit-slider-thumb {
+                appearance: none;
+                width: 1rem;
+                height: 1rem;
+                border-radius: 50%;
+                background: var(--color-rose-pine-iris);
+                cursor: pointer;
+            }
+
+            .form-slider::-moz-range-thumb {
+                width: 1rem;
+                height: 1rem;
+                border-radius: 50%;
+                background: var(--color-rose-pine-iris);
+                cursor: pointer;
+                border: none;
+            }
+
+            .form-input {
+                background-color: var(--color-rose-pine-surface);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.375rem;
+                color: var(--color-rose-pine-text);
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+            }
+
+            .form-input:focus {
+                outline: none;
+                border-color: var(--color-rose-pine-iris);
+                box-shadow: 0 0 0 1px var(--color-rose-pine-iris);
+            }
+
+            .form-textarea {
+                background-color: var(--color-rose-pine-surface);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.375rem;
+                color: var(--color-rose-pine-text);
+                padding: 0.75rem;
+                font-size: 0.875rem;
+                font-family:
+                    "Ubuntu Mono", ui-monospace, SFMono-Regular, Monaco,
+                    Consolas, monospace;
+                resize: vertical;
+            }
+
+            .form-textarea:focus {
+                outline: none;
+                border-color: var(--color-rose-pine-iris);
+                box-shadow: 0 0 0 1px var(--color-rose-pine-iris);
+            }
+
+            .form-checkbox {
+                appearance: none;
+                width: 1rem;
+                height: 1rem;
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.25rem;
+                background-color: var(--color-rose-pine-surface);
+                cursor: pointer;
+                position: relative;
+            }
+
+            .form-checkbox:checked {
+                background-color: var(--color-rose-pine-iris);
+                border-color: var(--color-rose-pine-iris);
+            }
+
+            .form-checkbox:checked::after {
+                content: "";
+                position: absolute;
+                left: 0.25rem;
+                top: 0.125rem;
+                width: 0.25rem;
+                height: 0.5rem;
+                border: solid var(--color-rose-pine-base);
+                border-width: 0 2px 2px 0;
+                transform: rotate(45deg);
+            }
+
+            /* Button styles */
+            .control-button {
+                background-color: var(--color-rose-pine-surface);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.375rem;
+                color: var(--color-rose-pine-text);
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .control-button:hover {
+                background-color: var(--color-rose-pine-highlight-low);
+                border-color: var(--color-rose-pine-highlight-high);
+            }
+
+            .control-button.active {
+                background-color: var(--color-rose-pine-iris);
+                border-color: var(--color-rose-pine-iris);
+                color: var(--color-rose-pine-base);
+            }
+
+            .control-button.success {
+                background-color: var(--color-rose-pine-pine);
+                border-color: var(--color-rose-pine-pine);
+            }
+
+            .control-button.reset-button {
+                background-color: var(--color-rose-pine-love);
+                border-color: var(--color-rose-pine-love);
+                color: var(--color-rose-pine-base);
+            }
+
+            /* Modal styles */
+            .modal-base {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(25, 23, 36, 0.8);
+                backdrop-filter: blur(4px);
+                z-index: 1000;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 1rem;
+            }
+
+            .modal-base.visible {
+                display: flex;
+            }
+
+            .modal-content {
+                background-color: var(--color-rose-pine-overlay);
+                border: 1px solid var(--color-rose-pine-highlight-med);
+                border-radius: 0.75rem;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow-y: auto;
+                position: relative;
+            }
+
+            .modal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem 1.5rem;
+                border-bottom: 1px solid var(--color-rose-pine-highlight-low);
+            }
+
+            .modal-title {
+                font-size: 1.125rem;
+                font-weight: 600;
+                color: var(--color-rose-pine-text);
+            }
+
+            .modal-close-button {
+                background: none;
+                border: none;
+                color: var(--color-rose-pine-subtle);
+                cursor: pointer;
+                padding: 0.25rem;
+                border-radius: 0.25rem;
+                transition: all 0.2s ease;
+            }
+
+            .modal-close-button:hover {
+                color: var(--color-rose-pine-text);
+                background-color: var(--color-rose-pine-highlight-low);
+            }
+
+            .config-section {
+                padding: 1.5rem;
+                border-bottom: 1px solid var(--color-rose-pine-highlight-low);
+            }
+
+            .config-section:last-child {
+                border-bottom: none;
+            }
+
+            .config-section h3 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--color-rose-pine-text);
+                margin-bottom: 1rem;
+            }
+
+            .adjustment-subheader {
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: var(--color-rose-pine-subtle);
+                margin-bottom: 0.5rem;
+            }
+
+            .control-group {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .status-message {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                display: none;
+            }
+
+            .status-success {
+                background-color: var(--color-rose-pine-pine);
+                color: var(--color-rose-pine-base);
+            }
+
+            .status-error {
+                background-color: var(--color-rose-pine-love);
+                color: var(--color-rose-pine-base);
+            }
+        </style>
         <!-- Include html2canvas library -->
         <script
             src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
@@ -21,27 +516,89 @@
             referrerpolicy="no-referrer"
         ></script>
     </head>
-    <body>
-        <!-- NEW Container for Bottom Controls -->
-        <div id="bottom-controls">
-            <!-- Config Toggle Button (Moved inside) -->
-            <button id="config-toggle-button" aria-label="Open Configuration">
-                Config
-            </button>
-            <!-- NEW: Color Picker Toggle Button -->
-            <button
-                id="color-pick-toggle-button"
-                aria-label="Toggle Color Picker Mode"
-            >
-                Pick Color
-            </button>
+    <body
+        class="bg-rose-pine-base text-rose-pine-text overflow-hidden ui-scaled"
+    >
+        <!-- Bottom Controls Bar -->
+        <div class="bottom-controls">
+            <!-- Left side controls -->
+            <div class="flex items-center gap-3">
+                <!-- Config Toggle Button -->
+                <button
+                    id="config-toggle-button"
+                    class="control-button"
+                    aria-label="Open Configuration"
+                >
+                    <svg
+                        class="w-4 h-4 mr-2 inline"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                        ></path>
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        ></path>
+                    </svg>
+                    Config
+                </button>
 
-            <!-- Zoom Controls (Moved here) -->
-            <div id="zoom-controls" class="control-group">
-                <label for="zoom-number">Zoom:</label>
+                <!-- Color Picker Toggle Button -->
+                <button
+                    id="color-pick-toggle-button"
+                    class="control-button"
+                    aria-label="Toggle Color Picker Mode"
+                >
+                    <svg
+                        class="w-4 h-4 mr-2 inline"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM7 3H5v12a2 2 0 004 0V3z"
+                        ></path>
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M17 14l2-2-2-2"
+                        ></path>
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 18l2-2-2-2"
+                        ></path>
+                    </svg>
+                    Pick Color
+                </button>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div
+                class="flex items-center gap-3 bg-rose-pine-surface/50 rounded-lg px-3 py-2 border border-rose-pine-highlight-med"
+            >
+                <label
+                    for="zoom-number"
+                    class="text-sm font-medium text-rose-pine-subtle"
+                    >Zoom:</label
+                >
                 <input
                     type="range"
                     id="zoom-slider"
+                    class="form-slider w-24"
                     min="40"
                     max="200"
                     value="100"
@@ -50,386 +607,636 @@
                 <input
                     type="number"
                     id="zoom-number"
+                    class="form-input w-16 text-center"
                     min="40"
                     max="200"
                     value="100"
                     step="4"
                 />
+                <span class="text-sm text-rose-pine-muted">%</span>
             </div>
         </div>
 
         <!-- Pannable Viewport -->
-        <div id="canvas-viewport">
+        <div id="canvas-viewport" class="canvas-viewport">
             <!-- Palette Container (moved by JS) -->
-            <div id="palette-container">
-                <div id="palette-grid">
+            <div id="palette-container" class="palette-container">
+                <div id="palette-grid" class="grid gap-0.5">
                     <!-- Palette cells will be generated by JavaScript here -->
                 </div>
             </div>
         </div>
 
-        <!-- NEW: Pop-out Palette Editor -->
-        <div id="popout-editor">
-            <div class="popout-header">
-                <span class="popout-title">Palette Data</span>
-                <span id="popout-status-message"></span>
-                <button id="popout-update-button" class="control-button">
-                    Update Palette
-                </button>
-                <button
-                    id="popout-close-button"
-                    aria-label="Close Pop-out Editor"
-                >
-                    &times;
-                </button>
-            </div>
-            <textarea id="popout-palette-input" spellcheck="false"></textarea>
-            <!-- NEW: Resize Handle -->
-            <div id="popout-resize-handle"></div>
-        </div>
-
-        <!-- NEW: HSL/HEX Color Picker Modal -->
-        <div id="color-picker-modal">
-            <div class="color-picker-header">
-                <span class="color-picker-title">Edit Color</span>
-                <button
-                    id="picker-apply-button"
-                    class="control-button apply-button"
-                >
-                    Apply
-                </button>
-                <button
-                    id="color-picker-close-button"
-                    class="modal-close-button"
-                    aria-label="Close Color Picker"
-                >
-                    &times;
-                </button>
-            </div>
-            <div class="color-picker-body">
-                <div id="color-picker-preview"></div>
-                <div class="color-picker-controls">
-                    <div class="picker-control-group">
-                        <label for="picker-hue-slider">H:</label>
-                        <input
-                            type="range"
-                            id="picker-hue-slider"
-                            min="0"
-                            max="360"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-hue-number"
-                            min="0"
-                            max="360"
-                            step="1"
-                        />
-                    </div>
-                    <div class="picker-control-group">
-                        <label for="picker-sat-slider">S:</label>
-                        <input
-                            type="range"
-                            id="picker-sat-slider"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-sat-number"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <span>%</span>
-                    </div>
-                    <div class="picker-control-group">
-                        <label for="picker-lum-slider">L:</label>
-                        <input
-                            type="range"
-                            id="picker-lum-slider"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <input
-                            type="number"
-                            id="picker-lum-number"
-                            min="0"
-                            max="100"
-                            step="1"
-                        />
-                        <span>%</span>
-                    </div>
-                    <div class="picker-control-group hex-group">
-                        <label for="picker-hex-input">HEX:</label>
-                        <input
-                            type="text"
-                            id="picker-hex-input"
-                            spellcheck="false"
-                        />
-                        <button
-                            id="picker-copy-hex-button"
-                            class="control-button copy-button"
-                            aria-label="Copy HEX Code"
-                        >
-                            Copy
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <!-- NEW: Resize Handle -->
-            <div id="color-picker-resize-handle"></div>
-        </div>
-        <!-- END Color Picker Modal -->
-
-        <!-- Configuration Modal -->
-        <div id="config-modal">
-            <button class="modal-close-button" aria-label="Close Configuration">
-                &times;
-            </button>
-
-            <div class="config-section">
-                <h3>Palette Actions</h3>
-                <div class="control-group">
-                    <button id="edit-palette-button" class="control-button">
-                        Edit Palette Data
+        <!-- Pop-out Palette Editor -->
+        <div
+            id="popout-editor"
+            class="fixed top-4 right-4 w-96 h-80 bg-rose-pine-overlay border border-rose-pine-highlight-med rounded-lg shadow-2xl hidden z-50 flex flex-col"
+        >
+            <div class="modal-header">
+                <span class="modal-title">Palette Data</span>
+                <div class="flex items-center gap-2">
+                    <span
+                        id="popout-status-message"
+                        class="status-message"
+                    ></span>
+                    <button
+                        id="popout-update-button"
+                        class="control-button text-sm px-3 py-1"
+                    >
+                        Update
                     </button>
-                    <!-- Wrapper for Export Controls -->
-                    <div class="export-controls-group">
-                        <label
-                            for="export-scale-input"
-                            class="export-scale-label"
-                            >Scale:</label
+                    <button
+                        id="popout-close-button"
+                        class="modal-close-button"
+                        aria-label="Close Pop-out Editor"
+                    >
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                         >
-                        <input
-                            type="number"
-                            id="export-scale-input"
-                            min="1"
-                            max="10"
-                            step="0.5"
-                            value="2"
-                        />
-                        <span>x</span>
-                        <button id="export-png-button" class="control-button">
-                            Export as PNG
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <textarea
+                id="popout-palette-input"
+                class="form-textarea flex-1 m-4 mt-0"
+                spellcheck="false"
+                placeholder="Enter palette data..."
+            ></textarea>
+            <!-- Resize Handle -->
+            <div id="popout-resize-handle" class="resize-handle"></div>
+        </div>
+
+        <!-- HSL/HEX Color Picker Modal -->
+        <div id="color-picker-modal" class="modal-base">
+            <div class="modal-content w-full max-w-md">
+                <div class="modal-header">
+                    <span class="modal-title">Edit Color</span>
+                    <div class="flex items-center gap-2">
+                        <button
+                            id="picker-apply-button"
+                            class="control-button success text-sm px-3 py-1"
+                        >
+                            Apply
+                        </button>
+                        <button
+                            id="color-picker-close-button"
+                            class="modal-close-button"
+                            aria-label="Close Color Picker"
+                        >
+                            <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"
+                                ></path>
+                            </svg>
                         </button>
                     </div>
                 </div>
-            </div>
+                <div class="p-4 space-y-4">
+                    <!-- Color Preview -->
+                    <div
+                        id="color-picker-preview"
+                        class="w-full h-16 rounded-lg border border-rose-pine-highlight-med"
+                    ></div>
 
-            <div class="config-section" id="palette-editor-section">
-                <!-- <h3>Edit Palette</h3> -->
-                <label
-                    for="palette-input"
-                    style="
-                        display: block;
-                        margin-bottom: 10px;
-                        font-weight: 500;
-                        font-size: 14px;
-                    "
-                >
-                    Palette Data (Space-Delimited rows, #Hex for colors):
-                </label>
-                <textarea
-                    id="palette-input"
-                    spellcheck="false"
-                    placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
-                ></textarea>
-                <button id="update-button">Update Palette from Text</button>
-            </div>
-
-            <div class="config-section">
-                <h3>Adjustments</h3>
-                <!-- Wrapper for Interpolation Controls -->
-                <div
-                    id="interpolation-controls-wrapper"
-                    class="adjustment-group"
-                >
-                    <div id="interpolation-controls" class="control-group">
-                        <label for="interpolation-toggle">
-                            Distribute Shades (Vertical):
-                        </label>
-                        <input type="checkbox" id="interpolation-toggle" />
-                        <div
-                            id="interpolation-steps-group"
-                            class="slider-group"
-                        >
-                            <label for="interpolation-steps-slider"
-                                >Steps:</label
+                    <!-- HSL Controls -->
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <label
+                                for="picker-hue-slider"
+                                class="text-sm font-medium text-rose-pine-text w-6"
+                                >H:</label
                             >
                             <input
                                 type="range"
-                                id="interpolation-steps-slider"
-                                min="1"
-                                max="10"
-                                value="1"
+                                id="picker-hue-slider"
+                                class="form-slider flex-1"
+                                min="0"
+                                max="360"
                                 step="1"
                             />
                             <input
                                 type="number"
-                                id="interpolation-steps-number"
-                                min="1"
-                                max="10"
-                                value="1"
+                                id="picker-hue-number"
+                                class="form-input w-16 text-center"
+                                min="0"
+                                max="360"
+                                step="1"
                             />
                         </div>
-                    </div>
-                </div>
-
-                <!-- Wrapper for Saturation Controls -->
-                <div id="saturation-controls-wrapper" class="adjustment-group">
-                    <div id="saturation-controls" class="control-group">
-                        <label for="saturation-offset-slider"
-                            >Saturation Offset:</label
-                        >
-                        <div id="saturation-offset-group" class="slider-group">
+                        <div class="flex items-center gap-3">
+                            <label
+                                for="picker-sat-slider"
+                                class="text-sm font-medium text-rose-pine-text w-6"
+                                >S:</label
+                            >
                             <input
                                 type="range"
-                                id="saturation-offset-slider"
-                                min="-100"
+                                id="picker-sat-slider"
+                                class="form-slider flex-1"
+                                min="0"
                                 max="100"
-                                value="0"
                                 step="1"
                             />
                             <input
                                 type="number"
-                                id="saturation-offset-number"
-                                min="-100"
+                                id="picker-sat-number"
+                                class="form-input w-16 text-center"
+                                min="0"
                                 max="100"
-                                value="0"
+                                step="1"
                             />
-                            <span>%</span>
+                            <span class="text-sm text-rose-pine-muted w-4"
+                                >%</span
+                            >
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label
+                                for="picker-lum-slider"
+                                class="text-sm font-medium text-rose-pine-text w-6"
+                                >L:</label
+                            >
+                            <input
+                                type="range"
+                                id="picker-lum-slider"
+                                class="form-slider flex-1"
+                                min="0"
+                                max="100"
+                                step="1"
+                            />
+                            <input
+                                type="number"
+                                id="picker-lum-number"
+                                class="form-input w-16 text-center"
+                                min="0"
+                                max="100"
+                                step="1"
+                            />
+                            <span class="text-sm text-rose-pine-muted w-4"
+                                >%</span
+                            >
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <label
+                                for="picker-hex-input"
+                                class="text-sm font-medium text-rose-pine-text w-12"
+                                >HEX:</label
+                            >
+                            <input
+                                type="text"
+                                id="picker-hex-input"
+                                class="form-input flex-1 font-mono"
+                                spellcheck="false"
+                            />
+                            <button
+                                id="picker-copy-hex-button"
+                                class="control-button text-sm px-3 py-1"
+                                aria-label="Copy HEX Code"
+                            >
+                                Copy
+                            </button>
                         </div>
                     </div>
                 </div>
+                <!-- Resize Handle -->
+                <div
+                    id="color-picker-resize-handle"
+                    class="resize-handle"
+                ></div>
+            </div>
+        </div>
 
-                <!-- Wrapper for Generate Row Controls -->
-                <div id="generate-x-controls-wrapper" class="adjustment-group">
-                    <!-- NEW: Subheader for Generate Row -->
-                    <h4 class="adjustment-subheader">Generate Specific Row</h4>
-                    <!-- Controls group (label removed) -->
-                    <div
-                        id="generate-x-controls"
-                        class="control-group generate-row-layout"
+        <!-- Configuration Modal -->
+        <div id="config-modal" class="modal-base">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Configuration</h2>
+                    <button
+                        class="modal-close-button"
+                        aria-label="Close Configuration"
                     >
-                        <!-- Removed <label for="generate-x-value">Generate Row:</label> -->
-                        <input
-                            type="number"
-                            id="generate-x-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Target"
-                        />
-                        <span>x</span>
-                        <label for="generate-ref1-value" class="from-label"
-                            >from</label
+                        <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                         >
-                        <input
-                            type="number"
-                            id="generate-ref1-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Ref 1"
-                        />
-                        <span>x</span>
-                        <label for="generate-ref2-value" class="and-label"
-                            >and</label
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Palette Actions Section -->
+                <div class="config-section">
+                    <h3>Palette Actions</h3>
+                    <div class="space-y-3">
+                        <div class="control-group">
+                            <button
+                                id="edit-palette-button"
+                                class="control-button"
+                            >
+                                <svg
+                                    class="w-4 h-4 mr-2 inline"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                    ></path>
+                                </svg>
+                                Edit Palette Data
+                            </button>
+                        </div>
+
+                        <!-- Export Controls -->
+                        <div
+                            class="flex items-center gap-3 bg-rose-pine-surface/50 rounded-lg p-3 border border-rose-pine-highlight-low"
                         >
-                        <input
-                            type="number"
-                            id="generate-ref2-value"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Ref 2"
-                        />
-                        <span>x</span>
-                        <button id="generate-x-button" class="control-button">
-                            Generate
+                            <label
+                                for="export-scale-input"
+                                class="text-sm font-medium text-rose-pine-text"
+                                >Scale:</label
+                            >
+                            <input
+                                type="number"
+                                id="export-scale-input"
+                                class="form-input w-16 text-center"
+                                min="1"
+                                max="10"
+                                step="0.5"
+                                value="2"
+                            />
+                            <span class="text-sm text-rose-pine-muted">×</span>
+                            <button
+                                id="export-png-button"
+                                class="control-button"
+                            >
+                                <svg
+                                    class="w-4 h-4 mr-2 inline"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    ></path>
+                                </svg>
+                                Export PNG
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Reset View Button -->
+                    <div>
+                        <button
+                            id="reset-view-button"
+                            class="control-button reset-button"
+                            type="button"
+                        >
+                            <svg
+                                class="w-5 h-5 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
+                                ></path>
+                            </svg>
+                            Reset View
                         </button>
                     </div>
                 </div>
 
-                <!-- NEW: UI Scale Section -->
-                <div class="adjustment-group">
-                    <h4 class="adjustment-subheader">Interface Scale</h4>
-                    <div class="control-group">
-                        <label for="ui-scale-number">UI Scale:</label>
-                        <div class="slider-group">
-                            <input
-                                type="number"
-                                id="ui-scale-number"
-                                min="50"
-                                max="200"
-                                value="100"
-                            />
-                            %
+                <!-- Palette Editor Section -->
+                <div class="config-section hidden" id="palette-editor-section">
+                    <label
+                        for="palette-input"
+                        class="block text-sm font-medium text-rose-pine-text mb-3"
+                    >
+                        Palette Data (Space-Delimited rows, #Hex for colors):
+                    </label>
+                    <textarea
+                        id="palette-input"
+                        class="form-textarea w-full"
+                        spellcheck="false"
+                        placeholder="Example Row:&#10;Label1 #ff0000 #00ff00 Label2 #0000ff ..."
+                    ></textarea>
+                    <button id="update-button" class="control-button mt-3">
+                        Update Palette from Text
+                    </button>
+                </div>
+
+                <!-- Adjustments Section -->
+                <div class="config-section">
+                    <h3>Adjustments</h3>
+                    <div class="space-y-4">
+                        <!-- Interpolation Controls -->
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <label
+                                    for="interpolation-toggle"
+                                    class="text-sm font-medium text-rose-pine-text"
+                                >
+                                    Distribute Shades (Vertical):
+                                </label>
+                                <input
+                                    type="checkbox"
+                                    id="interpolation-toggle"
+                                    class="form-checkbox"
+                                />
+                            </div>
+                            <div class="flex items-center gap-3 ml-6">
+                                <label
+                                    for="interpolation-steps-slider"
+                                    class="text-sm font-medium text-rose-pine-text"
+                                    >Steps:</label
+                                >
+                                <input
+                                    type="range"
+                                    id="interpolation-steps-slider"
+                                    class="form-slider w-24"
+                                    min="1"
+                                    max="10"
+                                    value="1"
+                                    step="1"
+                                />
+                                <input
+                                    type="number"
+                                    id="interpolation-steps-number"
+                                    class="form-input w-16 text-center"
+                                    min="1"
+                                    max="10"
+                                    value="1"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Saturation Controls -->
+                        <div class="space-y-3">
+                            <h4 class="adjustment-subheader">
+                                Saturation Adjustment
+                            </h4>
+                            <div class="flex items-center gap-3">
+                                <label
+                                    for="saturation-offset-slider"
+                                    class="text-sm font-medium text-rose-pine-text"
+                                    >Offset:</label
+                                >
+                                <input
+                                    type="range"
+                                    id="saturation-offset-slider"
+                                    class="form-slider flex-1"
+                                    min="-100"
+                                    max="100"
+                                    value="0"
+                                    step="1"
+                                />
+                                <input
+                                    type="number"
+                                    id="saturation-offset-number"
+                                    class="form-input w-16 text-center"
+                                    min="-100"
+                                    max="100"
+                                    value="0"
+                                />
+                                <span class="text-sm text-rose-pine-muted"
+                                    >%</span
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Generate Row Controls -->
+                        <div class="space-y-3">
+                            <h4 class="adjustment-subheader">
+                                Generate Specific Row
+                            </h4>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <input
+                                    type="number"
+                                    id="generate-x-value"
+                                    class="form-input w-16 text-center"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    placeholder="Target"
+                                />
+                                <span class="text-sm text-rose-pine-muted"
+                                    >×</span
+                                >
+                                <span class="text-sm text-rose-pine-text"
+                                    >from</span
+                                >
+                                <input
+                                    type="number"
+                                    id="generate-ref1-value"
+                                    class="form-input w-16 text-center"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    placeholder="Ref 1"
+                                />
+                                <span class="text-sm text-rose-pine-muted"
+                                    >×</span
+                                >
+                                <span class="text-sm text-rose-pine-text"
+                                    >and</span
+                                >
+                                <input
+                                    type="number"
+                                    id="generate-ref2-value"
+                                    class="form-input w-16 text-center"
+                                    min="0"
+                                    max="100"
+                                    step="1"
+                                    placeholder="Ref 2"
+                                />
+                                <span class="text-sm text-rose-pine-muted"
+                                    >×</span
+                                >
+                                <button
+                                    id="generate-x-button"
+                                    class="control-button"
+                                >
+                                    Generate
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- UI Scale Section -->
+                        <div class="space-y-3">
+                            <h4 class="adjustment-subheader">
+                                Interface Scale
+                            </h4>
+                            <div class="flex items-center gap-3">
+                                <label
+                                    for="ui-scale-number"
+                                    class="text-sm font-medium text-rose-pine-text"
+                                    >UI Scale:</label
+                                >
+                                <input
+                                    type="number"
+                                    id="ui-scale-number"
+                                    class="form-input w-16 text-center"
+                                    min="50"
+                                    max="200"
+                                    value="100"
+                                />
+                                <span class="text-sm text-rose-pine-muted"
+                                    >%</span
+                                >
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- END NEW Section -->
-            </div>
 
-            <!-- NEW: State Management Section -->
-            <div class="config-section">
-                <h3>Application State</h3>
-                <div
-                    id="state-timestamp"
-                    class="text-sm text-gray-500 mb-2"
-                ></div>
-                <div class="control-group state-management-group">
-                    <button id="save-state-button" class="control-button">
-                        Save Current State
-                    </button>
-                    <button
-                        id="reset-state-button"
-                        class="control-button reset-button"
-                    >
-                        Reset All & Reload
-                    </button>
-                    <button id="reset-view-button" class="control-button">
-                        Reset View
-                    </button>
+                <!-- State Management Section -->
+                <div class="config-section">
+                    <h3>Application State</h3>
+                    <div
+                        id="state-timestamp"
+                        class="text-sm text-gray-500 mb-2"
+                    ></div>
+                    <div class="flex gap-3">
+                        <button id="save-state-button" class="control-button">
+                            <svg
+                                class="w-4 h-4 mr-2 inline"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                                ></path>
+                            </svg>
+                            Save Current State
+                        </button>
+                        <button
+                            id="reset-state-button"
+                            class="control-button reset-button"
+                        >
+                            <svg
+                                class="w-4 h-4 mr-2 inline"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0V9a8 8 0 1115.356 2.586M4.582 9H9"
+                                ></path>
+                            </svg>
+                            Reset All & Reload
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Palette Data Import/Export Section -->
+                <div class="config-section">
+                    <h3>Palette Data</h3>
+                    <div class="flex gap-3">
+                        <button
+                            id="export-palette-button"
+                            class="control-button"
+                        >
+                            <svg
+                                class="w-4 h-4 mr-2 inline"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                ></path>
+                            </svg>
+                            Export Palette (.txt)
+                        </button>
+                        <button
+                            id="import-palette-button"
+                            class="control-button"
+                        >
+                            <svg
+                                class="w-4 h-4 mr-2 inline"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
+                                ></path>
+                            </svg>
+                            Import Palette (.txt)
+                        </button>
+                        <input
+                            type="file"
+                            id="import-palette-file-input"
+                            accept=".txt"
+                            class="hidden"
+                        />
+                    </div>
                 </div>
             </div>
-            <!-- END NEW Section -->
-
-            <!-- NEW: Palette Data Import/Export Section -->
-            <div class="config-section">
-                <h3>Palette Data</h3>
-                <div class="control-group palette-io-group">
-                    <button id="export-palette-button" class="control-button">
-                        Export Palette (.yaml)
-                    </button>
-                    <button id="import-palette-button" class="control-button">
-                        Import Palette (.yaml/.txt)
-                    </button>
-                    <input
-                        type="file"
-                        id="import-palette-file-input"
-                        accept=".txt,.yaml,.yml"
-                        style="display: none"
-                    />
-                    <!-- Hidden file input -->
-                    <!-- Add URL input/button here later if needed -->
-                </div>
-                <!-- Add Drag-drop zone instructions/styling later if needed -->
-            </div>
-            <!-- END NEW Section -->
         </div>
 
-        <!-- NEW: Palette Cell Tooltip -->
-        <div id="palette-tooltip" class="palette-tooltip">
-            <div id="tooltip-hex">HEX: <span></span></div>
-            <div id="tooltip-hsl">HSL: <span></span></div>
-            <div id="tooltip-rgb">RGB: <span></span></div>
+        <!-- Palette Cell Tooltip -->
+        <div id="palette-tooltip" class="palette-tooltip space-y-1">
+            <div id="tooltip-hex" class="flex items-center gap-2">
+                <span class="text-rose-pine-muted">HEX:</span>
+                <span class="font-semibold"></span>
+            </div>
+            <div id="tooltip-hsl" class="flex items-center gap-2">
+                <span class="text-rose-pine-muted">HSL:</span>
+                <span></span>
+            </div>
+            <div id="tooltip-rgb" class="flex items-center gap-2">
+                <span class="text-rose-pine-muted">RGB:</span>
+                <span></span>
+            </div>
         </div>
 
         <!-- Link External JS Modules (defer ensures HTML is parsed first) -->
-        <script type="module" src="dist/main.js" defer></script>
+        <script type="module" src="src/main.js" defer></script>
     </body>
 </html>
